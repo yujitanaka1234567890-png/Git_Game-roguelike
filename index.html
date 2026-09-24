@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>次元ローグライク（仮）</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <h1>次元ローグライク（仮）</h1>
+
+  <div id="hud">
+    <span id="hud-floor"></span>
+    <span id="hud-lv"></span>
+    <span class="hp-label">HP</span>
+    <div class="hp-bar"><div id="hp-fill"></div></div>
+    <span id="hud-hp"></span>
+    <span class="hp-label">精神</span>
+    <div class="hp-bar mind-bar"><div id="mind-fill"></div></div>
+    <span id="hud-mind"></span>
+    <span id="hud-atk"></span>
+    <span id="hud-turn"></span>
+    <span id="status"></span>
+  </div>
+  <div id="party"></div>
+  <div id="game-wrap">
+    <canvas id="game" tabindex="0"></canvas>
+    <div id="inventory" hidden></div>
+    <div id="dialog" hidden></div>
+  </div>
+  <div id="log"></div>
+  <p class="help help-dungeon">
+    矢印：移動・攻撃 ／ Shift＋矢印2つ同時：斜め ／ Shift＋矢印1つ：ダッシュ（Shiftを離すと止まる）<br>
+    スペース：足踏み ／ I：持ち物（T で投げる） ／ 階段の上で ↓↓：降りる ／ R を2回：冒険をあきらめる ／ V：ドット絵⇔文字 ／ M：効果音オン⇔オフ<br>
+    N = ぬめ系 ／ T = トゲ系 ／ † = 刃系（壁をすり抜ける） ／ D = 龍系（離れるとブレス） ／ P = 人形系 ／ B = つむじ鳥系 ／ 小文字 = 交配種<br>
+    左上の点 = 進化段階 ／ 黄色い枠と「!」= 敵の技の溜め中 ／ 青い枠 = 仲間の技の溜め中 ／ 精神 = 同じ階に長居すると減り、0でダンジョンに取り込まれる<br>
+    青い下地 = 仲間（ぶつかると入れ替わる） ／ ▼ = 階段 ／ ◎ = 脱出口（最深部） ／ ◇ = はぐれた仲間の気配（踏むと救出） ／ ♣ = 植物 ／ ≡ = 符 ／ ● = 木の実 ／ ♪ = 道具 ／ ∽ = 香 ／ ∫ = 煙草 ／ ▦ = 六面パズル ／ ⊙ = リボルバートイ
+  </p>
+  <p class="help help-base">
+    矢印で歩く（Shift＋矢印2つで斜め） ／ 牧場の仲間にぶつかる：話しかける（連れて行くか選ぶ）<br>
+    ▣ 収納箱にぶつかる：持って行く道具を選ぶ ／ ♥ 交配小屋にぶつかる：2体から新しい仲間を生み出す ／ 掲 救出の掲示板：はぐれた仲間に救出隊を送る ／ ∩ 門に乗る：行き先を選んで出発<br>
+    ウィンドウ：↑↓で選び Enter・スペースで決定、Esc で閉じる ／ V：ドット絵⇔文字 ／ M：効果音オン⇔オフ
+  </p>
+
+  <!-- 読み込み順が大事：下のファイルは上のファイルを使う -->
+  <script src="js/config.js"></script>
+  <!-- 図鑑データ（モンスター・技・ダンジョン・交配表）。admin/bestiary.html でも同じものを読む -->
+  <script src="js/data/skills.js"></script>
+  <script src="js/data/monsters.js"></script>
+  <script src="js/data/dungeons.js"></script>
+  <script src="js/data/breeding.js"></script>
+  <script src="js/data/worlds.js"></script>
+  <script src="js/data/sprites.js"></script>
+  <script src="js/dungeon.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/fov.js"></script>
+  <script src="js/log.js"></script>
+  <script src="js/dialog.js"></script>
+  <script src="js/fx.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/pixelart.js"></script>
+  <script src="js/dimension.js"></script>
+  <script src="js/combat.js"></script>
+  <script src="js/leveling.js"></script>
+  <script src="js/items.js"></script>
+  <script src="js/inventory.js"></script>
+  <script src="js/throw.js"></script>
+  <script src="js/mind.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/enemy.js"></script>
+  <script src="js/specials.js"></script>
+  <script src="js/pathfind.js"></script>
+  <script src="js/allies.js"></script>
+  <script src="js/rescue.js"></script>
+  <script src="js/base.js"></script>
+  <script src="js/basemap.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

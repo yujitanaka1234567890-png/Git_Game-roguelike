@@ -1,0 +1,12 @@
+# OS・エディタが作るファイル
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.vscode/
+.idea/
+
+# ログ・一時ファイル
+*.log
+*.tmp
+scratch_*

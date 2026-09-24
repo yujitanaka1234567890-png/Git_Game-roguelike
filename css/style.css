@@ -1,0 +1,188 @@
+body {
+  margin: 0;
+  padding: 16px;
+  background: #111;
+  color: #ddd;
+  font-family: "Consolas", "Meiryo", monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+h1 {
+  font-size: 20px;
+  margin: 0 0 12px;
+}
+
+canvas {
+  background: #000;
+  border: 2px solid #444;
+  outline: none;
+  max-width: 100%;
+}
+
+#hud {
+  width: 960px;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+#hud > span {
+  white-space: nowrap;
+}
+
+#hud-floor {
+  color: #8ab4ff;
+  min-width: 3em;
+}
+
+.hp-bar {
+  width: 200px;
+  height: 12px;
+  background: #400;
+  border: 1px solid #555;
+}
+
+#hp-fill {
+  height: 100%;
+  background: #4caf50;
+  transition: width 0.15s;
+}
+
+#hp-fill.warn { background: #e0b030; }
+#hp-fill.danger { background: #e04040; }
+
+.mind-bar { width: 120px; background: #201030; }
+#mind-fill { height: 100%; background: #9a6cff; transition: width 0.15s; }
+#mind-fill.warn { background: #c060d0; }
+#mind-fill.danger { background: #ff40a0; }
+
+#hud-atk {
+  color: #ffb0b0;
+}
+
+#hud-lv {
+  color: #ffe08a;
+}
+
+#party {
+  width: 960px;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.party-title { color: #8ab4ff; font-weight: bold; }
+.party-none { color: #666; }
+.party-member {
+  background: #1d3f6e;
+  padding: 1px 8px;
+  border-radius: 3px;
+}
+
+#game-wrap {
+  position: relative;
+}
+
+/* 操作説明：拠点にいる間は拠点用、ダンジョンではダンジョン用を出す */
+.help-base { display: none; }
+body.in-base .help-base { display: block; }
+body.in-base .help-dungeon { display: none; }
+
+#dialog {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 420px;
+  max-height: 90%;
+  overflow-y: auto;
+  padding: 10px 12px;
+  background: rgba(12, 14, 28, 0.96);
+  border: 2px solid #ffe08a;
+  font-size: 14px;
+}
+
+#dialog[hidden] { display: none; }
+#dialog ul { list-style: none; margin: 6px 0; padding: 0; }
+#dialog li { padding: 2px 6px; }
+#dialog li.selected { background: #2a3f70; }
+#dialog li.selected::before { content: "▶ "; }
+
+#inventory {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 300px;
+  padding: 10px 12px;
+  background: rgba(12, 14, 28, 0.95);
+  border: 2px solid #8ab4ff;
+  font-size: 14px;
+}
+
+#inventory[hidden] {
+  display: none;
+}
+
+#inventory ul {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+}
+
+#inventory li {
+  padding: 2px 6px;
+}
+
+#inventory li.selected {
+  background: #2a3f70;
+}
+
+#inventory li.selected::before {
+  content: "▶ ";
+}
+
+.inv-title { font-weight: bold; color: #8ab4ff; }
+.inv-icon { display: inline-block; width: 1.4em; text-align: center; font-weight: bold; }
+.inv-empty { color: #888; margin: 8px 0; }
+.inv-desc { border-top: 1px solid #334; padding-top: 6px; color: #ccc; font-size: 13px; }
+.inv-help { margin-top: 6px; color: #888; font-size: 12px; }
+
+#status {
+  color: #ffb070;
+  font-weight: normal;
+}
+
+#log {
+  width: 960px;
+  max-width: 100%;
+  min-height: 6.5em;
+  margin-top: 8px;
+  padding: 6px 10px;
+  box-sizing: border-box;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.log-info { color: #ccc; }
+.log-good { color: #8fd18f; }
+.log-bad  { color: #ff8080; }
+.log-miss { color: #888; }
+.log-warn { color: #ffd24a; font-weight: bold; }
+.log-ally { color: #7cc8ff; font-weight: bold; }
+
+.help {
+  color: #888;
+  font-size: 13px;
+}

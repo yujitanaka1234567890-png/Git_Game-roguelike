@@ -230,41 +230,68 @@ Game.sound = {
         vib.stop(t0 + 2.8);
       }, this);
     },
-    // 「ひそひそひそ…」：だれかが小声で話しているような、かすれた息の音の粒
+    // 「ひそひそひそ…」：声を出さずに息だけで話す音（ささやき）を、子音と母音に分けて合成する
+    //   ひ＝息の「h」→ 口のすぼまった「i」、そ＝鋭い「s」→ 丸い「o」。これを小声で早口にくり返す
     whisper: function () {
-      var ctx = this.ctx, t0 = ctx.currentTime + 0.05;
-      var len = Math.floor(ctx.sampleRate * 2.2);
+      var ctx = this.ctx, master = this.master;
+      var len = Math.floor(ctx.sampleRate * 0.4);
       var buf = ctx.createBuffer(1, len, ctx.sampleRate);
       var data = buf.getChannelData(0);
       for (var i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-      var src = ctx.createBufferSource();
-      src.buffer = buf;
-      var f = ctx.createBiquadFilter();
-      f.type = "bandpass";
-      f.Q.value = 4;
-      var g = ctx.createGain();
-      g.gain.setValueAtTime(0.0001, t0);
-      var t = t0;
-      for (var k = 0; k < 11; k++) {
-        var syl = 0.07 + Math.random() * 0.1; // 1音の長さ
-        f.frequency.setValueAtTime(1400 + Math.random() * 2600, t); // 口の形が変わるように、こもり方を変える
-        g.gain.exponentialRampToValueAtTime(0.05 + Math.random() * 0.05, t + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + syl);
-        t += syl + 0.02 + Math.random() * (k % 4 === 3 ? 0.25 : 0.06); // ときどき間があく
-      }
       var pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-      src.connect(f);
-      f.connect(g);
+      var out = ctx.createGain();
+      out.gain.value = 0.9;
       if (pan) {
-        pan.pan.setValueAtTime(-0.6, t0);
-        pan.pan.linearRampToValueAtTime(0.6, t); // 耳元を横切る
-        g.connect(pan);
-        pan.connect(this.master);
+        out.connect(pan);
+        pan.connect(master);
       } else {
-        g.connect(this.master);
+        out.connect(master);
       }
-      src.start(t0);
-      src.stop(t + 0.1);
+      // 息の音を1つ：filters = [[種類, 周波数, Q, 強さ], ...] を並列に通して足す
+      var puff = function (t, dur, peak, filters) {
+        var src = ctx.createBufferSource();
+        src.buffer = buf;
+        var g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(peak, t + Math.min(0.02, dur / 3));
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        filters.forEach(function (f) {
+          var bq = ctx.createBiquadFilter();
+          bq.type = f[0];
+          bq.frequency.value = f[1];
+          bq.Q.value = f[2];
+          var fg = ctx.createGain();
+          fg.gain.value = f[3];
+          src.connect(bq);
+          bq.connect(fg);
+          fg.connect(g);
+        });
+        g.connect(out);
+        src.start(t, Math.random() * 0.2);
+        src.stop(t + dur + 0.02);
+      };
+      var H = [["bandpass", 1800, 0.8, 0.5]];
+      var I = [["bandpass", 320, 6, 2.2], ["bandpass", 2400, 8, 2.6], ["bandpass", 3200, 8, 1.2]];
+      var S = [["highpass", 5200, 0.9, 0.9]];
+      var O = [["bandpass", 520, 6, 2.6], ["bandpass", 880, 7, 2.2], ["bandpass", 2600, 6, 0.5]];
+      var t = ctx.currentTime + 0.05;
+      var start = t;
+      var phrases = [3, 2, 3]; // 「ひそひそひそ」「ひそひそ」「ひそひそひそ」
+      for (var p = 0; p < phrases.length; p++) {
+        for (var k = 0; k < phrases[p]; k++) {
+          var v = 0.8 + Math.random() * 0.4; // 1音ずつ少し強さを変える
+          puff(t, 0.05, 0.05 * v, H);
+          puff(t + 0.035, 0.08, 0.09 * v, I);
+          puff(t + 0.11, 0.07, 0.07 * v, S);
+          puff(t + 0.17, 0.09, 0.09 * v, O);
+          t += 0.27;
+        }
+        t += 0.35 + Math.random() * 0.2; // 息つぎ
+      }
+      if (pan) {
+        pan.pan.setValueAtTime(-0.7, start);
+        pan.pan.linearRampToValueAtTime(0.7, t); // 耳元を横切る
+      }
     },
     levelup: function () {
       this.guitar([82.4, 123.5, 164.8], 0.16, 0, 0.3); // ジャ（E のパワーコード）

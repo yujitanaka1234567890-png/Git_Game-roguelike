@@ -240,7 +240,7 @@ Game.view3d = {
             else if (map.tileAt(x + 1, z) !== "G") name = "gateR";
           }
           var entry = { x: x, z: z, s: this.spriteSlot(name, null, spr.color, spr.char), m: m };
-          if (tile === ">" || tile === "O") flats.push(entry);
+          if (tile === ">") flats.push(entry);
           else stands.push(entry);
         }
       }
@@ -282,7 +282,8 @@ Game.view3d = {
       if (un.hp !== undefined && un.hp < un.maxHp) {
         this.board(un.x, un.z, 0.8, 0.08, white, this.rgb(c.hpBarBg), top + 0.06);
         var r = un.hp / un.maxHp;
-        this.board(un.x - 0.4 + 0.4 * r, un.z, 0.8 * r, 0.08, white, this.rgb(c.hpBar), top + 0.061);
+        // 中身は下地より少しカメラ側に置く（同じ面だと下地に隠れて赤黒くしか見えなかった）。仲間は緑、敵は赤
+        this.board(un.x - 0.4 + 0.4 * r, un.z + 0.03, 0.8 * r, 0.08, white, this.rgb(un.ally ? c.allyHpBar : c.hpBar), top + 0.06);
       }
       for (var pip = 0; pip < (un.stage || 1) - 1; pip++) {
         this.board(un.x, un.z, 0.14, 0.14, white, this.rgb("#ffe066"), top - 0.2, 0, -0.42 + pip * 0.18);

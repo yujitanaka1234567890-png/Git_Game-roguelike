@@ -152,8 +152,8 @@ Game.onKey = function (key) {
     Game.refresh(Game.view3d.zoomBy(key === "-" ? 1 : -1));
     return;
   }
-  // O：分隊への指示（ダンジョンで、ウィンドウが開いていない時）
-  if (lower === "o" && Game.state === "playing" && !Game.dialog.isOpen()) {
+  // .（ドット）：分隊への指示（ダンジョンで、ウィンドウが開いていない時）
+  if (key === "." && Game.state === "playing" && !Game.dialog.isOpen()) {
     Game.squad.openMenu();
     Game.refresh();
     return;
@@ -243,11 +243,11 @@ Game.endTurn = function () {
   Game.enemies.tryRespawn();
   var byMind = false;
   if (Game.mind.isGone() && Game.player.hp > 0) {
-    // 精神力が0の間は、闇に心身をむしばまれて毎ターンダメージ
-    var dmg = Math.min(Game.config.mind.zeroDamage, Game.player.hp);
+    // 精神力が0の間は、闇に心身をむしばまれて毎ターンダメージ。0が続くと zeroDoubleEvery ターンごとに倍になる
+    var dmg = Math.min(Game.mind.zeroDamage(), Game.player.hp);
     Game.player.hp -= dmg;
     Game.player.wasHit = true;
-    Game.log.add("闇が心身をむしばむ… " + dmg + " のダメージ（精神力が0）", "bad");
+    Game.log.add("闇が心身をむしばむ… " + dmg + " のダメージ（精神力が0。" + Game.config.mind.zeroDoubleEvery + "ターンごとに倍になる）", "bad");
     byMind = Game.player.hp <= 0;
   }
   if (Game.player.wasHit) Game.hitPauseUntil = Date.now() + Game.config.hitPauseMs;
@@ -342,7 +342,7 @@ Game.escapeDungeon = function (headline, cleared) {
 Game.useStairs = function (st) {
   if (st.action === "descend") Game.descend();
   else if (st.action === "escape" && Game.enemies.boss()) {
-    Game.refresh("「" + Game.enemies.boss().name + "」の力で脱出口が封じられている！ 倒さなければ出られない");
+    Game.refresh("「" + Game.enemies.boss().name + "」がいる間は帰れない！");
   } else if (st.action === "escape") {
     Game.escapeDungeon(Game.currentDungeon().name + " B" + Game.floor + "F の脱出口から脱出した！ ダンジョン踏破！", true);
   }

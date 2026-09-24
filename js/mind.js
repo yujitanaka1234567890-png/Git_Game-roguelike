@@ -3,13 +3,15 @@
 //   ・同じフロアに「長居の猶予」ターンを超えて居続けると、ダンジョンの気配に強く心をむしばまれ、
 //     lingerDrainEvery ターンごとに1ずつ減るようになる。
 //     猶予は階の広さに比例する：graceTurns ×（その階の床のマス数 ÷ refFloorTiles）。広い階ほど長く居られる
-//   ・半分を切ると、ときどき遠くでオオカミの遠吠えが聞こえ、ささやき声（ひそひそ…）がする
-//   ・0になると、闇に心身をむしばまれて毎ターン zeroDamage のダメージを受ける（HPが尽きれば倒れる）
+//   ・半分を切るとオオカミの遠吠え、4分の1を切るとささやき声（ひそひそひそ）が聞こえる（その後もときどき）
+//   ・0になると、闇に心身をむしばまれて毎ターン zeroDamage のダメージを受ける（HPが尽きれば倒れる）。
+//     0が続くと zeroDoubleEvery ターンごとにダメージが倍になる（2→4→8…）。1以上に回復すればリセット
 //   ・階段を降りると、新しい空気で少し持ち直す（descendRecover）。香・煙草・六面パズル・リボルバートイでも回復する
 //   ・拠点に戻る（冒険を始める）と満タン
 Game.mind = {
   floorTurns: 0, // 今の階に来てからのターン数
   grace: null, // この階の長居の猶予（ターン）。階に着いてから最初のターンに広さから決める
+  zeroTurns: 0, // 精神力0が続いているターン数（1以上に回復すると0に戻る）
   warned: {}, // 一度出した警告（同じ警告をくり返さない）
 
   // 冒険の開始時
@@ -18,7 +20,14 @@ Game.mind = {
     p.maxMind = Game.config.mind.max;
     p.mind = p.maxMind;
     this.floorTurns = 0;
+    this.zeroTurns = 0;
     this.warned = {};
+  },
+
+  // 精神力0の間に毎ターン受けるダメージ：最初は zeroDamage、zeroDoubleEvery ターンごとに倍
+  zeroDamage: function () {
+    var cfg = Game.config.mind;
+    return cfg.zeroDamage * Math.pow(2, Math.floor(Math.max(0, this.zeroTurns - 1) / cfg.zeroDoubleEvery));
   },
 
   // 新しい階に着いた時。recover = true なら少し回復（階段を降りた時）
@@ -58,15 +67,19 @@ Game.mind = {
     var every = this.floorTurns > this.grace ? cfg.lingerDrainEvery : cfg.drainEvery;
     if (this.floorTurns % every === 0) p.mind = Math.max(0, p.mind - 1);
     var ratio = p.mind / p.maxMind;
-    if (this.warnOnce(0.5, ratio, "頭の奥で、知らない声がささやいている…（精神力が半分を切った）")) {
+    this.zeroTurns = p.mind <= 0 ? this.zeroTurns + 1 : 0; // 1以上に戻れば倍化はリセット
+    if (this.warnOnce(0.5, ratio, "遠くで、オオカミの遠吠えが聞こえた…（精神力が半分を切った）")) {
       Game.sound.play("howl");
-      setTimeout(function () { Game.sound.play("whisper"); }, 1600);
     } else if (ratio < 0.5 && this.floorTurns % cfg.howlEvery === 0) {
       Game.sound.play("howl"); // 半分を切っている間は、ときどき遠吠えが聞こえる
     }
-    this.warnOnce(0.25, ratio, "自分の手が、一瞬ダンジョンの壁と同じ色に見えた…（精神力が残りわずか）");
+    if (this.warnOnce(0.25, ratio, "頭の奥で、知らない声がひそひそとささやいている…（精神力が残りわずか）")) {
+      Game.sound.play("whisper");
+    } else if (ratio < 0.25 && this.floorTurns % cfg.whisperEvery === 0) {
+      Game.sound.play("whisper"); // 4分の1を切っている間は、ときどきささやきが聞こえる
+    }
     this.warnOnce(0.1, ratio, "体が闇に溶けはじめている！ 早く階段へ！（精神力が危険）");
-    this.warnOnce(0, ratio, "精神力が尽きた！ 毎ターン " + cfg.zeroDamage + " のダメージを受ける。階段か精神回復の道具を！");
+    this.warnOnce(0, ratio, "精神力が尽きた！ 毎ターン " + cfg.zeroDamage + " のダメージ、" + cfg.zeroDoubleEvery + "ターンごとに倍になる。階段か精神回復の道具を！");
   },
 
   // 警告を1度だけ出す。出したら true

@@ -47,7 +47,7 @@ Game.enemies = {
     b.chasing = true; // 最初から主人公を狙っている
     b.targetX = Game.map.startX;
     b.targetY = Game.map.startY;
-    Game.log.add("⚠ 最下層のボス部屋だ。「" + b.name + "」が脱出口を封じている！ 倒せば封印が解ける。", "warn");
+    Game.log.add("⚠ 最下層のボス部屋だ。「" + b.name + "」が待ち構えている！ 倒せば帰還のゲートが現れる。", "warn");
   },
 
   boss: function () {
@@ -103,6 +103,19 @@ Game.enemies = {
     });
   },
 
+  // ボスが倒れた時：倒れたマスに帰還のゲート（脱出口 O）が現れる
+  bossDown: function (boss) {
+    var x = boss.x, y = boss.y;
+    if (Game.map.tileAt(x, y) !== "." || Game.items.at(x, y)) {
+      x = Game.map.stairsX;
+      y = Game.map.stairsY;
+    }
+    Game.map.tiles[y][x] = "O";
+    Game.log.add("★ ボスを倒した！ 倒れた場所に帰還のゲート（◎）が現れた！ 乗って ↓↓ で拠点へ帰れる", "good");
+    Game.sound.play("escape");
+    Game.fx.flash(Game.fx.around(x, y, 1), "#ffe066", 1200);
+  },
+
   // 主人公側（主人公・仲間・アイテム）に倒された時の処理
   kill: function (enemy) {
     this.remove(enemy);
@@ -114,10 +127,7 @@ Game.enemies = {
     }
     Game.log.add(enemy.name + "をたおした！（経験値：" + parts.join(" / ") + "）", "good");
     Game.sound.play("kill");
-    if (enemy.isBoss) {
-      Game.log.add("★ ボスを倒した！ 脱出口の封印が解けた！", "good");
-      Game.sound.play("escape");
-    }
+    if (enemy.isBoss) this.bossDown(enemy);
     for (var j = 0; j < shares.length; j++) {
       if (shares[j].unit === Game.player) Game.player.gainExp(shares[j].exp);
       else Game.allies.gainExp(shares[j].unit, shares[j].exp);
@@ -133,7 +143,7 @@ Game.enemies = {
   //   例）赤龍（強さ90）はぬめりん（強さ5）を50体倒して進化。ぬめりん（強さ5）は赤龍を1体倒すと一気にぬめ大王まで進化する
   killByEnemy: function (victim, killer) {
     this.remove(victim);
-    if (victim.isBoss) Game.log.add("★ ボスが倒れた！ 脱出口の封印が解けた！", "good");
+    if (victim.isBoss) this.bossDown(victim);
     Game.log.add(victim.name + "は" + killer.name + "の攻撃に巻き込まれて倒れた！", "info");
     Game.sound.play("kill");
     if (killer.hp > 0 && this.list.indexOf(killer) >= 0) this.gainEvoExp(killer, victim.exp);

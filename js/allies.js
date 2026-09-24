@@ -17,6 +17,14 @@ Game.allies = {
   clear: function () {
     this.list = [];
     this.pending = [];
+    this.numbers = {}; // 種類ごとに次に付ける番号（冒険ごとにリセット）
+  },
+  numbers: {},
+
+  // 同じ種類の仲間は加入順に 1, 2… と番号を付ける（例：ぬめりん1・ぬめりん2）。ダンジョンを出るとリセット
+  nextNumber: function (typeId) {
+    this.numbers[typeId] = (this.numbers[typeId] || 0) + 1;
+    return this.numbers[typeId];
   },
 
   // 倒した敵が仲間になるか判定する（確率はレア度で決まる）。
@@ -52,10 +60,12 @@ Game.allies = {
   create: function (typeId, x, y, ranchId) {
     var t = Game.enemies.types[typeId];
     var s = Game.enemies.statsOf(typeId); // レア度の倍率込みの能力値
+    var num = this.nextNumber(typeId);
     return {
       type: typeId,
-      baseName: t.name,
-      name: "仲間の" + t.name, // ログで敵と区別するため
+      num: num,
+      baseName: t.name + num,
+      name: "仲間の" + t.name + num, // ログで敵と区別するため
       symbol: t.symbol,
       color: t.color,
       maxHp: s.hp,
@@ -116,8 +126,9 @@ Game.allies = {
     var oldName = ally.baseName;
 
     ally.type = newId;
-    ally.baseName = newT.name;
-    ally.name = "仲間の" + newT.name;
+    ally.num = this.nextNumber(newId); // 進化後の種類での番号
+    ally.baseName = newT.name + ally.num;
+    ally.name = "仲間の" + ally.baseName;
     ally.symbol = newT.symbol;
     ally.color = newT.color;
     ally.maxHp = Math.max(1, newS.hp + newT.growth.hp * (lv - 1) + bonusHp);

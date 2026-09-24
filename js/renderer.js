@@ -257,7 +257,7 @@ Game.renderer = {
     var w = ts - 6;
     ctx.fillStyle = Game.config.colors.hpBarBg;
     ctx.fillRect(e.x * ts + 3, e.y * ts + ts - 3, w, 3);
-    ctx.fillStyle = Game.config.colors.hpBar;
+    ctx.fillStyle = Game.allies.list.indexOf(e) >= 0 ? Game.config.colors.allyHpBar : Game.config.colors.hpBar;
     ctx.fillRect(e.x * ts + 3, e.y * ts + ts - 3, w * (e.hp / e.maxHp), 3);
   },
 

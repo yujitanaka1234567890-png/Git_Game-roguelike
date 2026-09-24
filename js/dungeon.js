@@ -104,7 +104,8 @@ Game.dungeon = {
     };
   },
 
-  // 最下層：広く開けたボス部屋。左に主人公、右奥に脱出口（ボスを倒すまで封印）、その手前にボス。
+  // 最下層：広く開けたボス部屋。左に主人公、右奥にボス。脱出口はなく、ボスを倒すと帰還のゲート（脱出口）が現れる
+  // （enemies.bossDown。現れる場所はボスが倒れたマス。そこに置けない時は右奥の stairsX, stairsY）。
   // 身を隠せるよう柱を4本立てる。通路はない。
   bossFloor: function (cfg) {
     var W = cfg.width, H = cfg.height;
@@ -123,8 +124,7 @@ Game.dungeon = {
       var px = pillars[i][0], py = pillars[i][1];
       tiles[py][px] = tiles[py][px + 1] = tiles[py + 1][px] = tiles[py + 1][px + 1] = "#";
     }
-    var exit = { x: room.x2 - 1, y: cy };
-    tiles[exit.y][exit.x] = "O";
+    var exit = { x: room.x2 - 1, y: cy }; // ボスを倒した時のゲートの予備の場所（最初は床）
     // ボスの取り巻き（少しだけ）とアイテム（少しだけ）
     var used = {};
     var pickFree = function (x1, x2) {

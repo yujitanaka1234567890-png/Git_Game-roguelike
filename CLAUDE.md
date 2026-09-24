@@ -31,6 +31,7 @@
 - `js/allies.js` 仲間（仲間化判定・入れ替え確認・AI・一覧表示）
 - `js/base.js` 拠点のデータ（牧場・倉庫・連れて行く/持って行く選択・踏破記録 cleared・交配 breed・発見済み discovered・localStorage保存 key=dimension-roguelike-save-v1）
 - `js/basemap.js` 拠点の空間（固定マップ・牧場を歩く仲間・会話・収納箱・交配小屋・門でのダンジョン選択）
+- `js/data/sprites.js` ドット絵（12×12 の文字で手描き・オリジナル）/ `js/pixelart.js` ドット絵の描画（壁・床は模様をその場で描く）/ `js/sound.js` 効果音（Web Audio API で合成）
 - `js/renderer.js` 描画 / `js/input.js` キー入力 / `js/main.js` 状態遷移・ターン進行（endTurn→afterAction）・ダッシュ・脱出・死亡処理
 - `docs/roadmap.md` 開発ステップ / `docs/design_notes.md` 仕様面の課題メモ
 
@@ -64,3 +65,7 @@
 - アイテムは1個ずつ「アイテムデータ」{type, uses, origin} で持つ（持ち物・床・倉庫とも同じ形。items.makeEntry）。uses＝使用回数（リボルバートイ用）、origin＝拾った世界。アイテム名は全世界共通。商標名は使わない（例：六面パズル）。
 - 世界（data/worlds.js）：魔法の世界・深海調査・サイバーパンク・SF・スチームパンク。各ダンジョンは world を持ち（はじまりの洞窟＝魔法、深淵の迷宮＝深海調査）、壁・床の色が変わる。別の世界で拾ったアイテムを使うと DIMENSION_RULES（item, from, to, powerMul, note）で効き目を読み替え（今は空。辻褄は後で決める）。
 - 救出（rescue.js）：倒れる/あきらめると、その冒険の新入り（仲間になった時の姿 origType）が「はぐれた仲間」として base.lost に記録（ダンジョン・階、最大 lostMax=5）。同じダンジョンの同じ階に着くと気配◇が出て、踏むと仲間に戻る（新入り扱い・満員なら入れ替え確認）。拠点の掲示板（掲）から人型（humanoid）の仲間を最大3体派遣でき、成功率＝base0.25＋隊員ごと(0.12＋段階0.08×(段階-1)＋レア度0.02×レア度)−0.02×(階-1)−ダンジョンの rescueDifficulty（5〜95%）。派遣中（ranch の onMission）は冒険・交配に使えず牧場にもいない。次の冒険から戻った時（生還でも死亡でも）に結果：成功→牧場へ、失敗→はぐれた仲間はダンジョンに帰る（仲間にならなかった扱い）。隊員は必ず戻る。
+- 素材：外部の画像・音声素材は使わない。ドット絵は sprites.js に手描き（色は a=基本色/b=影/c=光＋固定色）、モンスター・アイテムは sprite/overlay で指定。効果音は sound.js の recipes に波形の組み合わせで追加。V でドット絵⇔文字、M で効果音オン⇔オフ（設定は localStorage）。
+- 救出隊：最大4体、人型（humanoid）1体以上必須。人型以外の上乗せは perNonHumanoid。一度自力救出した子（rescued）はその冒険で再び倒れると記録されずダンジョンへ帰る（リリース）。
+- アイテム効果は、DIMENSION_RULES で否定（読み替え）しない限り、どの世界でも同じ。
+- Git：roguelike_game/ がリポジトリのルート（ブランチ main）。push・リモート作成・GitHub Pages の設定は必ずユーザー承認を取ってから。

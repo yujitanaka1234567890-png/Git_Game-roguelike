@@ -24,6 +24,12 @@ Game.renderer = {
   },
 
   draw: function () {
+    // 3D表示（render3d.js）がオンなら、そちらで描く
+    if (Game.view3d.active()) {
+      Game.view3d.draw();
+      return;
+    }
+    Game.view3d.show(false);
     var ctx = this.ctx;
     var ts = Game.config.tileSize;
     var c = Game.config.colors;

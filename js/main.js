@@ -138,6 +138,10 @@ Game.onKey = function (key) {
     Game.refresh(Game.pixel.toggle() ? "表示：ドット絵" : "表示：文字");
     return;
   }
+  if (lower === "3") {
+    Game.refresh(Game.view3d.toggle());
+    return;
+  }
   if (lower === "m") {
     Game.refresh(Game.sound.toggle() ? "効果音：オン" : "効果音：オフ");
     return;
@@ -554,6 +558,7 @@ Game.enterFloor = function () {
 
 Game.start = function () {
   Game.pixel.init();
+  Game.view3d.init();
   Game.sound.init();
   Game.input.init(Game.onPlayerMove, Game.startDash, Game.onKey);
   Game.base.load();

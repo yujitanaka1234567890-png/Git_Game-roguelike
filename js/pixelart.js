@@ -38,25 +38,28 @@ Game.pixel = {
     return "rgb(" + r + "," + g + "," + b + ")";
   },
 
-  // 絵（と重ねる小物）を 12×12 の小さな canvas に描いて返す
+  // 絵（と重ねる小物）を小さな canvas に描いて返す（アイテム・設備は 12×12、キャラは 16×16）
   build: function (spriteName, overlayName, color) {
     var key = spriteName + "|" + (overlayName || "") + "|" + color;
     if (this.cache[key]) return this.cache[key];
     var rows = Game.SPRITES[spriteName];
     if (!rows) return null;
+    var size = rows.length;
     var cv = document.createElement("canvas");
-    cv.width = 12;
-    cv.height = 12;
+    cv.width = size;
+    cv.height = size;
     var ctx = cv.getContext("2d");
     var pal = {
       a: color,
       b: this.shade(color, -0.35),
       c: this.shade(color, 0.45),
+      d: this.shade(color, -0.6),
+      e: this.shade(color, 0.75),
     };
     var paint = function (grid) {
-      for (var y = 0; y < 12; y++) {
+      for (var y = 0; y < size; y++) {
         var row = grid[y] || "";
-        for (var x = 0; x < 12; x++) {
+        for (var x = 0; x < size; x++) {
           var ch = row[x];
           if (!ch || ch === ".") continue;
           ctx.fillStyle = pal[ch] || Game.SPRITE_COLORS[ch] || color;

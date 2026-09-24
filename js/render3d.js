@@ -3,7 +3,8 @@
 // 外部のライブラリは使わず、ブラウザに入っている WebGL で直接描く。
 //
 // 見せ方：
-//   ・カメラは斜め上から見下ろし、主人公を追いかける（なめらかに動く）
+//   ・カメラは斜め上から見下ろし、主人公を追いかける。左上に全体マップ（minimap.js）
+//   ・キャラは紙芝居のように動く（すべる移動・向きの裏返し・攻撃の踏み込み・やられ。anim3d.js）
 //   ・壁は箱、床は板。模様は 2D と同じもの（pixelart.js）をその場で描いて貼る
 //   ・キャラ・アイテム・設備は、ドット絵を描いた「板（紙芝居）」をカメラ向きに少し傾けて立てる
 //   ・光の計算はしない（面ごとに明るさを変えるだけ）→ 内蔵グラフィックでも軽い
@@ -15,16 +16,17 @@ Game.view3d = {
 
   // 見た目の設定
   wallHeight: 0.9, // 壁の高さ（1マス＝1）
-  camHeight: 7.5, // カメラの高さ
-  camBack: 5.5, // カメラが主人公より手前（画面下側）にいる距離
+  camHeight: 10.5, // カメラの高さ（大きいほど引きで広く見える）
+  camBack: 7.7, // カメラが主人公より手前（画面下側）にいる距離（高さとの比で見下ろす角度が決まる）
   fov: 50, // 縦の視野角（度）
   lean: 25, // 板（キャラ）をカメラ側へ傾ける角度（度）。0 だと真っ直ぐ立つが、上から見ると潰れて見える
   dim: 0.45, // 探索済みで今見えていない所の明るさ
 
   canvas: null,
   gl: null,
-  cam: null, // 今のカメラの注視点 {x, z}
-  anim: null, // カメラを動かしている途中なら requestAnimationFrame の番号
+  cam: null, // 今のカメラの注視点 {x, z}（主人公の表示位置）
+  loop: null, // 描き直し続けている間は requestAnimationFrame の番号
+  lastTiles: null, // 前に描いたマップ（変わったら別の階）
 
   init: function () {
     try {
@@ -46,7 +48,7 @@ Game.view3d = {
     } catch (e) {
       // 覚えておけなくても切り替えはできる
     }
-    this.cam = null; // すぐ主人公の位置へ
+    this.lastTiles = null; // 動きの記録をやり直す
     if (!this.enabled) this.show(false);
     return this.enabled ? "表示：3D（試作）" : "表示：2D";
   },
@@ -59,6 +61,7 @@ Game.view3d = {
   show: function (on) {
     document.getElementById("game").style.display = on ? "none" : "";
     if (this.canvas) this.canvas.style.display = on ? "" : "none";
+    if (!on) Game.minimap.hide();
   },
 
   // ---------- 準備（最初に3Dにした時に1回だけ） ----------
@@ -127,185 +130,38 @@ Game.view3d = {
     return true;
   },
 
-  // ---------- 絵の置き場（アトラス） ----------
-  ATLAS: 1024,
-  SLOT: 32,
-  slots: {},
-  nextSlot: 0,
-
-  // key の絵を枠に描いて、その位置（UV）を返す。paint(ctx) は (0,0)〜(w,h) に描く
-  slot: function (key, w, h, paint) {
-    var s = this.slots[key];
-    if (s) return s;
-    var per = this.ATLAS / this.SLOT;
-    if (this.nextSlot >= per * per) {
-      // 枠が足りなくなったら全部描き直す（めったに起きない）
-      this.slots = {};
-      this.nextSlot = 0;
-      this.actx.clearRect(0, 0, this.ATLAS, this.ATLAS);
-    }
-    var i = this.nextSlot++;
-    var sx = (i % per) * this.SLOT, sy = Math.floor(i / per) * this.SLOT;
-    var ctx = this.actx;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(sx, sy, w, h);
-    ctx.clip();
-    ctx.translate(sx, sy);
-    paint(ctx);
-    ctx.restore();
-    var A = this.ATLAS, e = 0.02;
-    s = { u0: (sx + e) / A, v0: (sy + e) / A, u1: (sx + w - e) / A, v1: (sy + h - e) / A };
-    this.slots[key] = s;
-    this.atlasDirty = true;
-    return s;
-  },
-
-  // モンスター・アイテム・設備の絵（なければ文字）
-  spriteSlot: function (sprite, overlay, color, ch) {
-    var cv = sprite ? Game.pixel.build(sprite, overlay, color) : null;
-    if (cv) {
-      return this.slot("spr|" + sprite + "|" + (overlay || "") + "|" + color, 12, 12, function (ctx) {
-        ctx.drawImage(cv, 0, 0);
-      });
-    }
-    return this.slot("chr|" + ch + "|" + color, 32, 32, function (ctx) {
-      ctx.fillStyle = color;
-      ctx.font = "bold 26px monospace";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(ch || "?", 16, 17);
-    });
-  },
-
-  // 壁・床の模様（2D と同じ描き方）。variant で床の小石の位置を変える
-  tileSlot: function (kind, color, variant) {
-    var v = variant || 0;
-    return this.slot(kind + "|" + color + "|" + v, 24, 24, function (ctx) {
-      var vx = v * 5 + 1, vy = v * 3 + 2; // 2D の模様はマスの位置で決まるので、仮の位置を渡す
-      ctx.translate(-vx * 24, -vy * 24);
-      if (kind === "wall") Game.pixel.drawWall(ctx, vx, vy, 24, color);
-      else if (kind === "grass") Game.pixel.drawGrass(ctx, vx, vy, 24, color);
-      else Game.pixel.drawFloor(ctx, vx, vy, 24, color);
-    });
-  },
-
-  // 真っ白（色を付けて帯や光に使う）・丸い影・四角い枠・攻撃マーク
-  whiteSlot: function () {
-    return this.slot("white", 8, 8, function (ctx) {
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, 8, 8);
-    });
-  },
-  shadowSlot: function () {
-    return this.slot("shadow", 32, 32, function (ctx) {
-      ctx.fillStyle = "rgba(0,0,0,0.5)";
-      ctx.beginPath();
-      ctx.ellipse(16, 16, 15, 15, 0, 0, Math.PI * 2);
-      ctx.fill();
-    });
-  },
-  ringSlot: function () {
-    return this.slot("ring", 32, 32, function (ctx) {
-      ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(2, 2, 28, 28);
-    });
-  },
-  spikeSlot: function () {
-    return this.slot("spike", 32, 32, function (ctx) {
-      Game.fx.spike(ctx, 16, 16, 15, 6);
-    });
-  },
-
-  // ---------- 頂点の組み立て ----------
-  data: new Float32Array(9 * 6 * 4000),
-  n: 0,
-
-  vert: function (x, y, z, u, v, c) {
-    if (this.n + 9 > this.data.length) {
-      var bigger = new Float32Array(this.data.length * 2);
-      bigger.set(this.data);
-      this.data = bigger;
-    }
-    var d = this.data, n = this.n;
-    d[n] = x; d[n + 1] = y; d[n + 2] = z; d[n + 3] = u; d[n + 4] = v;
-    d[n + 5] = c[0]; d[n + 6] = c[1]; d[n + 7] = c[2]; d[n + 8] = c[3];
-    this.n = n + 9;
-  },
-
-  // 4つの角（左下・右下・右上・左上）で四角を1枚
-  quad: function (p0, p1, p2, p3, s, c) {
-    this.vert(p0[0], p0[1], p0[2], s.u0, s.v1, c);
-    this.vert(p1[0], p1[1], p1[2], s.u1, s.v1, c);
-    this.vert(p2[0], p2[1], p2[2], s.u1, s.v0, c);
-    this.vert(p0[0], p0[1], p0[2], s.u0, s.v1, c);
-    this.vert(p2[0], p2[1], p2[2], s.u1, s.v0, c);
-    this.vert(p3[0], p3[1], p3[2], s.u0, s.v0, c);
-  },
-
-  // 床に寝かせた四角（x, z はマスの左上。size は1マスに対する大きさ、中央寄せ）
-  flat: function (x, z, y, size, s, c) {
-    var m = (1 - size) / 2;
-    var x0 = x + m, x1 = x + 1 - m, z0 = z + m, z1 = z + 1 - m;
-    this.quad([x0, y, z1], [x1, y, z1], [x1, y, z0], [x0, y, z0], s, c);
-  },
-
-  // 立てた板（紙芝居）。(cx, cz) は足元の中心。up は板の上方向にずらす量、roll は傾き（のけぞり）
-  board: function (cx, cz, w, h, s, c, up, roll, side) {
-    var t = (this.lean * Math.PI) / 180;
-    var U = [0, Math.cos(t), -Math.sin(t)], R = [1, 0, 0];
-    if (roll) {
-      var cs = Math.cos(roll), sn = Math.sin(roll);
-      var R2 = [R[0] * cs + U[0] * sn, R[1] * cs + U[1] * sn, R[2] * cs + U[2] * sn];
-      U = [U[0] * cs - R[0] * sn, U[1] * cs - R[1] * sn, U[2] * cs - R[2] * sn];
-      R = R2;
-    }
-    var bx = cx + U[0] * (up || 0) + R[0] * (side || 0);
-    var by = 0.01 + U[1] * (up || 0) + R[1] * (side || 0);
-    var bz = cz + U[2] * (up || 0) + R[2] * (side || 0);
-    var hw = w / 2;
-    var p0 = [bx - R[0] * hw, by - R[1] * hw, bz - R[2] * hw];
-    var p1 = [bx + R[0] * hw, by + R[1] * hw, bz + R[2] * hw];
-    this.quad(p0, p1,
-      [p1[0] + U[0] * h, p1[1] + U[1] * h, p1[2] + U[2] * h],
-      [p0[0] + U[0] * h, p0[1] + U[1] * h, p0[2] + U[2] * h], s, c);
-  },
-
-  rgb: function (hex, mul, alpha) {
-    var h = (hex || "#fff").replace("#", "");
-    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
-    var v = parseInt(h, 16), m = mul === undefined ? 1 : mul;
-    return [((v >> 16) & 255) / 255 * m, ((v >> 8) & 255) / 255 * m, (v & 255) / 255 * m, alpha === undefined ? 1 : alpha];
-  },
-
   // ---------- 描く ----------
-  // renderer.draw() から呼ばれる。カメラが主人公に追いついていなければ、追いつくまで毎フレーム描き直す
+  // renderer.draw() から呼ばれる（ゲームの状態が変わった時）。紙芝居の動きのため、その後も1秒に30回ほど描き直し続ける
   draw: function () {
     this.show(true);
-    var p = Game.player;
-    var tx = p.x + 0.5, tz = p.y + 0.5;
-    if (!this.cam || Math.abs(this.cam.x - tx) + Math.abs(this.cam.z - tz) > 6) this.cam = { x: tx, z: tz }; // 階移動などは一瞬で
-    this.render();
-    var self = this;
-    if (!this.anim && (Math.abs(this.cam.x - tx) > 0.01 || Math.abs(this.cam.z - tz) > 0.01)) {
-      var step = function () {
-        self.anim = null;
-        if (!self.active()) return;
-        var gx = Game.player.x + 0.5, gz = Game.player.y + 0.5;
-        self.cam.x += (gx - self.cam.x) * 0.3;
-        self.cam.z += (gz - self.cam.z) * 0.3;
-        if (Math.abs(gx - self.cam.x) < 0.01 && Math.abs(gz - self.cam.z) < 0.01) self.cam = { x: gx, z: gz };
-        self.render();
-        if (self.cam.x !== gx || self.cam.z !== gz) self.anim = requestAnimationFrame(step);
-      };
-      this.anim = requestAnimationFrame(step);
+    if (this.lastTiles !== Game.map.tiles) {
+      // 別の階・拠点に移った：動きの記録をやり直す
+      this.lastTiles = Game.map.tiles;
+      Game.anim3d.reset();
     }
+    Game.minimap.draw();
+    this.render();
+    this.startLoop();
+  },
+
+  startLoop: function () {
+    if (this.loop) return;
+    var self = this, last = 0;
+    var tick = function (t) {
+      if (!self.active()) {
+        self.loop = null;
+        return;
+      }
+      self.loop = requestAnimationFrame(tick);
+      if (t - last < 33) return;
+      last = t;
+      self.render();
+    };
+    this.loop = requestAnimationFrame(tick);
   },
 
   render: function () {
     var gl = this.gl;
-    var cam = this.cam;
     var fov = Game.fov;
     var c = Game.config.colors;
     var inBase = Game.state === "base";
@@ -314,11 +170,18 @@ Game.view3d = {
     var floorColor = wc ? wc.floor : c.floor;
     var H = this.wallHeight;
     var map = Game.map;
+    var now = Date.now();
     this.n = 0;
 
+    // キャラの今の見た目（紙芝居の動き）を先に決め、カメラは主人公の表示位置を追う
+    var units = this.collectUnits(now);
+    var hero = units.heroPose;
+    var cam = (this.cam = { x: hero.x, z: hero.z });
+    Game.anim3d.sweep(now);
+
     // ---- 1. 地形（画面に映る範囲だけ） ----
-    var x1 = Math.max(0, Math.floor(cam.x) - 15), x2 = Math.min(map.width - 1, Math.floor(cam.x) + 15);
-    var z1 = Math.max(0, Math.floor(cam.z) - 12), z2 = Math.min(map.height - 1, Math.floor(cam.z) + 7);
+    var x1 = Math.max(0, Math.floor(cam.x) - 20), x2 = Math.min(map.width - 1, Math.floor(cam.x) + 20);
+    var z1 = Math.max(0, Math.floor(cam.z) - 17), z2 = Math.min(map.height - 1, Math.floor(cam.z) + 9);
     var flats = []; // 床に置く設備（階段・脱出口）
     var stands = []; // 立てる設備（収納箱・門など）
     for (var z = z1; z <= z2; z++) {
@@ -361,7 +224,6 @@ Game.view3d = {
     // ---- 2. 床の上に描くもの（階段・影・仲間の印・技の光） ----
     var i;
     for (i = 0; i < flats.length; i++) this.flat(flats[i].x, flats[i].z, 0.004, 1, flats[i].s, [flats[i].m, flats[i].m, flats[i].m, 1]);
-    var units = this.collectUnits();
     var sh = this.shadowSlot(), ring = this.ringSlot(), white = this.whiteSlot();
     for (i = 0; i < units.length; i++) {
       var u = units[i];
@@ -384,27 +246,28 @@ Game.view3d = {
     units.sort(function (a, b) { return a.z - b.z; }); // 奥から順に
     for (i = 0; i < units.length; i++) {
       var un = units[i];
-      var size = un.boss ? 1.6 : un.item ? 0.6 : 0.95;
-      var tilt = un.unit ? Game.fx.tiltOf(un.unit) : null;
-      var ox = tilt ? tilt.dx * 0.12 : 0, oz = tilt ? tilt.dy * 0.12 : 0;
-      var roll = tilt ? -(tilt.dx !== 0 ? tilt.dx : tilt.dy * 0.6) * 0.3 : 0;
-      this.board(un.x + ox, un.z + oz, size, size, un.s, [un.m, un.m, un.m, 1], 0, roll);
+      var size = un.boss ? 2 : un.item ? 0.7 : 1.3; // 引きで見ても分かるよう、キャラは1マスより少し大きく
+      var fp = un.flip === undefined ? 1 : un.flip;
+      var w = size * Math.abs(fp) * (un.sx || 1), h = size * (un.sy || 1);
+      var tint = un.tint || [1, 1, 1];
+      this.board(un.x, un.z, w, h, un.s, [un.m * tint[0], un.m * tint[1], un.m * tint[2], 1], un.lift || 0, un.roll || 0, 0, fp);
+      var top = h + (un.lift || 0);
       if (un.hp !== undefined && un.hp < un.maxHp) {
-        this.board(un.x, un.z, 0.8, 0.08, white, this.rgb(c.hpBarBg), size + 0.06);
+        this.board(un.x, un.z, 0.8, 0.08, white, this.rgb(c.hpBarBg), top + 0.06);
         var r = un.hp / un.maxHp;
-        this.board(un.x - 0.4 + 0.4 * r, un.z, 0.8 * r, 0.08, white, this.rgb(c.hpBar), size + 0.061);
+        this.board(un.x - 0.4 + 0.4 * r, un.z, 0.8 * r, 0.08, white, this.rgb(c.hpBar), top + 0.061);
       }
       for (var pip = 0; pip < (un.stage || 1) - 1; pip++) {
-        this.board(un.x, un.z, 0.14, 0.14, white, this.rgb("#ffe066"), size - 0.2, 0, -0.38 + pip * 0.18);
+        this.board(un.x, un.z, 0.14, 0.14, white, this.rgb("#ffe066"), top - 0.2, 0, -0.42 + pip * 0.18);
       }
     }
-    // 攻撃マーク（赤いとげとげ）
-    var now = Date.now(), spike = this.spikeSlot();
+    // 攻撃マーク（赤いとげとげ）：攻撃された側に出す
+    var spike = this.spikeSlot();
     for (i = 0; i < Game.fx.hits.length; i++) {
-      var h = Game.fx.hits[i];
-      if (h.until <= now || h.unit.x < 0) continue;
-      if (h.unit !== Game.player && Game.allies.list.indexOf(h.unit) < 0 && !fov.isVisible(h.unit.x, h.unit.y)) continue;
-      this.board(h.unit.x + 0.5 - h.dx * 0.42, h.unit.y + 0.5 - h.dy * 0.42, 0.55, 0.55, spike, [1, 1, 1, 1], 0.2);
+      var hm = Game.fx.hits[i];
+      var pu = units.byObj.get(hm.unit);
+      if (hm.until <= now || !pu) continue;
+      this.board(pu.x - hm.dx * 0.42, pu.z - hm.dy * 0.42, 0.55, 0.55, spike, [1, 1, 1, 1], 0.2);
     }
     var spriteEnd = this.n;
 
@@ -452,23 +315,28 @@ Game.view3d = {
     return t !== undefined && t !== null && t !== "#";
   },
 
-  // 立てて描くもの（主人公・仲間・敵・アイテム・気配・飛んでいるアイテム）を集める
-  collectUnits: function () {
+  // 立てて描くもの（主人公・仲間・敵・アイテム・気配・飛んでいるアイテム）を集め、
+  // キャラは紙芝居の動き（anim3d.js）で今の見た目を決める。list.byObj＝キャラ→見た目、list.heroPose＝主人公
+  collectUnits: function (now) {
     var list = [];
+    list.byObj = new Map();
     var fov = Game.fov;
-    var c = Game.config.colors;
     var self = this;
     var add = function (o) { list.push(o); };
-    var mon = function (t, x, y, unit, extra) {
-      var o = { x: x + 0.5, z: y + 0.5, s: self.spriteSlot(t.sprite, t.overlay, t.color, t.symbol), m: 1, unit: unit, boss: !!t.boss, stage: t.stage };
+    // キャラ1体：obj = 動きを覚えておく相手（主人公・仲間・敵・牧場の子）
+    var mon = function (t, x, y, obj, unit, extra) {
+      var pose = Game.anim3d.pose(obj, x + 0.5, y + 0.5, now, false);
+      var o = { s: self.spriteSlot(t.sprite, t.overlay, t.color, t.symbol), m: 1, boss: !!t.boss, stage: t.stage };
+      for (var pk in pose) o[pk] = pose[pk];
       if (unit) { o.hp = unit.hp; o.maxHp = unit.maxHp; }
       for (var k in extra) o[k] = extra[k];
+      list.byObj.set(obj, o);
       return o;
     };
     if (Game.state === "base") {
       var ms = Game.baseScene.monsters;
       for (var b = 0; b < ms.length; b++) {
-        add(mon(Game.MONSTERS[ms[b].entry.type], ms[b].x, ms[b].y, null, { ally: !!Game.base.selected[ms[b].entry.id] }));
+        add(mon(Game.MONSTERS[ms[b].entry.type], ms[b].x, ms[b].y, ms[b], null, { ally: !!Game.base.selected[ms[b].entry.id] }));
       }
     }
     var items = Game.items.floorItems;
@@ -486,16 +354,21 @@ Game.view3d = {
     for (var a = 0; a < allies.length; a++) {
       var al = allies[a];
       if (al.x < 0) continue;
-      add(mon(Game.MONSTERS[al.type], al.x, al.y, al, { ally: true, charge: al.charge ? "#66ccff" : null }));
+      add(mon(Game.MONSTERS[al.type], al.x, al.y, al, al, { ally: true, charge: al.charge ? "#66ccff" : null }));
     }
     var es = Game.enemies.list;
     for (var i = 0; i < es.length; i++) {
       var e = es[i];
       if (!fov.isVisible(e.x, e.y)) continue;
-      add(mon(Game.MONSTERS[e.type], e.x, e.y, e, { charge: e.charge ? "#ffe066" : null }));
+      add(mon(Game.MONSTERS[e.type], e.x, e.y, e, e, { charge: e.charge ? "#ffe066" : null }));
     }
     var p = Game.player;
-    add({ x: p.x + 0.5, z: p.y + 0.5, s: this.spriteSlot("player", null, c.player, p.symbol), m: 1, unit: p });
+    var hp = Game.anim3d.pose(p, p.x + 0.5, p.y + 0.5, now, true);
+    hp.s = this.spriteSlot(hp.frame, null, Game.config.colors.player, p.symbol);
+    hp.m = 1;
+    add(hp);
+    list.byObj.set(p, hp);
+    list.heroPose = hp;
     var pr = Game.throwing.projectile;
     if (pr) add({ x: pr.x + 0.5, z: pr.y + 0.5, s: this.spriteSlot(pr.sprite, null, pr.color, pr.symbol), m: 1, item: true });
     return list;

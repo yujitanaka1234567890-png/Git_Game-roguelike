@@ -34,7 +34,7 @@
       <div id="log"></div>
     </div>
 
-    <!-- 右側：ゲーム画面と操作説明 -->
+    <!-- 中央：ゲーム画面 -->
     <div id="main">
       <div id="game-wrap">
         <canvas id="game" tabindex="0"></canvas>
@@ -42,18 +42,50 @@
         <div id="dialog" hidden></div>
         <div id="savecode" hidden></div>
       </div>
-      <p class="help help-dungeon">
-        矢印：移動・攻撃 ／ Shift＋矢印2つ同時：斜め ／ Shift＋矢印1つ：ダッシュ（Shiftを離すと止まる）<br>
-        スペース：足踏み ／ I：持ち物（T で投げる） ／ 階段の上で ↓↓：降りる ／ R を2回：冒険をあきらめる ／ V：ドット絵⇔文字 ／ 3：3D⇔2D（試作） ／ M：効果音オン⇔オフ<br>
-        左上の点 = 進化段階 ／ 黄色い枠と「!」= 敵の技の溜め中 ／ 青い枠 = 仲間の技の溜め中 ／ 青い下地 = 仲間（ぶつかると入れ替わる）<br>
-        精神 = ダンジョンにいると少しずつ減り、0でダンジョンに取り込まれる ／ ◇ = はぐれた仲間の気配（踏むと救出） ／ 最下層はボス部屋
-      </p>
-      <p class="help help-base">
-        矢印で歩く（Shift＋矢印2つで斜め） ／ 牧場の仲間にぶつかる：話しかける（連れて行くか選ぶ）<br>
-        収納箱：持って行く道具を選ぶ ／ 交配小屋：2体から新しい仲間を生み出す ／ 救出の掲示板：はぐれた仲間に救出隊を送る<br>
-        記録の石碑：続きから遊ぶための「記録の呪文」 ／ 門に乗る：行き先を選んで出発<br>
-        ウィンドウ：↑↓で選び Enter・スペースで決定、Esc で閉じる ／ V：ドット絵⇔文字 ／ 3：3D⇔2D（試作） ／ M：効果音オン⇔オフ
-      </p>
+    </div>
+
+    <!-- 右側：操作説明と凡例 -->
+    <div id="info">
+      <div class="help help-dungeon">
+        <div class="help-title">操作</div>
+        <ul>
+          <li>矢印：移動・攻撃</li>
+          <li>Shift＋矢印2つ同時：斜め</li>
+          <li>Shift＋矢印1つ：ダッシュ（Shiftを離すと止まる）</li>
+          <li>スペース：足踏み</li>
+          <li>I：持ち物（T で投げる）</li>
+          <li>階段の上で ↓↓：降りる</li>
+          <li>R を2回：冒険をあきらめる</li>
+          <li>3：3D ⇔ 2D　V：ドット絵 ⇔ 文字</li>
+          <li>M：効果音オン ⇔ オフ</li>
+        </ul>
+        <div class="help-title">見方</div>
+        <ul>
+          <li>左上の点 = 進化段階</li>
+          <li>黄色い枠と「!」= 敵の技の溜め中</li>
+          <li>青い枠 = 仲間の技の溜め中</li>
+          <li>青い下地・青い四角 = 仲間（ぶつかると入れ替わる）</li>
+          <li>精神 = ダンジョンにいると少しずつ減り、0でダンジョンに取り込まれる</li>
+          <li>◇ = はぐれた仲間の気配（踏むと救出）</li>
+          <li>最下層はボス部屋</li>
+          <li>3D表示では左上に全体マップ（水色＝自分・青＝仲間・赤＝敵・黄＝アイテム）</li>
+        </ul>
+      </div>
+      <div class="help help-base">
+        <div class="help-title">拠点での操作</div>
+        <ul>
+          <li>矢印で歩く（Shift＋矢印2つで斜め）</li>
+          <li>牧場の仲間にぶつかる：話しかける</li>
+          <li>▣ 収納箱：持って行く道具を選ぶ</li>
+          <li>掲 掲示板：連れて行く仲間を選ぶ・救出隊を送る</li>
+          <li>♥ 交配小屋：2体から新しい仲間を生み出す</li>
+          <li>図 図鑑：出会ったモンスターを調べる</li>
+          <li>碑 記録の石碑：続きから遊ぶための「記録の呪文」</li>
+          <li>∩ 門に乗る：行き先を選んで出発</li>
+          <li>ウィンドウ：↑↓で選び Enter・スペースで決定、Esc で閉じる</li>
+          <li>3：3D ⇔ 2D　V：ドット絵 ⇔ 文字　M：効果音</li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -66,6 +98,7 @@
   <script src="js/data/breeding.js"></script>
   <script src="js/data/worlds.js"></script>
   <script src="js/data/sprites.js"></script>
+  <script src="js/data/characters.js"></script>
   <script src="js/dungeon.js"></script>
   <script src="js/map.js"></script>
   <script src="js/fov.js"></script>
@@ -90,9 +123,13 @@
   <script src="js/rescue.js"></script>
   <script src="js/base.js"></script>
   <script src="js/savecode.js"></script>
+  <script src="js/bestiary.js"></script>
   <script src="js/basemap.js"></script>
   <script src="js/renderer.js"></script>
+  <script src="js/anim3d.js"></script>
+  <script src="js/minimap.js"></script>
   <script src="js/render3d.js"></script>
+  <script src="js/render3d_parts.js"></script>
   <script src="js/input.js"></script>
   <script src="js/main.js"></script>
 </body>

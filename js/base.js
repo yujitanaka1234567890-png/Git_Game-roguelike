@@ -10,6 +10,7 @@ Game.base = {
   taking: {}, // 倉庫から持って行く物 { id: true }
   cleared: {}, // 踏破したダンジョン { dungeonId: true }
   discovered: {}, // 交配で生まれたことのある種類 { typeId: true }（まだの子は「？？？」と表示）
+  seen: {}, // 出会ったことのある種類 { typeId: true }（プレイヤー用の図鑑 bestiary.js に載る）
   lost: [], // はぐれた仲間の記録 [{id, dungeonId, floor, members: [種類ID], mission: null | {team, chance}}]（rescue.js）
   lastResult: null, // 直前の冒険の結果 { kind: "escape" | "death" | "info", lines: [...] }
   saveKey: "dimension-roguelike-save-v1",
@@ -28,6 +29,7 @@ Game.base = {
       this.storage = [];
       this.cleared = {};
       this.discovered = {};
+      this.seen = {};
       this.lost = [];
       for (var i = 0; i < Game.config.starterStorage.length; i++) this.addToStorage(Game.config.starterStorage[i]);
       this.lastResult = {
@@ -47,6 +49,7 @@ Game.base = {
     this.storage = (data.storage || []).filter(function (s) { return Game.items.types[s.type]; });
     this.cleared = data.cleared || {};
     this.discovered = data.discovered || {};
+    this.seen = data.seen || {};
     this.lost = (data.lost || []).filter(function (r) {
       return Game.DUNGEONS[r.dungeonId] && r.members.every(function (t) { return Game.MONSTERS[t]; });
     });
@@ -56,7 +59,7 @@ Game.base = {
   getSaveData: function () {
     return {
       ranch: this.ranch, storage: this.storage, nextId: this.nextId,
-      cleared: this.cleared, discovered: this.discovered, lost: this.lost,
+      cleared: this.cleared, discovered: this.discovered, seen: this.seen, lost: this.lost,
     };
   },
 
@@ -81,6 +84,7 @@ Game.base = {
     this.storage = data.storage.filter(function (s) { return Game.items.types[s.type]; });
     this.cleared = data.cleared || {};
     this.discovered = data.discovered || {};
+    this.seen = data.seen || {};
     this.lost = (data.lost || []).filter(function (r) {
       return Game.DUNGEONS[r.dungeonId] && r.members.every(function (t) { return Game.MONSTERS[t]; });
     });

@@ -12,6 +12,7 @@ Game.renderer = {
     "H": { sprite: "hut", color: "#ff99cc", char: "♥", charColor: "#ff88cc" },
     "K": { sprite: "board", color: "#8a5a2a", char: "掲", charColor: "#ffcc55" },
     "S": { sprite: "stone", color: "#9a9aa6", char: "碑", charColor: "#bbbbdd" },
+    "Z": { sprite: "book", color: "#6a8aff", char: "図", charColor: "#aaccff" },
     "G": { sprite: "gateM", color: "#c8a8ff", char: "∩", charColor: "#c8a8ff" }, // 3マスで1つの門（drawTile で左・中・右を選ぶ）
   },
 
@@ -147,7 +148,7 @@ Game.renderer = {
       else if (tile === "O") ctx.fillStyle = lit ? c.exit : c.exitDim;
       else if (tile === ",") ctx.fillStyle = c.grass;
       else if (tile === "G") ctx.fillStyle = c.gate;
-      else if (inBase || tile === "C" || tile === "H" || tile === "K" || tile === "S") ctx.fillStyle = c.houseFloor;
+      else if (inBase) ctx.fillStyle = c.houseFloor;
       else ctx.fillStyle = lit ? colors.floor : colors.floorDim;
       ctx.fillRect(x * ts, y * ts, ts, ts);
       ctx.strokeStyle = c.grid;

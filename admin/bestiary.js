@@ -59,17 +59,18 @@
     var rows = (Game.SPRITES || {})[spriteName];
     if (!rows) return el("span", fallback, "sym");
     var cv = el("canvas");
-    cv.width = 36;
-    cv.height = 36;
+    var n = rows.length, px = n === 16 ? 3 : 4; // 16×16 は 48px、12×12 も 48px で見せる
+    cv.width = n * px;
+    cv.height = n * px;
     cv.style.background = "#222";
     var ctx = cv.getContext("2d");
-    var pal = { a: color, b: shade(color, -0.35), c: shade(color, 0.45) };
+    var pal = { a: color, b: shade(color, -0.35), c: shade(color, 0.45), d: shade(color, -0.6), e: shade(color, 0.75) };
     var paint = function (grid) {
-      for (var y = 0; y < 12; y++) for (var x = 0; x < 12; x++) {
+      for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) {
         var ch = (grid[y] || "")[x];
         if (!ch || ch === ".") continue;
         ctx.fillStyle = pal[ch] || Game.SPRITE_COLORS[ch] || color;
-        ctx.fillRect(x * 3, y * 3, 3, 3);
+        ctx.fillRect(x * px, y * px, px, px);
       }
     };
     paint(rows);
@@ -143,18 +144,20 @@
       }
     }
   });
-  // ドット絵：指定された絵があるか、12×12 になっているか
+  // ドット絵：指定された絵があるか、12×12 か 16×16 の正方形になっているか
   var SP = Game.SPRITES || {}, OV = Game.SPRITE_OVERLAYS || {};
   Object.keys(SP).concat(Object.keys(OV).map(function (k) { return "overlay:" + k; })).forEach(function (key) {
     var grid = key.indexOf("overlay:") === 0 ? OV[key.slice(8)] : SP[key];
-    if (grid.length !== 12 || grid.some(function (row) { return row.length !== 12; })) {
-      check("err", "ドット絵「" + key + "」が 12×12 になっていない");
+    var n = grid.length;
+    if ((n !== 12 && n !== 16) || grid.some(function (row) { return row.length !== n; })) {
+      check("err", "ドット絵「" + key + "」が 12×12 か 16×16 になっていない");
     }
   });
   Object.keys(M).forEach(function (id) {
     if (!M[id].sprite) check("warn", name(id) + "：ドット絵（sprite）が指定されていない（文字で表示される）");
     else if (!SP[M[id].sprite]) check("err", name(id) + "：ドット絵「" + M[id].sprite + "」が sprites.js にない");
     if (M[id].overlay && !OV[M[id].overlay]) check("err", name(id) + "：重ねる小物「" + M[id].overlay + "」が sprites.js にない");
+    else if (M[id].overlay && SP[M[id].sprite] && OV[M[id].overlay].length !== SP[M[id].sprite].length) check("err", name(id) + "：絵と重ねる小物の大きさが違う");
   });
 
   Object.keys(S).forEach(function (sk) {

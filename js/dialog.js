@@ -3,7 +3,8 @@
 //   Game.dialog.open({
 //     title: "見出し", lines: ["説明文", ...],
 //     options: [{ label: "選択肢", onChoose: function () {...}, keepOpen: false }, ...],
-//     onCancel: function () {...}   // Esc の時（省略可）
+//     onCancel: function () {...},  // Esc の時（省略可）
+//     image: canvas                 // 見出しの下に大きく出す絵（省略可。図鑑で使う）
 //   }, 最初に選んでおく番号（省略可）);
 Game.dialog = {
   current: null,
@@ -14,6 +15,7 @@ Game.dialog = {
       lines: cfg.lines || [],
       options: cfg.options || [],
       onCancel: cfg.onCancel || null,
+      image: cfg.image || null,
       cursor: Math.min(cursor || 0, Math.max(0, (cfg.options || []).length - 1)),
     };
   },
@@ -67,6 +69,14 @@ Game.dialog = {
       return e;
     };
     if (c.title) add("div", "inv-title", c.title);
+    if (c.image) {
+      var big = add("canvas", "dialog-image");
+      big.width = c.image.width * 5;
+      big.height = c.image.height * 5;
+      var bctx = big.getContext("2d");
+      bctx.imageSmoothingEnabled = false;
+      bctx.drawImage(c.image, 0, 0, big.width, big.height);
+    }
     for (var i = 0; i < c.lines.length; i++) add("div", "inv-desc", c.lines[i]);
     var ul = add("ul");
     var selectedLi = null;

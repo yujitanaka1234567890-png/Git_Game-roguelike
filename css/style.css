@@ -145,12 +145,24 @@ canvas {
   cursor: pointer;
 }
 
-/* ---------- 操作説明 ---------- */
-.help {
-  color: #888;
-  font-size: 12px;
-  max-width: 964px;
+/* ---------- 操作説明と凡例（画面右） ---------- */
+#info {
+  width: 250px;
+  flex: 0 0 250px;
 }
+
+.help {
+  color: #999;
+  font-size: 12px;
+  line-height: 1.5;
+  background: #16161c;
+  border: 1px solid #333;
+  padding: 6px 10px;
+}
+
+.help-title { color: #8ab4ff; font-weight: bold; margin-top: 4px; }
+.help ul { margin: 2px 0 6px; padding-left: 1.1em; }
+.help li { margin: 1px 0; }
 
 /* 拠点にいる間は拠点用、ダンジョンではダンジョン用の説明を出す */
 .help-base { display: none; }
@@ -177,10 +189,24 @@ body.in-base .help-dungeon { display: none; }
 }
 
 #dialog[hidden] { display: none; }
+#dialog, #inventory, #savecode { z-index: 2; }
+
+/* 3D表示の時だけ左上に重ねる全体マップ（minimap.js） */
+#minimap {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+  border: none;
+  background: transparent;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
 #dialog ul { list-style: none; margin: 6px 0; padding: 0; }
 #dialog li { padding: 2px 6px; }
 #dialog li.selected { background: #2a3f70; }
 #dialog li.selected::before { content: "▶ "; }
+#dialog .dialog-image { display: block; margin: 6px auto; border: 1px solid #334; background: #1a1d2c; max-width: 100%; }
 
 #inventory {
   position: absolute;

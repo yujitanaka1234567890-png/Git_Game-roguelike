@@ -1,16 +1,18 @@
 // 拠点の空間：主人公が歩き回れる小さなマップ。
 //   左：牧場（草地）… 連れ帰った仲間たちが歩き回っている。話しかけると「連れて行くか」を選べる
-//   右：家           … 収納箱（▣）に触れると、倉庫から持って行く道具を選べる
-//                      交配小屋（♥）に触れると、牧場の2体から新しい仲間を生み出せる
-//                      救出の掲示板（掲）に触れると、はぐれた仲間の確認と救出隊の派遣ができる
-//                      記録の石碑（碑）に触れると、記録の呪文（セーブ用パスワード）の書き出し・読み込みができる
+//   右：家（設備は奥の壁ぞいに2マスおきに並ぶ）
+//                      収納箱（▣）… 倉庫から持って行く道具を選ぶ
+//                      掲示板（掲）… 連れて行く仲間を選ぶ／はぐれた仲間の確認と救出隊の派遣
+//                      交配小屋（♥）… 牧場の2体から新しい仲間を生み出す
+//                      図鑑（図）… 出会ったモンスターのくわしい情報を見る（bestiary.js）
+//                      記録の石碑（碑）… 記録の呪文（セーブ用パスワード）の書き出し・読み込み
 //   下：門（∩）      … 乗ると行き先のダンジョンを選んで出発
 Game.baseScene = {
   monsters: [], // 牧場を歩く仲間 [{entry: 牧場のデータ, x, y}]
 
-  // 拠点のマップを文字で組み立てる（横40 × 縦14）
+  // 拠点のマップを文字で組み立てる（横22 × 縦12）
   buildLayout: function () {
-    var W = 40, H = 14;
+    var W = 22, H = 12;
     var g = [];
     for (var y = 0; y < H; y++) {
       var row = [];
@@ -20,16 +22,17 @@ Game.baseScene = {
     var fill = function (x1, y1, x2, y2, ch) {
       for (var yy = y1; yy <= y2; yy++) for (var xx = x1; xx <= x2; xx++) g[yy][xx] = ch;
     };
-    fill(1, 1, 20, 12, ","); // 牧場
-    fill(22, 1, 38, 9, "."); // 家
-    fill(21, 5, 21, 7, "."); // 家と牧場をつなぐ出入口
-    fill(31, 10, 33, 11, "."); // 門への通路
-    fill(31, 12, 33, 12, "G"); // 門
-    g[2][25] = "C"; // 収納箱
-    g[2][35] = "H"; // 交配小屋
-    g[2][30] = "K"; // 救出の掲示板
-    g[8][37] = "S"; // 記録の石碑（記録の呪文）
-    g[6][30] = "@"; // 拠点に戻った時の位置
+    fill(1, 1, 8, 10, ","); // 牧場
+    fill(10, 1, 20, 7, "."); // 家
+    fill(9, 4, 9, 6, "."); // 家と牧場をつなぐ出入口
+    fill(14, 8, 16, 9, "."); // 門への通路
+    fill(14, 10, 16, 10, "G"); // 門
+    g[1][11] = "C"; // 収納箱
+    g[1][13] = "K"; // 掲示板
+    g[1][15] = "H"; // 交配小屋
+    g[1][17] = "Z"; // 図鑑
+    g[1][19] = "S"; // 記録の石碑（記録の呪文）
+    g[4][15] = "@"; // 拠点に戻った時の位置
     return g.map(function (r) { return r.join(""); });
   },
 
@@ -72,6 +75,61 @@ Game.baseScene = {
     }
   },
 
+  // 拠点のマップで、ある設備（文字）がある場所
+  findTile: function (ch) {
+    for (var y = 0; y < Game.map.height; y++) {
+      var x = Game.map.tiles[y].indexOf(ch);
+      if (x >= 0) return { x: x, y: y };
+    }
+    return null;
+  },
+
+  // 掲示板：連れて行く仲間を選ぶ・救出隊
+  openBoard: function () {
+    var self = this;
+    var n = Game.base.partyEntries().length;
+    var lost = Game.base.lost.length;
+    Game.dialog.open({
+      title: "掲示板",
+      lines: ["冒険の仲間選びと、はぐれた仲間の救出はここで。"],
+      options: [
+        { label: "連れて行く仲間を選ぶ（" + n + " / " + Game.config.maxAllies + "）", onChoose: function () { self.openPartySelect(0); } },
+        { label: "はぐれた仲間の救出" + (lost > 0 ? "（" + lost + " 件）" : ""), onChoose: function () { Game.rescue.openBoard(); } },
+        { label: "閉じる" },
+      ],
+    });
+  },
+
+  // 牧場の仲間から、連れて行く子を選ぶ（選ぶたびにウィンドウは開いたまま）
+  openPartySelect: function (cursor) {
+    var self = this;
+    var base = Game.base;
+    var home = base.ranch.filter(function (r) { return !r.onMission; });
+    var options = home.map(function (r, idx) {
+      var t = Game.MONSTERS[r.type];
+      var s = Game.enemies.statsOf(r.type);
+      return {
+        label: (base.selected[r.id] ? "【連れて行く】" : "　　　　　　") + t.symbol + " " + t.name +
+          "（" + Game.enemies.rarityOf(r.type).label + "　HP" + s.hp + " 攻" + s.atk + "）",
+        keepOpen: true,
+        onChoose: function () {
+          var res = base.toggleParty(r.id);
+          if (res === "full") Game.log.add("連れて行ける仲間は " + Game.config.maxAllies + " 体までだ。", "miss");
+          self.openPartySelect(idx);
+        },
+      };
+    });
+    options.push({ label: "決定して閉じる" });
+    Game.dialog.open(
+      {
+        title: "連れて行く仲間（" + base.partyEntries().length + " / " + Game.config.maxAllies + "）",
+        lines: [home.length === 0 ? "牧場にはまだ仲間がいない。ダンジョンで仲間を増やそう。" : "Enter で選ぶ・外す。冒険はいつも Lv1 から。"],
+        options: options,
+      },
+      cursor
+    );
+  },
+
   monsterAt: function (x, y) {
     for (var i = 0; i < this.monsters.length; i++) {
       if (this.monsters[i].x === x && this.monsters[i].y === y) return this.monsters[i];
@@ -92,7 +150,11 @@ Game.baseScene = {
       return;
     }
     if (Game.map.tileAt(nx, ny) === "K") {
-      Game.rescue.openBoard();
+      this.openBoard();
+      return;
+    }
+    if (Game.map.tileAt(nx, ny) === "Z") {
+      Game.bestiary.open(0);
       return;
     }
     if (Game.map.tileAt(nx, ny) === "S") {
@@ -288,7 +350,8 @@ Game.baseScene = {
             self.syncMonsters();
             Game.log.add(nameA + " と " + nameB + " はダンジョンへ帰っていった。", "info");
             Game.log.add("♥ 新しい仲間「" + t.name + "」が生まれた！", "good");
-            Game.fx.flash(Game.fx.around(35, 2, 1), "#ff88cc", 700);
+            var hut = self.findTile("H");
+            if (hut) Game.fx.flash(Game.fx.around(hut.x, hut.y, 1), "#ff88cc", 700);
             var sk = Game.specials.skillsOf({ type: born }).map(function (s) { return s.def.name; });
             var st = Game.enemies.statsOf(born);
             Game.dialog.open({

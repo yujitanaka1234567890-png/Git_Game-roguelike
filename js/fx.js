@@ -24,12 +24,14 @@ Game.fx = {
   clear: function () {
     this.list = [];
     this.hits = [];
+    this.attacks = [];
     this.generation++;
   },
 
   // ---------- 攻撃を受けた時の動き ----------
   // 攻撃されたキャラは、攻撃された方向と逆に少し傾き（のけぞり）、攻撃された側に赤いとげとげ（攻撃マーク）が出る
   hits: [], // [{ unit, dx, dy, until }]  dx, dy = 攻撃者から見た向き（のけぞる向き）
+  attacks: [], // 攻撃した側 [{ unit, dx, dy, until }]  dx, dy = 攻撃した向き（3D表示の攻撃ポーズに使う）
   hitMs: 260,
 
   hitMark: function (target, source) {
@@ -40,11 +42,24 @@ Game.fx = {
     var now = Date.now();
     this.hits = this.hits.filter(function (h) { return h.unit !== target && h.until > now; });
     this.hits.push({ unit: target, dx: dx, dy: dy, until: now + this.hitMs });
+    if (source && source !== target) {
+      this.attacks = this.attacks.filter(function (a) { return a.unit !== source && a.until > now; });
+      this.attacks.push({ unit: source, dx: dx, dy: dy, until: now + this.hitMs });
+    }
     var gen = this.generation;
     var self = this;
     setTimeout(function () {
       if (gen === self.generation && Game.renderer.ctx) Game.renderer.draw(); // のけぞりを元に戻して描き直す
     }, this.hitMs + 10);
+  },
+
+  // unit が今攻撃している最中なら、その向き {dx, dy, until}。なければ null
+  attackOf: function (unit) {
+    var now = Date.now();
+    for (var i = 0; i < this.attacks.length; i++) {
+      if (this.attacks[i].unit === unit && this.attacks[i].until > now) return this.attacks[i];
+    }
+    return null;
   },
 
   // unit が今のけぞっているなら、その向き {dx, dy}。なければ null

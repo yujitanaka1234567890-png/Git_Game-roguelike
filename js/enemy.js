@@ -36,8 +36,28 @@ Game.enemies = {
     }
   },
 
-  // 湧き直し：respawnChance の確率で、主人公から見えない離れた場所に敵が1体湧く（上限まで）
+  // ボス部屋のボスを置く（最下層）
+  spawnBoss: function () {
+    var sp = Game.map.bossSpawn;
+    var id = Game.currentDungeon().boss;
+    if (!sp || !id) return;
+    this.spawn(id, sp.x, sp.y);
+    var b = this.list[this.list.length - 1];
+    b.isBoss = true;
+    b.chasing = true; // 最初から主人公を狙っている
+    b.targetX = Game.map.startX;
+    b.targetY = Game.map.startY;
+    Game.log.add("⚠ 最下層のボス部屋だ。「" + b.name + "」が脱出口を封じている！ 倒せば封印が解ける。", "warn");
+  },
+
+  boss: function () {
+    for (var i = 0; i < this.list.length; i++) if (this.list[i].isBoss) return this.list[i];
+    return null;
+  },
+
+  // 湧き直し：respawnChance の確率で、主人公から見えない離れた場所に敵が1体湧く（上限まで。ボス部屋では湧かない）
   tryRespawn: function () {
+    if (Game.map.bossSpawn) return;
     if (Math.random() >= Game.config.respawnChance) return;
     if (this.list.length >= Game.config.dungeon.maxEnemies) return;
     var p = Game.player;
@@ -78,6 +98,7 @@ Game.enemies = {
       dest: null, // うろつき中：目指している場所 {x, y}
       dmgLog: [], // 受けたダメージの記録 [{unit, amount}]（経験値の分配用）
       charge: null, // 技の溜め中 { left: 残りターン, skill: 技のID }
+      evoExp: 0, // 敵の経験値（他の敵を倒すとたまり、たまると進化する）
       breathCd: 0, // ブレスが再び使えるまでのターン数
     });
   },
@@ -93,11 +114,63 @@ Game.enemies = {
     }
     Game.log.add(enemy.name + "をたおした！（経験値：" + parts.join(" / ") + "）", "good");
     Game.sound.play("kill");
+    if (enemy.isBoss) {
+      Game.log.add("★ ボスを倒した！ 脱出口の封印が解けた！", "good");
+      Game.sound.play("escape");
+    }
     for (var j = 0; j < shares.length; j++) {
       if (shares[j].unit === Game.player) Game.player.gainExp(shares[j].exp);
       else Game.allies.gainExp(shares[j].unit, shares[j].exp);
     }
     Game.allies.tryRecruit(enemy);
+  },
+
+  // ---------- 敵どうしの事故と、敵の進化 ----------
+  // 敵が他の敵を（技の巻き添えで）倒すと、倒した敵に「敵の経験値」が入る（主人公・仲間には入らない。仲間にもならない）。
+  //   ・もらえる量 ＝ 倒された敵の強さ（経験値の値）→ 強い敵を倒すほど多い
+  //   ・進化に必要な量 ＝ 倒した敵自身の強さ × enemyEvoFactor → 強い敵ほど多く必要
+  //   例）赤龍（強さ90）はぬめりん（強さ5）を50体倒して進化。ぬめりん（強さ5）は赤龍を1体倒すと一気にぬめ大王まで進化する
+  killByEnemy: function (victim, killer) {
+    this.remove(victim);
+    if (victim.isBoss) Game.log.add("★ ボスが倒れた！ 脱出口の封印が解けた！", "good");
+    Game.log.add(victim.name + "は" + killer.name + "の攻撃に巻き込まれて倒れた！", "info");
+    Game.sound.play("kill");
+    if (killer.hp > 0 && this.list.indexOf(killer) >= 0) this.gainEvoExp(killer, victim.exp);
+  },
+
+  // 敵が進化するのに必要な「敵の経験値」
+  evoNeed: function (e) {
+    return Math.max(1, Math.round(this.statsOf(e.type).exp * Game.config.enemyEvoFactor));
+  },
+
+  gainEvoExp: function (e, amount) {
+    e.evoExp = (e.evoExp || 0) + amount;
+    while (this.types[e.type].evolvesTo && e.evoExp >= this.evoNeed(e)) {
+      e.evoExp -= this.evoNeed(e);
+      this.evolveEnemy(e);
+    }
+  },
+
+  // 敵の進化：別の種類になり、能力は新しい種類の値（HP全回復）
+  evolveEnemy: function (e) {
+    var oldName = e.name;
+    var newId = this.types[e.type].evolvesTo;
+    var t = this.types[newId];
+    var s = this.statsOf(newId);
+    e.type = newId;
+    e.name = t.name;
+    e.symbol = t.symbol;
+    e.color = t.color;
+    e.maxHp = s.hp;
+    e.hp = s.hp;
+    e.atk = s.atk;
+    e.def = s.def;
+    e.exp = s.exp;
+    e.phasing = !!t.phasing;
+    e.charge = null;
+    Game.log.add("⚡ " + oldName + "は仲間を倒して力を増し、" + t.name + "に進化した！", "warn");
+    Game.sound.play("evolve");
+    if (Game.fov.isVisible(e.x, e.y)) Game.fx.flash(Game.fx.around(e.x, e.y, 1), "#ff66ff", 700);
   },
 
   // 経験値の分け方：その敵に与えたダメージの割合で分ける。

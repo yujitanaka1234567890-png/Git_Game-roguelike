@@ -4,6 +4,7 @@
 //   unlockedBy：このダンジョンを踏破すると行けるようになる（null なら最初から行ける）
 //   enemyBase ：1階の敵の数（1階深くなるごとに+1、最大は config.dungeon.maxEnemies）
 //   rescueDifficulty：このダンジョンに救出隊を送る時の成功率の減少
+//   boss      ：最下層（広いボス部屋）に待ち構えるボス（monsters.js の boss: true の種類）。倒すと脱出口の封印が解ける
 //   spawns    ：出てくるモンスター。from〜to 階に出る（to 省略時は最後の階まで）。出やすさはレア度で決まる
 // 3段階目の進化個体のような強い種類は、強いダンジョンにだけ出す。
 Game.DUNGEONS = {
@@ -14,6 +15,7 @@ Game.DUNGEONS = {
     unlockedBy: null,
     enemyBase: 3,
     rescueDifficulty: 0,
+    boss: "rockColossus",
     spawns: [
       { type: "numerin", from: 1 },
       { type: "tsumujiDori", from: 1 },
@@ -35,6 +37,7 @@ Game.DUNGEONS = {
     unlockedBy: "beginnerCave",
     enemyBase: 5,
     rescueDifficulty: 0.15,
+    boss: "abyssMaw",
     spawns: [
       { type: "numeron", from: 1 },
       { type: "tetsuTogemogura", from: 1 },

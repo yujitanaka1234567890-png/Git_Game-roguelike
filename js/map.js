@@ -1,7 +1,7 @@
 // 現在のマップ（ダンジョンの階 or 拠点）と「そのマスに入れるか」の判定。
 // ダンジョンは dungeon.js が毎階ランダムに作り、拠点は basemap.js の固定マップを読み込む。
 //   # = 壁   . = 床   > = 下り階段   O = 脱出口
-//   （拠点用） , = 牧場の草地   C = 収納箱 / H = 交配小屋 / K = 救出の掲示板（入れない。触れると開く）   G = ダンジョンへの門
+//   （拠点用） , = 牧場の草地   C = 収納箱 / H = 交配小屋 / K = 救出の掲示板 / S = 記録の石碑（入れない。触れると開く）   G = ダンジョンへの門
 Game.map = {
   tiles: [], // tiles[y][x]
   width: 0,
@@ -11,6 +11,7 @@ Game.map = {
   startY: 0,
   enemySpawns: [], // [{x, y}, ...] 敵を置く位置
   itemSpawns: [], // [{x, y}, ...] アイテムを置く位置
+  bossSpawn: null, // ボス部屋のボスの位置（最下層だけ）
 
   // 新しい階を作る
   generate: function (floor) {
@@ -23,6 +24,7 @@ Game.map = {
     this.startY = d.startY;
     this.enemySpawns = d.enemySpawns;
     this.itemSpawns = d.itemSpawns;
+    this.bossSpawn = d.bossSpawn || null; // ボス部屋ならボスの位置
   },
 
   // 文字で描いた固定マップを読み込む（拠点用）。@ の位置を初期位置にする
@@ -33,6 +35,7 @@ Game.map = {
     this.rooms = [];
     this.enemySpawns = [];
     this.itemSpawns = [];
+    this.bossSpawn = null;
     for (var y = 0; y < this.height; y++) {
       var row = [];
       for (var x = 0; x < this.width; x++) {
@@ -66,7 +69,7 @@ Game.map = {
   // (x, y) のマスに入れるか？ マップ外・壁・収納箱・交配小屋・掲示板は入れない
   isWalkable: function (x, y) {
     var t = this.tileAt(x, y);
-    return t !== "#" && t !== "C" && t !== "H" && t !== "K";
+    return t !== "#" && t !== "C" && t !== "H" && t !== "K" && t !== "S";
   },
 
   // (x, y) から (dx, dy) 方向へ1歩進めるか（地形だけで判定。キャラの有無は見ない）

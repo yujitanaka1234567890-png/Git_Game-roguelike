@@ -1,5 +1,8 @@
 // 効果音。録音データや外部の音素材は一切使わず、ブラウザの音声合成（Web Audio API）で
 // その場で波形（音の高さ・長さ・音色）を組み立てて鳴らす。すべてこのゲームのためのオリジナル。
+// ・レベルアップの「yeah」は、ブラウザに入っている読み上げ機能（speechSynthesis）で声にする。
+// ・ゲームオーバーの曲は、J.S.バッハ「トッカータとフーガ ニ短調」の冒頭（18世紀の曲で著作権は切れている）を
+//   この場で合成して鳴らしている（録音は使っていない）。
 // ブラウザの決まりで、最初にキーを押すまでは音が出ない（unlock）。M キーで音のオン／オフ。
 Game.sound = {
   enabled: true,
@@ -58,8 +61,8 @@ Game.sound = {
     osc.stop(t0 + dur + 0.02);
   },
 
-  // 雑音（打撃・炎・カチッという音など）。lowpass = こもらせる周波数
-  noise: function (dur, vol, delay, lowpass) {
+  // 雑音（打撃・炎・カチッという音など）。lowpass = こもらせる周波数 / highpass = 低い音を削る周波数
+  noise: function (dur, vol, delay, lowpass, highpass) {
     var ctx = this.ctx;
     var t0 = ctx.currentTime + (delay || 0);
     var len = Math.max(1, Math.floor(ctx.sampleRate * dur));
@@ -76,8 +79,15 @@ Game.sound = {
       var f = ctx.createBiquadFilter();
       f.type = "lowpass";
       f.frequency.value = lowpass;
-      src.connect(f);
+      node.connect(f);
       node = f;
+    }
+    if (highpass) {
+      var h = ctx.createBiquadFilter();
+      h.type = "highpass";
+      h.frequency.value = highpass;
+      node.connect(h);
+      node = h;
     }
     node.connect(g);
     g.connect(this.master);
@@ -100,22 +110,73 @@ Game.sound = {
     }
   },
 
+  // 声（ブラウザの読み上げ機能）。使えないブラウザでは何もしない
+  say: function (text, lang, pitch, rate) {
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return false;
+    var u = new window.SpeechSynthesisUtterance(text);
+    u.lang = lang || "en-US";
+    u.pitch = pitch || 1.2;
+    u.rate = rate || 1.1;
+    u.volume = Math.min(1, this.volume * 4);
+    window.speechSynthesis.speak(u);
+    return true;
+  },
+
   recipes: {
-    hit: function () { this.tone(260, 0.08, "square", 0.35, 120); this.noise(0.05, 0.25, 0, 2500); }, // こちらの攻撃が当たった
+    // 敵への攻撃「バシュ」：空気を切る音＋軽い打撃
+    hit: function () {
+      this.noise(0.13, 0.4, 0, null, 1400);
+      this.tone(190, 0.07, "square", 0.2, 90, 0.02);
+    },
     hurt: function () { this.tone(160, 0.16, "sawtooth", 0.35, 70); this.noise(0.08, 0.3, 0, 1200); }, // 攻撃を受けた
     miss: function () { this.tone(700, 0.06, "sine", 0.15, 520); },
-    kill: function () { this.tone(440, 0.1, "triangle", 0.35, 880); this.tone(660, 0.12, "triangle", 0.3, null, 0.09); },
-    levelup: function () { this.seq([523, 659, 784, 1047], 0.08, "square", 0.25); },
+    // 敵を倒した「ザンッ」：鋭い斬撃音＋余韻
+    kill: function () {
+      this.noise(0.2, 0.45, 0, null, 2800);
+      this.tone(1500, 0.14, "sawtooth", 0.18, 380);
+      this.tone(95, 0.12, "sine", 0.3, 60, 0.05);
+    },
+    // レベルアップ「yeah」（読み上げが使えなければ上がっていく音）
+    levelup: function () {
+      if (!this.say("Yeah!", "en-US", 1.3, 1.0)) this.seq([523, 659, 784, 1047], 0.08, "square", 0.25);
+    },
+    allyLevelup: function () { this.seq([659, 880], 0.06, "square", 0.15); }, // 仲間のレベルアップ（控えめ）
     pickup: function () { this.seq([880, 1175], 0.05, "sine", 0.3); },
     use: function () { this.tone(520, 0.18, "triangle", 0.3, 1040); },
+    // 回復「しゅぴんっ！」：シュッと上がる音＋キラッとした高い音
+    heal: function () {
+      this.noise(0.08, 0.15, 0, null, 3000);
+      this.tone(700, 0.11, "sine", 0.28, 2600);
+      this.tone(2600, 0.16, "triangle", 0.22, null, 0.1);
+      this.tone(3900, 0.12, "sine", 0.12, null, 0.12);
+    },
+    // 最大値が上がった「ぐぐぐっ」：低い音が3段階せり上がる
+    maxup: function () {
+      var f = [98, 117, 139, 165];
+      for (var i = 0; i < f.length; i++) this.tone(f[i], i === 3 ? 0.18 : 0.09, "square", 0.3, f[i] * 1.06, i * 0.11);
+    },
+    // リボルバーの弾倉を回す音：ジーッ（ラチェット音がだんだん速くなる）→ カキンッカキンッ（金属音）
     fidget: function () {
-      this.noise(0.03, 0.35, 0, 5000);
-      this.noise(0.03, 0.35, 0.12, 5000);
-      this.noise(0.03, 0.35, 0.24, 5000);
-      this.tone(1800, 0.03, "square", 0.08, null, 0.24);
+      var t = 0, gap = 0.09;
+      for (var i = 0; i < 9; i++) {
+        this.noise(0.018, 0.3, t, 6000);
+        this.tone(2600, 0.015, "square", 0.05, null, t);
+        t += gap;
+        gap = Math.max(0.03, gap * 0.8);
+      }
+      this.tone(2400, 0.18, "triangle", 0.25, 2300, t + 0.05);
+      this.tone(3600, 0.12, "sine", 0.15, null, t + 0.05);
+      this.tone(2400, 0.18, "triangle", 0.22, 2300, t + 0.22);
+      this.tone(3600, 0.12, "sine", 0.12, null, t + 0.22);
     },
     throw: function () { this.noise(0.12, 0.2, 0, 1800); this.tone(500, 0.12, "sine", 0.1, 300); },
-    stairs: function () { this.seq([784, 659, 523, 392], 0.07, "triangle", 0.3); },
+    // 階段の上り下り「ざっざっざっ」：足音3回
+    stairs: function () {
+      for (var i = 0; i < 3; i++) {
+        this.noise(0.1, 0.5, i * 0.2, 1100, 180);
+        this.tone(70, 0.06, "sine", 0.2, 50, i * 0.2);
+      }
+    },
     warn: function () { this.tone(880, 0.07, "square", 0.15); this.tone(660, 0.07, "square", 0.15, null, 0.1); },
     special: function () { this.noise(0.35, 0.45, 0, 900); this.tone(120, 0.35, "sawtooth", 0.35, 50); },
     breath: function () { this.noise(0.45, 0.4, 0, 700); this.tone(200, 0.4, "sawtooth", 0.2, 90); },
@@ -123,7 +184,25 @@ Game.sound = {
     recruit: function () { this.seq([523, 784, 1047], 0.09, "triangle", 0.3); },
     rescue: function () { this.seq([659, 880, 1175, 1568], 0.08, "sine", 0.3); },
     escape: function () { this.seq([392, 523, 659, 784, 1047], 0.1, "triangle", 0.3); },
-    death: function () { this.tone(330, 0.9, "sawtooth", 0.35, 55); this.noise(0.5, 0.2, 0.1, 600); },
+    // ゲームオーバー「チャラリ〜 チャラチャラ〜」：パイプオルガン風（トッカータとフーガ ニ短調 冒頭）
+    gameover: function () {
+      var self = this;
+      var organ = function (freq, t, dur) {
+        self.tone(freq, dur, "square", 0.12, null, t);
+        self.tone(freq / 2, dur, "sine", 0.22, null, t);
+        self.tone(freq * 2, dur, "sine", 0.05, null, t);
+      };
+      // チャラリ〜（ラ・ソ・ラ〜）
+      organ(880, 0.0, 0.13);
+      organ(784, 0.13, 0.13);
+      organ(880, 0.26, 1.0);
+      // チャラチャラ〜（ソ・ファ・ミ・レ・ド#・レ〜）
+      var run = [784, 698, 659, 587, 554];
+      for (var i = 0; i < run.length; i++) organ(run[i], 1.5 + i * 0.14, i === 4 ? 0.5 : 0.15);
+      organ(587, 1.5 + 5 * 0.14 + 0.36, 1.6);
+      organ(294, 1.5 + 5 * 0.14 + 0.36, 1.6); // 低いレを重ねて重々しく
+    },
+    death: function () { this.tone(330, 0.5, "sawtooth", 0.25, 110); }, // 仲間が倒れた
     cursor: function () { this.tone(1200, 0.025, "sine", 0.08); },
   },
 };

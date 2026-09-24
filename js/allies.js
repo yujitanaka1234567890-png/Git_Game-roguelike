@@ -22,6 +22,7 @@ Game.allies = {
   // 倒した敵が仲間になるか判定する（確率はレア度で決まる）。
   // 仲間がいっぱいなら、ターンの終わりに入れ替え確認を出すため pending に入れる
   tryRecruit: function (enemy) {
+    if (Game.enemies.types[enemy.type].boss) return; // ボスは仲間にならない
     if (Math.random() >= Game.enemies.rarityOf(enemy.type).recruit) return;
     var name = Game.enemies.types[enemy.type].name;
     if (this.list.length >= Game.config.maxAllies) {
@@ -146,6 +147,7 @@ Game.allies = {
   // 倒れた時：拠点から連れてきた子は拠点に戻るだけ（この冒険中の進化は取り消し）。この冒険の新入りは失われる
   die: function (ally) {
     this.remove(ally);
+    Game.sound.play("death");
     if (ally.fromBase) Game.log.add(ally.name + "は力尽きて、元の姿で拠点へ戻っていった…", "bad");
     else Game.log.add(ally.name + "は倒れてしまった…", "bad");
   },

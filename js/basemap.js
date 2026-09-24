@@ -3,6 +3,7 @@
 //   右：家           … 収納箱（▣）に触れると、倉庫から持って行く道具を選べる
 //                      交配小屋（♥）に触れると、牧場の2体から新しい仲間を生み出せる
 //                      救出の掲示板（掲）に触れると、はぐれた仲間の確認と救出隊の派遣ができる
+//                      記録の石碑（碑）に触れると、記録の呪文（セーブ用パスワード）の書き出し・読み込みができる
 //   下：門（∩）      … 乗ると行き先のダンジョンを選んで出発
 Game.baseScene = {
   monsters: [], // 牧場を歩く仲間 [{entry: 牧場のデータ, x, y}]
@@ -27,6 +28,7 @@ Game.baseScene = {
     g[2][25] = "C"; // 収納箱
     g[2][35] = "H"; // 交配小屋
     g[2][30] = "K"; // 救出の掲示板
+    g[8][37] = "S"; // 記録の石碑（記録の呪文）
     g[6][30] = "@"; // 拠点に戻った時の位置
     return g.map(function (r) { return r.join(""); });
   },
@@ -91,6 +93,10 @@ Game.baseScene = {
     }
     if (Game.map.tileAt(nx, ny) === "K") {
       Game.rescue.openBoard();
+      return;
+    }
+    if (Game.map.tileAt(nx, ny) === "S") {
+      Game.savecode.openMenu();
       return;
     }
     var m = this.monsterAt(nx, ny);

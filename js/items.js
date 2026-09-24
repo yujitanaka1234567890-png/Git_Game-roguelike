@@ -9,47 +9,48 @@
 Game.items = {
   // 名前はすべてこのゲームで使う一般的な名前（既存作品のアイテム名・商標は使わない）
   // category：plant（植物）/ talisman（符）/ fruit（木の実）/ tool（道具）/ incense（香）/ smoke（煙草）/ puzzle（パズル）/ fidget（手遊び道具）
+  // group：持ち物の並び順の分類（groupOrder の順に自動で並ぶ）
   // sprite：ドット絵（data/sprites.js の絵の名前）  weight：出やすさ（大きいほど出やすい）
   // effect = 使った時の効果（effects） / throwEffect = 投げて誰かに当たった時の効果（throwEffects）
   types: {
     healMoss: {
-      name: "いやし苔", sprite: "leaf", category: "plant", symbol: "♣", color: "#66cc66", weight: 10,
+      name: "いやし苔", group: "hp", sprite: "leaf", category: "plant", symbol: "♣", color: "#66cc66", weight: 10,
       effect: "heal", throwEffect: "heal", power: 15, maxUp: 1,
       desc: "HPを15回復する。HPが満タンなら最大HPが1上がる。投げて当てると相手が回復する。",
     },
     sunNectar: {
-      name: "ひだまり蜜", sprite: "jar", category: "plant", symbol: "♣", color: "#ffcc44", weight: 4,
+      name: "ひだまり蜜", group: "hp", sprite: "jar", category: "plant", symbol: "♣", color: "#ffcc44", weight: 4,
       effect: "heal", throwEffect: "heal", power: 50, maxUp: 2,
       desc: "HPを大きく回復する。HPが満タンなら最大HPが2上がる。投げて当てると相手が回復する。",
     },
     flashTalisman: {
-      name: "閃光の符", sprite: "talisman", category: "talisman", symbol: "≡", color: "#eeee66", weight: 5,
+      name: "閃光の符", group: "attack", sprite: "talisman", category: "talisman", symbol: "≡", color: "#eeee66", weight: 5,
       effect: "flash", throwEffect: "bonk", power: 12,
       desc: "見えている敵すべてに12ダメージの閃光を放つ。投げて当てると小さなダメージ。",
     },
     mightFruit: {
-      name: "剛力の実", sprite: "fruit", category: "fruit", symbol: "●", color: "#ff99aa", weight: 3,
+      name: "剛力の実", group: "buff", sprite: "fruit", category: "fruit", symbol: "●", color: "#ff99aa", weight: 3,
       effect: "atkUp", throwEffect: "atkUp", power: 1,
       desc: "攻撃力が永久に1上がる。投げて当てると相手の攻撃力が上がる。",
     },
     // ---- 精神力を回復する物 ----
     calmIncense: {
-      name: "澄心の香", sprite: "incense", category: "incense", symbol: "∽", color: "#cc99ff", weight: 4,
+      name: "澄心の香", group: "mind", sprite: "incense", category: "incense", symbol: "∽", color: "#cc99ff", weight: 4,
       effect: "mindUp", throwEffect: "bonk", power: 50,
       desc: "焚くと心が澄み、精神力が50回復する。",
     },
     tobacco: {
-      name: "煙草", sprite: "cigarette", category: "smoke", symbol: "∫", color: "#ddccaa", weight: 5,
-      effect: "mindUp", throwEffect: "bonk", power: 35,
-      desc: "一服すると気持ちが落ち着き、精神力が35回復する。",
+      name: "煙草", group: "mind", sprite: "cigarette", category: "smoke", symbol: "∫", color: "#ddccaa", weight: 5,
+      effect: "mindUp", throwEffect: "bonk", power: 7,
+      desc: "一服すると気持ちが落ち着き、精神力が7回復する。"
     },
     sixFacePuzzle: {
-      name: "六面パズル", sprite: "cube", category: "puzzle", symbol: "▦", color: "#ff7755", weight: 5,
-      effect: "mindUp", throwEffect: "bonk", power: 30,
-      desc: "六つの面の色をそろえる立体パズル。そろえると達成感で精神力が30回復する（使うとなくなる）。",
+      name: "六面パズル", group: "mind", sprite: "cube", category: "puzzle", symbol: "▦", color: "#ff7755", weight: 5,
+      effect: "mindUp", throwEffect: "bonk", power: 10,
+      desc: "六つの面の色をそろえる立体パズル。そろえると達成感で精神力が10回復する（使うとなくなる）。"
     },
     revolverToy: {
-      name: "リボルバートイ", sprite: "revolver", category: "fidget", symbol: "⊙", color: "#bbbbcc", weight: 4,
+      name: "リボルバートイ", group: "mind", sprite: "revolver", category: "fidget", symbol: "⊙", color: "#bbbbcc", weight: 4,
       effect: "fidget", throwEffect: "bonk", power: 0,
       desc: "弾倉を回して遊ぶ手遊び道具。使ってもなくならないが、回すほど効き目が落ち、4回目で壊れる。",
       // 1回目〜4回目の回復量とログ（4回目で壊れる）
@@ -62,11 +63,15 @@ Game.items = {
     },
     // ---- 道具 ----
     returnBell: {
-      name: "帰還の鈴", sprite: "bell", category: "tool", symbol: "♪", color: "#88ddff", weight: 3,
+      name: "帰還の鈴", group: "tool", sprite: "bell", category: "tool", symbol: "♪", color: "#88ddff", weight: 3,
       effect: "escape", throwEffect: "bonk", power: 0,
       desc: "鳴らすと、その場からダンジョンを脱出して拠点に帰れる。連れている仲間も一緒に帰る。",
     },
   },
+
+  // 持ち物の並び順（効果の分類ごと）と、その見出し
+  groupOrder: ["hp", "mind", "buff", "attack", "tool"],
+  groupLabels: { hp: "体力回復", mind: "精神回復", buff: "強化", attack: "攻撃", tool: "道具" },
 
   // 使う時の動詞（カテゴリごと）
   verbs: {
@@ -157,7 +162,8 @@ Game.items = {
       Game.sound.play("fidget");
       return this.useFidget(entry, t, mul);
     }
-    Game.sound.play("use");
+    // 回復・最大値アップは効果の中で音を鳴らす。それ以外は共通の「使った」音
+    if (t.effect !== "heal" && t.effect !== "mindUp") Game.sound.play("use");
     Game.log.add(t.name + "を" + this.verbs[t.category] + "。");
     this.effects[t.effect](t, Math.round(t.power * mul));
     return true;
@@ -179,8 +185,10 @@ Game.items = {
       if (p.hp >= p.maxHp) {
         p.maxHp += t.maxUp;
         p.hp = p.maxHp;
+        Game.sound.play("maxup");
         Game.log.add("最大HPが " + t.maxUp + " 上がった！", "good");
       } else {
+        Game.sound.play("heal");
         var before = p.hp;
         p.hp = Math.min(p.maxHp, p.hp + power);
         Game.log.add("HPが " + (p.hp - before) + " 回復した。", "good");
@@ -204,11 +212,13 @@ Game.items = {
     },
 
     atkUp: function (t, power) {
+      Game.sound.play("maxup");
       Game.player.atk += power;
       Game.log.add("攻撃力が " + power + " 上がった！", "good");
     },
 
     mindUp: function (t, power) {
+      Game.sound.play("heal");
       Game.mind.restore(power, true);
     },
 
@@ -227,6 +237,7 @@ Game.items = {
   throwEffects: {
     // 当たった相手のHPを回復（敵に当てると敵が回復する）
     heal: function (t, target) {
+      Game.sound.play("heal");
       var before = target.hp;
       target.hp = Math.min(target.maxHp, target.hp + t.power);
       Game.log.add(target.name + "のHPが " + (target.hp - before) + " 回復した。", "good");

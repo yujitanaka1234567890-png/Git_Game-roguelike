@@ -29,7 +29,7 @@ Game.mind = {
     var p = Game.player;
     var before = p.mind;
     p.mind = Math.min(p.maxMind, p.mind + amount);
-    if (withLog) Game.log.add("精神力が " + (p.mind - before) + " 回復した。心が澄みわたる。", "good");
+    if (withLog) Game.log.add("精神力が " + (p.mind - before) + " 回復した。", "good");
   },
 
   // 1ターンごとに呼ぶ

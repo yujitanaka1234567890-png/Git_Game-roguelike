@@ -11,6 +11,33 @@ Game.rescue = {
 
   // ---------- はぐれた記録 ----------
 
+  // ---------- 記録の期限 ----------
+  // はぐれた仲間は、助けられないまま主人公が3回（config.lostDives）ダンジョンに潜ると、ダンジョンへ帰ってしまう。
+  // 冒険に出るたびに数え（countDive）、冒険が終わった時に期限切れを消す（expireOld）。
+
+  countDive: function () {
+    for (var i = 0; i < Game.base.lost.length; i++) {
+      if (!Game.base.lost[i].mission) Game.base.lost[i].dives = (Game.base.lost[i].dives || 0) + 1;
+    }
+  },
+
+  // 期限切れの記録を消して、結果の文章を返す
+  expireOld: function () {
+    var self = this;
+    var lines = [];
+    Game.base.lost = Game.base.lost.filter(function (rec) {
+      if (rec.mission || (rec.dives || 0) < Game.config.lostDives) return true;
+      lines.push(self.placeName(rec) + " にはぐれていた " + self.memberNames(rec) + " は、待ちきれずにダンジョンへ帰っていった…");
+      return false;
+    });
+    return lines;
+  },
+
+  // あと何回の冒険で帰ってしまうか
+  divesLeft: function (rec) {
+    return Math.max(0, Game.config.lostDives - (rec.dives || 0));
+  },
+
   // 倒れた時：新入りの種類（進化は取り消しなので仲間になった時の姿）を記録する。記録の説明文を返す（なければ null）
   // 一度救出された子（rescued）は記録しない（2度目ははぐれずにダンジョンへ帰る）
   recordLost: function (newcomers) {
@@ -18,7 +45,7 @@ Game.rescue = {
     if (newcomers.length === 0) return null;
     var base = Game.base;
     var members = newcomers.map(function (a) { return a.origType || a.type; });
-    base.lost.push({ id: base.nextId++, dungeonId: Game.dungeonId, floor: Game.floor, members: members, mission: null });
+    base.lost.push({ id: base.nextId++, dungeonId: Game.dungeonId, floor: Game.floor, members: members, mission: null, dives: 0 });
     var note = "";
     while (base.lost.length > Game.config.lostMax) {
       var gone = base.lost.shift();
@@ -178,7 +205,7 @@ Game.rescue = {
         };
       }
       return {
-        label: self.placeName(rec) + "：" + self.memberNames(rec),
+        label: self.placeName(rec) + "：" + self.memberNames(rec) + "　（あと " + self.divesLeft(rec) + " 回の冒険で帰ってしまう）",
         onChoose: function () { self.openTeamSelect(rec, {}); },
       };
     });
@@ -186,7 +213,7 @@ Game.rescue = {
     Game.dialog.open({
       title: "救出の掲示板",
       lines: [
-        "はぐれた仲間は、その階に自分でたどり着けば取り戻せる。",
+        "はぐれた仲間は、その階に自分でたどり着けば取り戻せる。助けないまま " + Game.config.lostDives + " 回冒険に出ると、ダンジョンへ帰ってしまう。",
         "仲間を最大4体（★人型が1体は必須）救出隊として送ることもできる（失敗すると、はぐれた仲間はダンジョンに帰ってしまう）。",
       ],
       options: options,

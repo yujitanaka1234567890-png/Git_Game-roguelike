@@ -30,6 +30,26 @@ Game.updateStatus = function (message) {
   mfill.className = mindRatio > 0.5 ? "" : mindRatio > 0.25 ? "warn" : "danger";
   document.getElementById("hud-mind").textContent = p.mind + " / " + p.maxMind;
   document.getElementById("hud-turn").textContent = "ターン " + Game.turn;
+  // ボスがいればボスの体力を表示
+  var bossRow = document.getElementById("hud-boss");
+  var boss = Game.state === "base" ? null : Game.enemies.boss();
+  bossRow.hidden = !boss;
+  if (boss) {
+    bossRow.innerHTML = "";
+    var nm = document.createElement("span");
+    nm.textContent = "ボス " + boss.name;
+    var bar = document.createElement("div");
+    bar.className = "boss-bar";
+    var bf = document.createElement("div");
+    bf.className = "boss-fill";
+    bf.style.width = (boss.hp / boss.maxHp) * 100 + "%";
+    bar.appendChild(bf);
+    var num = document.createElement("span");
+    num.textContent = boss.hp + "/" + boss.maxHp;
+    bossRow.appendChild(nm);
+    bossRow.appendChild(bar);
+    bossRow.appendChild(num);
+  }
   document.getElementById("status").textContent = message || "";
 };
 
@@ -86,6 +106,8 @@ Game.onPlayerMove = function (dx, dy, isRepeat) {
     return;
   }
   if (Game.state !== "playing" || Game.dashing) return;
+  // 押しっぱなしで歩いている時、ダメージを受けた直後は少しの間止める（被弾に気づけるように）
+  if (isRepeat && Date.now() < Game.hitPauseUntil) return;
   Game.giveUpPending = false;
 
   // 階段の上で、その階段の方向キー → 1回目は確認、2回目で使う
@@ -198,6 +220,7 @@ Game.endTurn = function () {
   Game.allies.regen(Game.turn);
   Game.mind.tick();
   Game.enemies.tryRespawn();
+  if (Game.player.wasHit) Game.hitPauseUntil = Date.now() + Game.config.hitPauseMs;
   if (Game.player.hp <= 0) {
     Game.log.add("あなたは B" + Game.floor + "F で倒れた… Enter で拠点へ戻る", "bad");
     Game.onDeath("B" + Game.floor + "F で倒れてしまった…");
@@ -211,7 +234,7 @@ Game.endTurn = function () {
 // はぐれた仲間は、その階に自分でたどり着くか救出隊を送れば取り戻せる（rescue.js）。
 // 拠点から連れてきた子は牧場にいるまま。この冒険中の進化は取り消し（牧場の記録は書き換えていない）
 Game.onDeath = function (headline) {
-  Game.sound.play("death");
+  Game.sound.play("gameover");
   Game.state = "gameover";
   Game.dashToken++;
   Game.dialog.close();
@@ -225,7 +248,7 @@ Game.onDeath = function (headline) {
   if (lost.length > 0) Game.log.add("新しい仲間たちは散り散りになってしまった…", "bad");
   Game.allies.clear();
   var lines = [headline];
-  var missionLines = Game.rescue.resolveMissions(); // 派遣中の救出隊の結果（新しい記録を足す前に）
+  var missionLines = Game.rescue.resolveMissions().concat(Game.rescue.expireOld()); // 救出隊の結果と期限切れ（新しい記録を足す前に）
   var lostNote = Game.rescue.recordLost(newcomers);
   lines.push(lost.length > 0 ? "この冒険で仲間になった " + lost.join("・") + " とはぐれてしまった…" : "はぐれた仲間はいない。");
   if (lostNote) lines.push(lostNote);
@@ -276,7 +299,7 @@ Game.escapeDungeon = function (headline, cleared) {
   if (carried.length > 0) lines.push("持ち物 " + (carried.length - overflow.length) + " 個を倉庫にしまった。");
   if (overflow.length > 0) lines.push("倉庫がいっぱいで " + overflow.join("・") + " は置いてきた…");
 
-  lines = lines.concat(Game.rescue.resolveMissions()); // 派遣中の救出隊の結果
+  lines = lines.concat(Game.rescue.resolveMissions(), Game.rescue.expireOld()); // 救出隊の結果と期限切れ
   Game.allies.clear();
   Game.inventory.clear();
   Game.base.save();
@@ -288,7 +311,9 @@ Game.escapeDungeon = function (headline, cleared) {
 
 Game.useStairs = function (st) {
   if (st.action === "descend") Game.descend();
-  else if (st.action === "escape") {
+  else if (st.action === "escape" && Game.enemies.boss()) {
+    Game.refresh("「" + Game.enemies.boss().name + "」の力で脱出口が封じられている！ 倒さなければ出られない");
+  } else if (st.action === "escape") {
     Game.escapeDungeon(Game.currentDungeon().name + " B" + Game.floor + "F の脱出口から脱出した！ ダンジョン踏破！", true);
   }
   // 将来：if (st.action === "ascend") Game.ascend();
@@ -305,11 +330,14 @@ Game.descend = function () {
 };
 
 // ---------- ダッシュ ----------
-// 同じ方向へ1ターンずつ自動で進み続ける（1歩ごとに敵も動く）。
+// 同じ方向へ1ターンずつ自動で進み続ける（1歩ごとに敵も動く）。仲間がいたら位置を入れ替えて進む。
 // 止まる条件：Shift を離した ／ 前が壁 ／ 前に敵 ／ 隣に敵が来た ／ 新しい敵が見えた ／
-//             ダメージを受けた ／ 階段に乗った ／ アイテムに乗った ／ 確認画面が出た ／ ゲームオーバー
+//             新しく通路（分かれ道・部屋の出入口）が隣に現れた ／ 部屋の出入口に着いた ／
+//             階段に乗った ／ アイテムに乗った ／ 確認画面が出た ／ ゲームオーバー
+// ダメージを受けても止まらないが、次の1歩まで hitPauseMs だけ間をあける（被弾に気づけるように）
 Game.dashing = false;
 Game.dashToken = 0; // 拠点へ戻る・階移動の時に、古いダッシュや投げアニメを確実に止めるための番号
+Game.hitPauseUntil = 0; // この時刻（ミリ秒）までは、押しっぱなしの移動を受け付けない（被弾した直後）
 
 Game.startDash = function (dx, dy) {
   if (Game.state !== "playing" || Game.dashing || Game.dialog.isOpen()) return;
@@ -323,28 +351,52 @@ Game.startDash = function (dx, dy) {
   Game.dashStep(dx, dy, Game.dashToken);
 };
 
-// 次の1歩を進めるか（壁・敵・仲間がいたら不可。ダッシュでは攻撃も入れ替えもしない）
+// 次の1歩を進めるか（壁・敵がいたら不可。仲間なら入れ替えて進む。ダッシュでは攻撃はしない）
 Game.canDashStep = function (dx, dy) {
   var p = Game.player;
-  return Game.map.canStep(p.x, p.y, dx, dy) && !Game.path.isOccupied(p.x + dx, p.y + dy);
+  return Game.map.canStep(p.x, p.y, dx, dy) && !Game.enemies.at(p.x + dx, p.y + dy);
+};
+
+// マス (x, y) の種類：部屋の中 "room" ／ 部屋の出入口 "door" ／ 通路 "corr"
+Game.placeKind = function (x, y) {
+  var r = Game.map.roomAt(x, y);
+  if (!r) return "corr";
+  return x < r.x1 || x > r.x2 || y < r.y1 || y > r.y2 ? "door" : "room";
+};
+
+// (x, y) の周り8マスのうち、通路・出入口になっているマス（進む方向の1マス先と、来た方向の1マスは除く）
+Game.dashOpenings = function (x, y, dx, dy) {
+  var set = {};
+  for (var i = 0; i < Game.DIRS8.length; i++) {
+    var d = Game.DIRS8[i];
+    if ((d[0] === dx && d[1] === dy) || (d[0] === -dx && d[1] === -dy)) continue;
+    var nx = x + d[0], ny = y + d[1];
+    if (!Game.map.isWalkable(nx, ny)) continue;
+    if (Game.placeKind(nx, ny) !== "room") set[nx + "," + ny] = true;
+  }
+  return set;
 };
 
 Game.dashStep = function (dx, dy, token) {
   if (token !== Game.dashToken) return;
+  var p = Game.player;
   var seenBefore = Game.enemies.visibleCount();
   var bagBefore = Game.inventory.items.length;
   var alliesBefore = Game.allies.list.length;
+  var openBefore = Game.dashOpenings(p.x, p.y, dx, dy);
   Game.playTurn(dx, dy);
-  var p = Game.player;
+  var openAfter = Game.dashOpenings(p.x, p.y, dx, dy);
+  var newOpening = Object.keys(openAfter).some(function (k) { return !openBefore[k]; });
   var stop =
     Game.state !== "playing" ||
     Game.dialog.isOpen() ||
     !Game.input.shiftHeld ||
     Game.enemies.visibleCount() > seenBefore ||
-    p.wasHit ||
+    newOpening || // 分かれ道・出入口が隣に現れた
+    Game.placeKind(p.x, p.y) === "door" || // 部屋の出入口に着いた
     p.onStairs() ||
     Game.items.at(p.x, p.y) || // 拾えなかったアイテムの上
-    Game.allies.list.length !== alliesBefore || // はぐれた仲間を救出した
+    Game.allies.list.length !== alliesBefore || // はぐれた仲間を救出した・仲間が倒れた
     Game.inventory.items.length !== bagBefore || // アイテムを拾った
     Game.enemies.adjacentTo(p.x, p.y) ||
     !Game.canDashStep(dx, dy);
@@ -352,9 +404,10 @@ Game.dashStep = function (dx, dy, token) {
     Game.dashing = false;
     return;
   }
+  // ダメージを受けた直後は、次の1歩まで長めに間をあける
   setTimeout(function () {
     Game.dashStep(dx, dy, token);
-  }, Game.config.dashDelay);
+  }, p.wasHit ? Game.config.hitPauseMs : Game.config.dashDelay);
 };
 
 // ---------- 持ち物 ----------
@@ -453,6 +506,7 @@ Game.showBase = function () {
 // 拠点から出発：選んだ仲間（Lv1で作り直す）と、倉庫から選んだ持ち物を持ってB1Fへ
 Game.startAdventure = function (dungeonId) {
   Game.dungeonId = dungeonId || "beginnerCave";
+  Game.rescue.countDive(); // はぐれた仲間の期限を1つ進める
   var party = Game.base.partyEntries();
   var items = Game.base.takeItemsOut();
   document.body.classList.remove("in-base");
@@ -492,6 +546,7 @@ Game.enterFloor = function () {
   Game.player.placeAt(Game.map.startX, Game.map.startY);
   Game.enemies.init(Game.map.enemySpawns, Game.floor);
   Game.items.init(Game.map.itemSpawns);
+  Game.enemies.spawnBoss(); // 最下層ならボスを置く
   Game.allies.placeNear(Game.player.x, Game.player.y);
   Game.rescue.setupFloor(); // はぐれた仲間がいる階なら気配を置く
 };

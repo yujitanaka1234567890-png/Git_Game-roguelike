@@ -90,6 +90,7 @@
     if (M[id].evolvesTo) addHow(M[id].evolvesTo, name(id) + " がLv" + M[id].evolveLevel + "で進化");
   });
   B.forEach(function (r) { addHow(r.child, "交配：" + name(r.parents[0]) + " × " + name(r.parents[1])); });
+  Object.keys(D).forEach(function (did) { if (D[did].boss) addHow(D[did].boss, "ボス：" + D[did].name + " 最下層"); });
 
   // ---------- 設定チェック ----------
   Object.keys(M).forEach(function (id) {
@@ -112,6 +113,7 @@
     var d = D[did];
     if (d.unlockedBy && !D[d.unlockedBy]) check("err", d.name + "：解放条件のダンジョン「" + d.unlockedBy + "」が存在しない");
     if (!W[d.world]) check("err", d.name + "：世界「" + d.world + "」が worlds.js にない");
+    if (d.boss && !(M[d.boss] && M[d.boss].boss)) check("err", d.name + "：ボス「" + d.boss + "」が monsters.js にない（または boss: true がない）");
     d.spawns.forEach(function (s) { if (!M[s.type]) check("err", d.name + "：出現モンスター「" + s.type + "」が存在しない"); });
     if (!d.spawns.some(function (s) { return s.from <= 1; })) check("err", d.name + "：B1Fに出る敵がいない");
     for (var f = 1; f <= d.floors; f++) {
@@ -175,6 +177,7 @@
     if (t.breath) feats.push("ブレス（" + t.breath.range + "マス・" + t.breath.cooldown + "ターンに1度）");
     if (t.breedOnly) feats.push("交配専用");
     if (t.humanoid) feats.push("人型（救出隊に派遣できる）");
+    if (t.boss) feats.push("ボス（仲間にならない）");
     return [
       sym, id, t.name, "段階" + (t.stage || 1),
       (r.label || "?") + "（仲間化 " + Math.round((r.recruit || 0) * 100) + "%）",

@@ -13,10 +13,26 @@ Game.inventory = {
   },
 
   // 持ち物に加える（種類ID でも アイテムデータ でもよい）。いっぱいなら false
+  // 加えたら、効果の分類（体力回復→精神回復→強化→攻撃→道具）の順に自動で並べ直す
   add: function (typeOrEntry, origin) {
     if (this.items.length >= this.max) return false;
     this.items.push(Game.items.makeEntry(typeOrEntry, origin));
+    this.sort();
     return true;
+  },
+
+  // 分類の順に並べる（同じ分類の中では、先に持っていた物が上。選んでいる物はそのまま選んだまま）
+  sort: function () {
+    var cur = this.items[this.selected];
+    var order = Game.items.groupOrder;
+    var rank = function (e) {
+      var i = order.indexOf(Game.items.types[e.type].group);
+      return i < 0 ? order.length : i;
+    };
+    var indexed = this.items.map(function (e, i) { return { e: e, i: i }; });
+    indexed.sort(function (a, b) { return rank(a.e) - rank(b.e) || a.i - b.i; });
+    this.items = indexed.map(function (x) { return x.e; });
+    if (cur) this.selected = Math.max(0, this.items.indexOf(cur));
   },
 
   selectedEntry: function () {
@@ -66,8 +82,17 @@ Game.inventory = {
     }
 
     var ul = document.createElement("ul");
+    var lastGroup = null;
     for (var i = 0; i < this.items.length; i++) {
       var t = Game.items.types[this.items[i].type];
+      if (t.group !== lastGroup) {
+        // 分類の見出し（選択はできない）
+        var head = document.createElement("li");
+        head.className = "inv-group";
+        head.textContent = "― " + (Game.items.groupLabels[t.group] || "その他") + " ―";
+        ul.appendChild(head);
+        lastGroup = t.group;
+      }
       var li = document.createElement("li");
       if (i === this.selected) li.className = "selected";
       var icon = document.createElement("span");

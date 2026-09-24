@@ -23,7 +23,68 @@ Game.fx = {
 
   clear: function () {
     this.list = [];
+    this.hits = [];
     this.generation++;
+  },
+
+  // ---------- 攻撃を受けた時の動き ----------
+  // 攻撃されたキャラは、攻撃された方向と逆に少し傾き（のけぞり）、攻撃された側に赤いとげとげ（攻撃マーク）が出る
+  hits: [], // [{ unit, dx, dy, until }]  dx, dy = 攻撃者から見た向き（のけぞる向き）
+  hitMs: 260,
+
+  hitMark: function (target, source) {
+    if (!target || target.x < 0) return;
+    var dx = source ? Math.sign(target.x - source.x) : 0;
+    var dy = source ? Math.sign(target.y - source.y) : 0;
+    if (dx === 0 && dy === 0) dy = 1;
+    var now = Date.now();
+    this.hits = this.hits.filter(function (h) { return h.unit !== target && h.until > now; });
+    this.hits.push({ unit: target, dx: dx, dy: dy, until: now + this.hitMs });
+    var gen = this.generation;
+    var self = this;
+    setTimeout(function () {
+      if (gen === self.generation && Game.renderer.ctx) Game.renderer.draw(); // のけぞりを元に戻して描き直す
+    }, this.hitMs + 10);
+  },
+
+  // unit が今のけぞっているなら、その向き {dx, dy}。なければ null
+  tiltOf: function (unit) {
+    var now = Date.now();
+    for (var i = 0; i < this.hits.length; i++) {
+      if (this.hits[i].unit === unit && this.hits[i].until > now) return this.hits[i];
+    }
+    return null;
+  },
+
+  // 赤いとげとげ（攻撃マーク）を描く：攻撃された側（のけぞる向きの反対側）のマスの端に
+  drawHitMarks: function (ctx, ts) {
+    var now = Date.now();
+    for (var i = 0; i < this.hits.length; i++) {
+      var h = this.hits[i];
+      if (h.until <= now || h.unit.x < 0) continue;
+      if (h.unit !== Game.player && Game.allies.list.indexOf(h.unit) < 0 && !Game.fov.isVisible(h.unit.x, h.unit.y)) continue;
+      var cx = h.unit.x * ts + ts / 2 - h.dx * ts * 0.42;
+      var cy = h.unit.y * ts + ts / 2 - h.dy * ts * 0.42;
+      this.spike(ctx, cx, cy, ts * 0.3, ts * 0.12);
+    }
+  },
+
+  // とげとげの星形
+  spike: function (ctx, cx, cy, rOut, rIn) {
+    ctx.beginPath();
+    for (var k = 0; k < 16; k++) {
+      var r = k % 2 === 0 ? rOut : rIn;
+      var a = (Math.PI * 2 * k) / 16 - Math.PI / 2;
+      var px = cx + Math.cos(a) * r, py = cy + Math.sin(a) * r;
+      if (k === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = "#ff2a2a";
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#400";
+    ctx.stroke();
   },
 
   // (x, y) の周り r マス（自分のマスも含む）

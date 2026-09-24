@@ -82,6 +82,23 @@ Game.SKILLS = {
     name: "大竜巻", shape: "sight", mult: 1.9, color: "#66ccff",
     windup: "上空で大きく旋回し始めた…", charging: "巨大な竜巻が形になりつつある…！",
   },
+  // ---- ボス ----
+  rockAvalanche: {
+    name: "岩なだれ", shape: "around", mult: 2.4, color: "#a0a080",
+    windup: "両腕の大岩を高く振り上げた…", charging: "天井からぱらぱらと小石が落ちてくる…！",
+  },
+  quakeWave: {
+    name: "大地の震え", shape: "sight", mult: 1.3, color: "#c0a060",
+    windup: "足を大きく踏み鳴らす構えだ…", charging: "床の苔がいっせいに逆立った…！",
+  },
+  whirlpool: {
+    name: "深淵の渦潮", shape: "sight", mult: 1.5, color: "#3a8aff",
+    windup: "巨大な口で水を吸い込み始めた…", charging: "部屋じゅうの水が渦を巻いている…！",
+  },
+  swallow: {
+    name: "丸呑み", shape: "single", mult: 3.5, color: "#ff4466",
+    windup: "大きな口をゆっくりと開き始めた…", charging: "口の奥の暗闇がこちらを見ている…！",
+  },
   // ---- 交配で生まれる種類 ----
   stickyNeedles: {
     name: "ねばトゲ弾", shape: "around", mult: 2.2, color: "#aaff88",
@@ -124,3 +141,6 @@ Game.SKILLS = {
     windup: "腕を風車のように回し始めた…", charging: "回転がびゅうびゅうと風を切っている…！",
   },
 };
+
+// それぞれの技に自分のID（キー）を覚えさせておく（ログから技の説明を開く時などに使う）
+for (var skillId in Game.SKILLS) Game.SKILLS[skillId].id = skillId;

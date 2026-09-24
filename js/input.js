@@ -21,6 +21,14 @@ Game.input = {
 
     window.addEventListener("keydown", function (e) {
       Game.sound.unlock(); // ブラウザは最初の操作の後でないと音を出せない
+      // 記録の呪文の画面が開いている間は、ゲームの操作をしない（Esc だけで閉じられる）
+      if (Game.savecode && Game.savecode.isOpen()) {
+        if (e.key === "Escape") Game.savecode.close();
+        return;
+      }
+      // 文字の入力欄に入力している時も、ゲームの操作にしない
+      var tag = e.target && e.target.tagName;
+      if (tag === "TEXTAREA" || tag === "INPUT") return;
       self.shiftHeld = e.shiftKey;
       var dir = self.arrows[e.key];
       if (dir) {

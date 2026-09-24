@@ -8,6 +8,7 @@
 Game.dungeon = {
   generate: function (floor) {
     var cfg = Game.config.dungeon;
+    if (floor >= Game.currentDungeon().floors && Game.currentDungeon().boss) return this.bossFloor(cfg);
     for (var attempt = 0; attempt < 50; attempt++) {
       var result = this.tryGenerate(cfg, floor);
       if (result) return result;
@@ -58,6 +59,7 @@ Game.dungeon = {
     // 3. 通路でつなぐ
     var edges = this.spanningTree(cfg.cols, cfg.rows);
     this.addExtraEdges(edges, cfg.cols, cfg.rows, cfg.extraConnections);
+    this.removeDeadEnds(edges, cells, cfg.cols, cfg.rows);
     for (var i = 0; i < edges.length; i++) {
       this.connect(tiles, cells[edges[i][0]], cells[edges[i][1]]);
     }
@@ -99,6 +101,52 @@ Game.dungeon = {
       stairsX: stairs.x, stairsY: stairs.y,
       enemySpawns: enemySpawns,
       itemSpawns: itemSpawns,
+    };
+  },
+
+  // 最下層：広く開けたボス部屋。左に主人公、右奥に脱出口（ボスを倒すまで封印）、その手前にボス。
+  // 身を隠せるよう柱を4本立てる。通路はない。
+  bossFloor: function (cfg) {
+    var W = cfg.width, H = cfg.height;
+    var tiles = [];
+    for (var y = 0; y < H; y++) {
+      var row = [];
+      for (var x = 0; x < W; x++) row.push("#");
+      tiles.push(row);
+    }
+    var room = { x1: 3, y1: 3, x2: W - 4, y2: H - 4, isRoom: true };
+    this.fillRect(tiles, room.x1, room.y1, room.x2, room.y2);
+    var cy = Math.floor((room.y1 + room.y2) / 2);
+    // 柱（2×2）
+    var pillars = [[12, 8], [12, cy + 4], [26, 8], [26, cy + 4]];
+    for (var i = 0; i < pillars.length; i++) {
+      var px = pillars[i][0], py = pillars[i][1];
+      tiles[py][px] = tiles[py][px + 1] = tiles[py + 1][px] = tiles[py + 1][px + 1] = "#";
+    }
+    var exit = { x: room.x2 - 1, y: cy };
+    tiles[exit.y][exit.x] = "O";
+    // ボスの取り巻き（少しだけ）とアイテム（少しだけ）
+    var used = {};
+    var pickFree = function (x1, x2) {
+      for (var t = 0; t < 50; t++) {
+        var p = { x: Game.randInt(x1, x2), y: Game.randInt(room.y1, room.y2) };
+        if (tiles[p.y][p.x] !== "." || used[p.x + "," + p.y]) continue;
+        used[p.x + "," + p.y] = true;
+        return p;
+      }
+      return null;
+    };
+    used[exit.x + "," + exit.y] = true;
+    used[(room.x1 + 2) + "," + cy] = true;
+    used[(room.x2 - 5) + "," + cy] = true;
+    var enemySpawns = [pickFree(20, room.x2 - 2), pickFree(20, room.x2 - 2)].filter(Boolean);
+    var itemSpawns = [pickFree(room.x1, 15), pickFree(room.x1, 15)].filter(Boolean);
+    return {
+      width: W, height: H, tiles: tiles, rooms: [room],
+      startX: room.x1 + 2, startY: cy,
+      stairsX: exit.x, stairsY: exit.y,
+      enemySpawns: enemySpawns, itemSpawns: itemSpawns,
+      bossSpawn: { x: room.x2 - 5, y: cy },
     };
   },
 
@@ -160,6 +208,25 @@ Game.dungeon = {
       if (has(a, b)) continue;
       edges.push([a, b]);
       added++;
+    }
+  },
+
+  // 通路の行き止まりをなくす：部屋ではない区画（通路の分岐点）が1本の通路としかつながっていないと
+  // そこが行き止まりになるので、別の隣の区画ともつないで、必ず通り抜けられるようにする
+  removeDeadEnds: function (edges, cells, cols, rows) {
+    var has = function (a, b) {
+      return edges.some(function (e) { return (e[0] === a && e[1] === b) || (e[0] === b && e[1] === a); });
+    };
+    var degree = function (i) {
+      return edges.filter(function (e) { return e[0] === i || e[1] === i; }).length;
+    };
+    for (var i = 0; i < cells.length; i++) {
+      if (cells[i].isRoom) continue;
+      var others = this.neighbors(i, cols, rows).filter(function (j) { return !has(i, j); });
+      while (degree(i) < 2 && others.length > 0) {
+        var k = Math.floor(Math.random() * others.length);
+        edges.push([i, others.splice(k, 1)[0]]);
+      }
     }
   },
 

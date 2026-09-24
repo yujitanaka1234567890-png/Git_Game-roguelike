@@ -26,7 +26,8 @@ Game.combat = {
   applyDamage: function (source, defender, dmg) {
     var actual = Math.min(dmg, defender.hp); // 残りHPを超えた分は数えない
     defender.hp -= actual;
-    defender.wasHit = true; // ダッシュ停止などの判定用
+    defender.wasHit = true; // ダッシュの間あけなどの判定用
+    Game.fx.hitMark(defender, source); // のけぞり＋赤いとげとげ
     if (defender.dmgLog && source) defender.dmgLog.push({ unit: source, amount: actual });
   },
 

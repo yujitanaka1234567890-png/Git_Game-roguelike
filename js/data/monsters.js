@@ -14,6 +14,7 @@
 //   breath   ：離れた相手へのブレス（敵の時）
 //   breedOnly：交配でしか手に入らない（ダンジョンには出ない）
 //   humanoid ：人型で知能が高い（救出隊には人型が1体は必要）
+//   boss     ：ダンジョン最下層のボス（dungeons.js の boss）。仲間にならず、進化もしない。大きく描かれる
 Game.MONSTERS = {
   // ---- ぬめ系 ----
   numerin: {
@@ -113,6 +114,15 @@ Game.MONSTERS = {
     name: "天空つむじ王", symbol: "B", sprite: "bird3", color: "#bbeeff", hp: 15, atk: 6, def: 1, exp: 16,
     rarity: 4, growth: { hp: 4, atk: 2 }, skills: ["greatTornado", "beakGust"],
     stage: 3,
+  },
+  // ---- ボス（各ダンジョンの最下層） ----
+  rockColossus: {
+    name: "岩苔の巨像", symbol: "Ω", sprite: "golem", color: "#8a9a6a", hp: 40, atk: 4, def: 1, exp: 50,
+    rarity: 5, growth: { hp: 0, atk: 0 }, skills: ["rockAvalanche", "quakeWave"], stage: 1, boss: true,
+  },
+  abyssMaw: {
+    name: "深淵の大口", symbol: "Ψ", sprite: "maw", color: "#3a6aa0", hp: 60, atk: 6, def: 2, exp: 90,
+    rarity: 5, growth: { hp: 0, atk: 0 }, skills: ["whirlpool", "swallow"], stage: 1, boss: true,
   },
   // ---- 交配でしか生まれない種類（breeding.js） ----
   togeNume: {

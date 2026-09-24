@@ -11,7 +11,8 @@ Game.renderer = {
     "C": { sprite: "chest", color: "#e0b050", char: "▣", charColor: "#e0b050" },
     "H": { sprite: "hut", color: "#ff99cc", char: "♥", charColor: "#ff88cc" },
     "K": { sprite: "board", color: "#8a5a2a", char: "掲", charColor: "#ffcc55" },
-    "G": { sprite: "gate", color: "#c8a8ff", char: "∩", charColor: "#c8a8ff" },
+    "S": { sprite: "stone", color: "#9a9aa6", char: "碑", charColor: "#bbbbdd" },
+    "G": { sprite: "gateM", color: "#c8a8ff", char: "∩", charColor: "#c8a8ff" }, // 3マスで1つの門（drawTile で左・中・右を選ぶ）
   },
 
   init: function () {
@@ -82,7 +83,7 @@ Game.renderer = {
       var al = allies[a];
       if (al.x < 0) continue;
       this.drawAllyBg(al.x, al.y);
-      this.drawMonster(Game.MONSTERS[al.type], al.x, al.y);
+      this.drawMonster(Game.MONSTERS[al.type], al.x, al.y, al);
       if (al.hp < al.maxHp) this.drawHpBar(al);
       if (al.charge) this.drawChargeMark(al, "#66ccff");
     }
@@ -92,14 +93,20 @@ Game.renderer = {
     for (var i = 0; i < list.length; i++) {
       var e = list[i];
       if (!fov.isVisible(e.x, e.y)) continue;
-      this.drawMonster(Game.MONSTERS[e.type], e.x, e.y);
+      this.drawMonster(Game.MONSTERS[e.type], e.x, e.y, e);
       if (e.hp < e.maxHp) this.drawHpBar(e);
       if (e.charge) this.drawChargeMark(e);
     }
 
     // ---- 主人公 ----
     var p = Game.player;
-    this.drawThing("player", null, c.player, p.x, p.y, p.symbol, c.player);
+    var self = this;
+    this.withTilt(p, p.x, p.y, function () {
+      self.drawThing("player", null, c.player, p.x, p.y, p.symbol, c.player);
+    });
+
+    // ---- 攻撃マーク（赤いとげとげ） ----
+    Game.fx.drawHitMarks(ctx, ts);
 
     // ---- 投げて飛んでいるアイテム ----
     var pr = Game.throwing.projectile;
@@ -134,7 +141,7 @@ Game.renderer = {
       else if (tile === "O") ctx.fillStyle = lit ? c.exit : c.exitDim;
       else if (tile === ",") ctx.fillStyle = c.grass;
       else if (tile === "G") ctx.fillStyle = c.gate;
-      else if (inBase || tile === "C" || tile === "H" || tile === "K") ctx.fillStyle = c.houseFloor;
+      else if (inBase || tile === "C" || tile === "H" || tile === "K" || tile === "S") ctx.fillStyle = c.houseFloor;
       else ctx.fillStyle = lit ? colors.floor : colors.floorDim;
       ctx.fillRect(x * ts, y * ts, ts, ts);
       ctx.strokeStyle = c.grid;
@@ -157,15 +164,54 @@ Game.renderer = {
     Game.pixel.drawFloor(ctx, x, y, ts, floorColor);
     var spr = this.tileSprites[tile];
     if (spr) {
-      Game.pixel.draw(ctx, spr.sprite, null, spr.color, x, y, ts);
+      var name = spr.sprite;
+      if (tile === "G") {
+        // 門：左右のマスも門なら真ん中、左端・右端ならそれぞれの柱を描いて、3マスで1つのアーチにする
+        if (Game.map.tileAt(x - 1, y) !== "G") name = "gateL";
+        else if (Game.map.tileAt(x + 1, y) !== "G") name = "gateR";
+      }
+      Game.pixel.draw(ctx, name, null, spr.color, x, y, ts);
       if (!lit && !inBase) this.dimCell(x, y);
     }
   },
 
-  // モンスター1体（ドット絵なら絵、文字表示なら文字）＋進化段階の印
-  drawMonster: function (t, x, y) {
-    this.drawThing(t.sprite, t.overlay, t.color, x, y, t.symbol, t.color);
+  // モンスター1体（ドット絵なら絵、文字表示なら文字）＋進化段階の印。unit を渡すと攻撃された時にのけぞる
+  // ボスは1.6倍の大きさで、足元に赤い影をつけて描く
+  drawMonster: function (t, x, y, unit) {
+    var self = this;
+    this.withTilt(unit, x, y, function () {
+      var big = t.boss && Game.pixel.enabled ? Game.pixel.build(t.sprite, t.overlay, t.color) : null;
+      if (big) {
+        var ts = Game.config.tileSize, size = ts * 1.6;
+        self.ctx.fillStyle = "rgba(255, 40, 40, 0.28)";
+        self.ctx.beginPath();
+        self.ctx.ellipse(x * ts + ts / 2, y * ts + ts - 2, ts * 0.8, ts * 0.3, 0, 0, Math.PI * 2);
+        self.ctx.fill();
+        self.ctx.imageSmoothingEnabled = false;
+        self.ctx.drawImage(big, x * ts + ts / 2 - size / 2, y * ts + ts - size, size, size);
+        return;
+      }
+      self.drawThing(t.sprite, t.overlay, t.color, x, y, t.symbol, t.color);
+    });
     this.drawStagePips(x, y, t.stage);
+  },
+
+  // 攻撃されたばかりなら、攻撃と逆向きに少し傾けてずらした状態で draw() を呼ぶ（のけぞり）
+  withTilt: function (unit, x, y, draw) {
+    var h = unit ? Game.fx.tiltOf(unit) : null;
+    if (!h) {
+      draw();
+      return;
+    }
+    var ctx = this.ctx;
+    var ts = Game.config.tileSize;
+    var cx = x * ts + ts / 2, cy = y * ts + ts;
+    ctx.save();
+    ctx.translate(cx + h.dx * 3, cy + h.dy * 3);
+    ctx.rotate((h.dx !== 0 ? h.dx : h.dy * 0.6) * 0.3); // 足元を軸に、攻撃と逆側へ傾く
+    ctx.translate(-cx, -cy);
+    draw();
+    ctx.restore();
   },
 
   // 絵を描く。ドット絵が無効 or 絵がなければ文字で描く

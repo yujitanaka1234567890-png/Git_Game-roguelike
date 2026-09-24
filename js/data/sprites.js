@@ -295,6 +295,36 @@ Game.SPRITES = {
     "...kk..kk...",
   ],
 
+  // ======== ボス（大きく描かれる） ========
+  golem: [
+    "...kkkkkk...",
+    "..kaavvaak..",
+    ".kaaaaaaaak.",
+    ".kawkaakwak.",
+    ".kaaarraaak.",
+    "kkaakkkkaakk",
+    "kaakaaaakaak",
+    "kakavaavakak",
+    "kbkaaaaaakbk",
+    "kk.kaaaak.kk",
+    "...kakkak...",
+    "..kkk..kkk..",
+  ],
+  maw: [
+    "......y.....",
+    ".....k......",
+    "....k.......",
+    "..kkkkkkkk..",
+    ".kaaaaaaaak.",
+    "kaawkaaaaaak",
+    "kaaaaaaaaaak",
+    "kwkwkwkwkwak",
+    "krrrrrrrrrak",
+    "kwkwkwkwkwak",
+    ".kbbbbbbbbk.",
+    "..kkkkkkkk..",
+  ],
+
   // ======== アイテム ========
   leaf: [
     "............",
@@ -426,15 +456,15 @@ Game.SPRITES = {
   // ======== 地形・拠点の設備 ========
   stairs: [
     "............",
-    ".kkkkkkkkkk.",
+    "............",
+    ".......kkkk.",
+    ".......kaak.",
+    "....kkkkbbk.",
+    "....kaaaaak.",
+    ".kkkkbbbbbk.",
     ".kaaaaaaaak.",
     ".kbbbbbbbbk.",
-    ".kkkkaaaaak.",
-    "....kbbbbbk.",
-    "....kkkkaak.",
-    ".......kbbk.",
-    ".......kkkk.",
-    "............",
+    ".kkkkkkkkkk.",
     "............",
     "............",
   ],
@@ -480,6 +510,20 @@ Game.SPRITES = {
     ".kkkkkkkkkk.",
     "............",
   ],
+  stone: [
+    "............",
+    "...kkkkkk...",
+    "..kggggggk..",
+    "..kgwwwwgk..",
+    "..kggggggk..",
+    "..kgwwwggk..",
+    "..kggggggk..",
+    "..kgwwwwgk..",
+    "..kggggggk..",
+    ".kkkkkkkkkk.",
+    ".knnnnnnnnk.",
+    ".kkkkkkkkkk.",
+  ],
   board: [
     "............",
     ".kkkkkkkkkk.",
@@ -494,19 +538,34 @@ Game.SPRITES = {
     "...kn..nk...",
     "...kk..kk...",
   ],
-  gate: [
-    "..kkkkkkkk..",
-    ".kaaaaaaaak.",
-    "kaakkkkkkaak",
-    "kak......kak",
-    "kak......kak",
-    "kak......kak",
-    "kak......kak",
-    "kak......kak",
-    "kak......kak",
-    "kak......kak",
-    "kbk......kbk",
-    "kkk......kkk",
+  // 門は3マス並べて1つの大きなアーチになる（左・中・右。右は左を左右反転して下で作る）
+  gateL: [
+    "......kkkkkk",
+    "....kkaaaaaa",
+    "...kaacccccc",
+    "..kaackkkkkk",
+    "..kack......",
+    ".kaak.......",
+    ".kaak.......",
+    ".kaak.......",
+    ".kaak.......",
+    ".kaak.......",
+    ".kbbk.......",
+    "kkkkkk......",
+  ],
+  gateM: [
+    "kkkkkkkkkkkk",
+    "aaaaayyaaaaa",
+    "cccckyykcccc",
+    "kkkkkkkkkkkk",
+    "............",
+    "............",
+    "............",
+    "............",
+    "............",
+    "............",
+    "............",
+    "............",
   ],
   marker: [
     ".....kk.....",
@@ -523,6 +582,9 @@ Game.SPRITES = {
     ".....kk.....",
   ],
 };
+
+// 門の右側（左側を左右反転）
+Game.SPRITES.gateR = Game.SPRITES.gateL.map(function (row) { return row.split("").reverse().join(""); });
 
 // 交配種などの「上に重ねる小物」（元の絵の上に描く。色は固定）
 Game.SPRITE_OVERLAYS = {

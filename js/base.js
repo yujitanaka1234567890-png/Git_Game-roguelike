@@ -52,18 +52,41 @@ Game.base = {
     });
   },
 
+  // 保存する中身（ブラウザの自動記録と、記録の呪文 savecode.js で共通）
+  getSaveData: function () {
+    return {
+      ranch: this.ranch, storage: this.storage, nextId: this.nextId,
+      cleared: this.cleared, discovered: this.discovered, lost: this.lost,
+    };
+  },
+
   save: function () {
     try {
-      window.localStorage.setItem(
-        this.saveKey,
-        JSON.stringify({
-          ranch: this.ranch, storage: this.storage, nextId: this.nextId,
-          cleared: this.cleared, discovered: this.discovered, lost: this.lost,
-        })
-      );
+      window.localStorage.setItem(this.saveKey, JSON.stringify(this.getSaveData()));
     } catch (e) {
       // 保存できなくてもゲームは続ける
     }
+  },
+
+  // 記録の呪文から読み込む。形がおかしければ false（今の記録はそのまま）
+  applySaveData: function (data) {
+    if (!data || !Array.isArray(data.ranch) || !Array.isArray(data.storage) || typeof data.nextId !== "number") return false;
+    try {
+      window.localStorage.setItem(this.saveKey, JSON.stringify(data));
+    } catch (e) {
+      // 保存領域が使えなくても、この場では読み込む
+    }
+    this.nextId = data.nextId;
+    this.ranch = data.ranch.filter(function (r) { return Game.enemies.types[r.type]; });
+    this.storage = data.storage.filter(function (s) { return Game.items.types[s.type]; });
+    this.cleared = data.cleared || {};
+    this.discovered = data.discovered || {};
+    this.lost = (data.lost || []).filter(function (r) {
+      return Game.DUNGEONS[r.dungeonId] && r.members.every(function (t) { return Game.MONSTERS[t]; });
+    });
+    this.selected = {};
+    this.taking = {};
+    return true;
   },
 
   ranchEntry: function (id) {

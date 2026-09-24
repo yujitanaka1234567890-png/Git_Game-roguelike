@@ -8,6 +8,28 @@
 //   主人公・仲間が受けるダメージは、1回で相手の最大HPの specialMaxRatio まで（即死しない）
 // 仲間が使う時：allySkillChance の確率で溜めを始め、敵と同じく予兆をログに出して specialWindup ターン後に発動
 Game.specials = {
+  // 技の説明を選択ウィンドウで見せる（ログの技名をクリックした時）
+  showInfo: function (id) {
+    var d = Game.SKILLS[id];
+    if (!d) return;
+    var shapes = { single: "隣の1体", around: "隣にいる全員", sight: "使い手から見えている全員" };
+    var users = Object.keys(Game.MONSTERS)
+      .filter(function (m) { return (Game.MONSTERS[m].skills || []).indexOf(id) >= 0; })
+      .map(function (m) { return Game.MONSTERS[m].name; });
+    Game.dialog.open({
+      title: "技：「" + d.name + "」",
+      lines: [
+        "範囲：" + (shapes[d.shape] || d.shape),
+        "威力：使い手の攻撃力 × " + d.mult + (d.hits ? "（" + d.hits + "連撃）" : ""),
+        "予兆：「" + d.windup + "」→ 2ターン後に発動（それまでに離れれば避けられる）",
+        "受けるダメージは最大HPの " + Math.round(Game.config.specialMaxRatio * 100) + "% まで（即死はしない）",
+        "使うモンスター：" + (users.join("・") || "なし"),
+      ],
+      options: [{ label: "閉じる" }],
+    });
+    Game.refresh();
+  },
+
   // unit（敵・仲間）が持っている技 [{id, def}]
   skillsOf: function (unit) {
     var ids = Game.MONSTERS[unit.type].skills || [];
@@ -19,10 +41,14 @@ Game.specials = {
   },
 
   // 技が届く相手。side = "enemy"（敵が使う → 主人公・仲間に当たる）/ "ally"（仲間が使う → 敵に当たる）
+  // 敵が範囲技（隣の全員・見えている全員）を使うと、範囲にいる他の敵も巻き込まれる（事故）
   targetsFor: function (user, def, side) {
     var candidates;
     if (side === "enemy") {
       candidates = [Game.player].concat(Game.allies.list).filter(function (u) { return u.x >= 0; });
+      if (def.shape !== "single") {
+        candidates = candidates.concat(Game.enemies.list.filter(function (e) { return e !== user; }));
+      }
     } else {
       candidates = Game.enemies.list.slice();
     }
@@ -32,11 +58,18 @@ Game.specials = {
     });
   },
 
+  // 主人公・仲間（敵から見た「狙う相手」）か
+  isOurSide: function (u) {
+    return u === Game.player || Game.allies.list.indexOf(u) >= 0;
+  },
+
   // 届く相手がいる技からランダムに1つ選ぶ。なければ null
+  // （敵は、主人公・仲間に届く時だけ使う。他の敵を狙って使うことはない）
   pickUsable: function (user, side) {
     var self = this;
     var usable = this.skillsOf(user).filter(function (s) {
-      return self.targetsFor(user, s.def, side).length > 0;
+      var ts = self.targetsFor(user, s.def, side);
+      return side === "enemy" ? ts.some(function (u) { return self.isOurSide(u); }) : ts.length > 0;
     });
     return usable.length > 0 ? Game.pick(usable) : null;
   },
@@ -50,7 +83,8 @@ Game.specials = {
     Game.sound.play("warn");
     Game.log.add(
       "⚠ " + e.name + "は" + skill.def.windup + "（" + Game.config.specialWindup + "ターン後に「" + skill.def.name + "」）",
-      "warn"
+      "warn",
+      { skill: skill.id }
     );
     Game.fx.flash([{ x: e.x, y: e.y }], "#ffe066", 300);
     return true;
@@ -61,7 +95,7 @@ Game.specials = {
     var def = Game.SKILLS[e.charge.skill];
     e.charge.left--;
     if (e.charge.left > 0) {
-      Game.log.add("⚠ " + e.name + "は" + def.charging, "warn");
+      Game.log.add("⚠ " + e.name + "は" + def.charging + "（「" + def.name + "」まであと" + e.charge.left + "ターン）", "warn", { skill: e.charge.skill });
       Game.fx.flash([{ x: e.x, y: e.y }], "#ffe066", 300);
       return;
     }
@@ -79,7 +113,8 @@ Game.specials = {
     Game.sound.play("warn");
     Game.log.add(
       "◆ " + a.name + "は" + skill.def.windup + "（" + Game.config.specialWindup + "ターン後に「" + skill.def.name + "」）",
-      "ally"
+      "ally",
+      { skill: skill.id }
     );
     return true;
   },
@@ -89,7 +124,7 @@ Game.specials = {
     var def = Game.SKILLS[a.charge.skill];
     a.charge.left--;
     if (a.charge.left > 0) {
-      Game.log.add("◆ " + a.name + "は" + def.charging, "ally");
+      Game.log.add("◆ " + a.name + "は" + def.charging + "（「" + def.name + "」まであと" + a.charge.left + "ターン）", "ally", { skill: a.charge.skill });
       return;
     }
     a.charge = null;
@@ -98,14 +133,21 @@ Game.specials = {
 
   release: function (user, def, side) {
     Game.sound.play("special");
-    Game.log.add("★ " + user.name + "の「" + def.name + "」！", side === "enemy" ? "bad" : "good");
+    Game.log.add("★ " + user.name + "の「" + def.name + "」！", side === "enemy" ? "bad" : "good", { skill: def.id });
     var targets = this.targetsFor(user, def, side);
     if (targets.length === 0) {
       Game.log.add("しかし、誰にも当たらなかった！", "miss");
       Game.fx.flash(Game.fx.around(user.x, user.y, 1), def.color, 400);
       return;
     }
-    if (def.shape === "single") targets = [Game.combat.chooseTarget(targets)];
+    if (def.shape === "single") {
+      var aimed = side === "enemy" ? targets.filter(this.isOurSide) : targets;
+      if (aimed.length === 0) {
+        Game.log.add("しかし、誰にも当たらなかった！", "miss");
+        return;
+      }
+      targets = [Game.combat.chooseTarget(aimed)];
+    }
 
     // 派手なエフェクト
     if (def.shape === "around") Game.fx.flash(Game.fx.around(user.x, user.y, 1), def.color, 500);
@@ -116,18 +158,24 @@ Game.specials = {
 
   // 1体に技を当てる。主人公・仲間が受ける時は、合計ダメージを相手の最大HPの specialMaxRatio までに抑える
   hit: function (user, t, def, side) {
-    if (t.hp <= 0) return; // この技ですでに倒れている
+    if (t.hp <= 0 || (t !== Game.player && t.x < 0)) return; // この技ですでに倒れている
+    var ours = this.isOurSide(t);
+    var accident = side === "enemy" && !ours; // 敵の技に、他の敵が巻き込まれた
     var hits = def.hits || 1;
     var total = 0;
     for (var h = 0; h < hits; h++) {
       total += Math.max(1, Math.round((user.atk * def.mult - t.def) * (0.9 + Math.random() * 0.2)));
       Game.fx.flash([{ x: t.x, y: t.y }], def.color, 180, h * 220); // 連撃は点滅を重ねる
     }
-    if (side === "enemy") total = Math.min(total, Math.ceil(t.maxHp * Game.config.specialMaxRatio));
+    if (side === "enemy" && ours) total = Math.min(total, Math.ceil(t.maxHp * Game.config.specialMaxRatio));
     Game.combat.applyDamage(user, t, total);
-    Game.log.add(t.name + "に " + total + " のダメージ" + (hits > 1 ? "（" + hits + "連撃）" : ""), side === "enemy" ? "bad" : "good");
+    Game.log.add(
+      (accident ? t.name + "も巻き込まれた！ " : t.name + "に ") + total + " のダメージ" + (hits > 1 ? "（" + hits + "連撃）" : ""),
+      side === "enemy" && ours ? "bad" : accident ? "info" : "good"
+    );
     if (t.hp > 0) return;
     if (side === "ally") Game.enemies.kill(t);
+    else if (accident) Game.enemies.killByEnemy(t, user);
     else if (t !== Game.player) Game.allies.die(t);
   },
 

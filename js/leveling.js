@@ -12,7 +12,7 @@ Game.leveling = {
     unit.exp += amount;
     while (unit.level < maxLevel && unit.exp >= this.expForLevel(unit.level + 1)) {
       unit.level++;
-      Game.sound.play("levelup");
+      Game.sound.play(unit === Game.player ? "levelup" : "allyLevelup");
       unit.maxHp += growth.hp;
       unit.hp = Math.min(unit.maxHp, unit.hp + growth.hp);
       unit.atk += growth.atk;

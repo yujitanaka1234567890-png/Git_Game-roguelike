@@ -102,6 +102,7 @@
       if (!M[t.evolvesTo]) check("err", name(id) + "：進化先「" + t.evolvesTo + "」が存在しない");
       else if ((M[t.evolvesTo].stage || 1) !== (t.stage || 1) + 1) check("warn", name(id) + "：進化先の stage が1つ上になっていない");
       if (!t.evolveLevel) check("err", name(id) + "：evolveLevel（進化するLv）がない");
+      if (!t.enemyEvoExp) check("warn", name(id) + "：enemyEvoExp（敵として進化に必要な経験値）がない（自分の経験値×" + Game.config.enemyEvoFactor + " で代用）");
     }
     if (!t.growth) check("err", name(id) + "：growth（仲間の成長量）がない");
     if (!howToGet[id]) check("warn", name(id) + "：どこにも出現せず、進化・交配でも手に入らない");
@@ -193,6 +194,30 @@
     ["", "ID", "名前", "段階", "レア度", "HP", "攻撃力", "防御力", "経験値", "成長/Lv", "技", "進化", "入手方法", "特徴"],
     rows
   ));
+
+  // ---------- 敵としての進化（敵が敵を倒した時） ----------
+  content.appendChild(el("h2", "敵としての進化（倒された時に与える経験値と、進化に必要な経験値）"));
+  content.appendChild(el("p", "敵の範囲技に巻き込まれて別の敵が倒れると、倒した敵は「倒された敵の経験値」をもらう。たまった量が「進化に必要な経験値」に届くと、その場で進化する（余りは持ち越し、続けて届けば2段階進化）。" +
+    "例：赤龍は " + (M.redDragon ? M.redDragon.enemyEvoExp : "?") + " 必要、ぬめりんは倒されると " + (M.numerin ? stats("numerin").exp : "?") + " くれる → ぬめりんを " +
+    (M.redDragon && M.numerin ? Math.ceil(M.redDragon.enemyEvoExp / stats("numerin").exp) : "?") + " 体倒すと赤龍は進化する。", "note"));
+  var sample = ["numerin", "togemogura", "redDragon"].filter(function (x) { return M[x]; });
+  var evoHeaders = ["", "名前", "レア度", "倒された時に与える経験値", "敵として進化に必要な経験値", "進化先"];
+  sample.forEach(function (x) { evoHeaders.push(M[x].name + "なら何体"); });
+  var evoRows = Object.keys(M).filter(function (id) { return !M[id].breedOnly; }).map(function (id) {
+    var t = M[id], s = stats(id);
+    var sym = spriteCanvas(t.sprite, t.overlay, t.color, t.symbol);
+    sym.style.color = t.color;
+    var need = t.evolvesTo ? (t.enemyEvoExp || Math.max(1, Math.round(s.exp * Game.config.enemyEvoFactor))) : 0;
+    var row = [
+      sym, t.name, (R[t.rarity] || {}).label || "?",
+      { text: s.exp, cls: "num" },
+      t.boss ? "（ボスは進化しない）" : t.evolvesTo ? { text: need + (t.enemyEvoExp ? "" : "（仮）"), cls: "num" } : "（最終段階）",
+      t.evolvesTo && !t.boss ? name(t.evolvesTo) : "—",
+    ];
+    sample.forEach(function (x) { row.push(need && !t.boss ? { text: Math.ceil(need / stats(x).exp) + "体", cls: "num" } : "—"); });
+    return row;
+  });
+  content.appendChild(table(evoHeaders, evoRows));
 
   // ---------- 技 ----------
   content.appendChild(el("h2", "技（" + Object.keys(S).length + " 個）"));

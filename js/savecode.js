@@ -1,7 +1,7 @@
 // 記録の呪文（セーブ用の長いパスワード）。
 // ふだんの記録は、このブラウザの保存領域に自動で残っている（base.js）。
 // それとは別に、拠点の「記録の石碑」で記録を1つの長い文字列（呪文）に書き出せる。
-// 呪文を控えておけば、別のPC・別のブラウザ・保存領域を消した後でも、呪文を唱える（貼り付ける）だけで続きから遊べる。
+// 呪文を控えておけば、別のPC・別のブラウザ・保存領域を消した後でも、呪文を地面に書く（貼り付ける）だけで続きから遊べる。
 //
 // 呪文の中身：JIGEN1-（打ち間違い検出用の番号）-（記録の中身を文字に変換したもの）
 //   ・中身は牧場・倉庫・踏破記録・交配の発見・はぐれた仲間の記録（ブラウザの自動記録と同じもの）
@@ -9,7 +9,7 @@
 //   ・外部には一切送らない（ブラウザの中で変換するだけ）
 Game.savecode = {
   prefix: "JIGEN1",
-  mode: null, // null（閉じている） / "export"（書き出し） / "import"（唱える）
+  mode: null, // null（閉じている） / "export"（書き出し） / "import"（地面に書く）
 
   isOpen: function () {
     return this.mode !== null;
@@ -48,7 +48,7 @@ Game.savecode = {
     } catch (e) {
       return { error: "呪文の文字が壊れている（途中が欠けていないか確認してください）" };
     }
-    if (this.checksum(json) !== parts[1]) return { error: "呪文のどこかが違う（1文字でも違うと唱えられません）" };
+    if (this.checksum(json) !== parts[1]) return { error: "呪文のどこかが違う（1文字でも違うと、書いても何も起こりません）" };
     try {
       return { data: JSON.parse(json) };
     } catch (e) {
@@ -73,7 +73,7 @@ Game.savecode = {
       "記録の呪文（書き出し）",
       [
         "下の呪文が、今の記録（牧場の仲間・倉庫の道具・踏破したダンジョン・はぐれた仲間など）のすべてです。",
-        "メモ帳などに貼り付けて保存しておけば、別のPCやブラウザでも「記録の呪文を唱える」で続きから遊べます。",
+        "メモ帳などに貼り付けて保存しておけば、別のPCやブラウザでも「記録の呪文を地面に書く」で続きから遊べます。",
         "※冒険の途中の状態は入りません（拠点にいる時の記録です）。",
       ],
       code,
@@ -85,20 +85,20 @@ Game.savecode = {
     );
   },
 
-  // 唱える（呪文を入力して記録を読み込む）
+  // 地面に書く（呪文を入力して記録を読み込む）
   openImport: function () {
     this.mode = "import";
     var self = this;
     this.build(
-      "記録の呪文（唱える）",
+      "記録の呪文（地面に書く）",
       [
-        "書き出しておいた呪文を、下の欄に全部貼り付けて「唱える」を押してください。",
-        "⚠ 唱えると、今このブラウザにある記録は、呪文の記録で上書きされます。",
+        "書き出しておいた呪文を、下の欄に全部貼り付けて「地面に書く」を押してください。",
+        "⚠ 書くと、今このブラウザにある記録は、呪文に記録された世界線のものに置き換わります。",
       ],
       "",
       false,
       [
-        { label: "唱える（読み込む）", onClick: function (ta, msg) { self.apply(ta.value, msg); } },
+        { label: "地面に書く（読み込む）", onClick: function (ta, msg) { self.apply(ta.value, msg); } },
         { label: "閉じる", onClick: function () { self.close(); } },
       ]
     );
@@ -116,8 +116,10 @@ Game.savecode = {
     }
     this.mode = null;
     document.getElementById("savecode").hidden = true;
-    Game.base.lastResult = { kind: "info", lines: ["記録の呪文を唱えた。続きから再開する。"] };
+    Game.base.lastResult = { kind: "info", lines: ["地面に書いた文字が浮かび上がり光った。記録された世界線へ移動した"] };
     Game.showBase();
+    Game.sound.play("rescue");
+    Game.fx.flash(Game.fx.around(Game.player.x, Game.player.y, 2), "#cfa8ff", 900);
   },
 
   copy: function (ta, msg) {
@@ -181,7 +183,7 @@ Game.savecode = {
       ],
       options: [
         { label: "記録の呪文を書き出す", onChoose: function () { self.openExport(); } },
-        { label: "記録の呪文を唱える（続きから）", onChoose: function () { self.openImport(); } },
+        { label: "記録の呪文を地面に書く（続きから）", onChoose: function () { self.openImport(); } },
         { label: "閉じる" },
       ],
     });

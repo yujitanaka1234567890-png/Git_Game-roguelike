@@ -10,6 +10,8 @@
 //   skills   ：持っている技（skills.js のID）。敵も仲間も予告して2ターン溜めてから使う
 //   stage    ：進化段階（1〜3）
 //   evolvesTo / evolveLevel：仲間がこのLvに達すると、この種類に進化する（生きて帰れば確定）
+//   enemyEvoExp：敵として進化するのに必要な「敵の経験値」。敵が他の敵を倒すと、倒された敵の経験値（exp×レア度倍率）がたまり、
+//                ここに届くと進化する。例）赤龍は 250 必要、ぬめりんを倒すと 5 もらえる → ぬめりん50体で進化
 //   phasing  ：壁をすり抜ける（敵の時）
 //   breath   ：離れた相手へのブレス（敵の時）
 //   breedOnly：交配でしか手に入らない（ダンジョンには出ない）
@@ -20,12 +22,12 @@ Game.MONSTERS = {
   numerin: {
     name: "ぬめりん", symbol: "N", sprite: "nume1", color: "#55dd77", hp: 8, atk: 3, def: 0, exp: 5,
     rarity: 1, growth: { hp: 3, atk: 1 }, skills: ["press"],
-    stage: 1, evolvesTo: "numeron", evolveLevel: 5,
+    stage: 1, evolvesTo: "numeron", evolveLevel: 5, enemyEvoExp: 14,
   },
   numeron: {
     name: "ぬめろん", symbol: "N", sprite: "nume2", color: "#33ccaa", hp: 12, atk: 4, def: 1, exp: 10,
     rarity: 2, growth: { hp: 4, atk: 1 }, skills: ["press", "acidSplash"],
-    stage: 2, evolvesTo: "numeDaiou", evolveLevel: 30,
+    stage: 2, evolvesTo: "numeDaiou", evolveLevel: 30, enemyEvoExp: 36,
   },
   numeDaiou: {
     name: "ぬめ大王", symbol: "N", sprite: "nume3", color: "#44ffee", hp: 16, atk: 5, def: 1, exp: 16,
@@ -36,12 +38,12 @@ Game.MONSTERS = {
   togemogura: {
     name: "トゲモグラ", symbol: "T", sprite: "toge1", color: "#e09050", hp: 12, atk: 4, def: 1, exp: 12,
     rarity: 2, growth: { hp: 4, atk: 1 }, skills: ["spikeStorm"],
-    stage: 1, evolvesTo: "tetsuTogemogura", evolveLevel: 5,
+    stage: 1, evolvesTo: "tetsuTogemogura", evolveLevel: 5, enemyEvoExp: 44,
   },
   tetsuTogemogura: {
     name: "鉄トゲモグラ", symbol: "T", sprite: "toge2", color: "#b8b8c8", hp: 16, atk: 5, def: 2, exp: 14,
     rarity: 3, growth: { hp: 5, atk: 1 }, skills: ["spikeStorm", "ironCharge"],
-    stage: 2, evolvesTo: "senbonTogemogura", evolveLevel: 30,
+    stage: 2, evolvesTo: "senbonTogemogura", evolveLevel: 30, enemyEvoExp: 67,
   },
   senbonTogemogura: {
     name: "千本トゲモグラ", symbol: "T", sprite: "toge3", color: "#ffcc66", hp: 18, atk: 5, def: 2, exp: 16,
@@ -52,12 +54,12 @@ Game.MONSTERS = {
   floatKnife: {
     name: "浮遊ナイフ", symbol: "†", sprite: "blade1", color: "#c8d4ee", hp: 10, atk: 5, def: 1, exp: 15,
     rarity: 3, growth: { hp: 3, atk: 2 }, skills: ["slashDance"], phasing: true,
-    stage: 1, evolvesTo: "floatTwinBlade", evolveLevel: 5,
+    stage: 1, evolvesTo: "floatTwinBlade", evolveLevel: 5, enemyEvoExp: 72,
   },
   floatTwinBlade: {
     name: "浮遊双刃", symbol: "†", sprite: "blade2", color: "#88bbff", hp: 12, atk: 5, def: 1, exp: 15,
     rarity: 4, growth: { hp: 4, atk: 2 }, skills: ["slashDance", "crossSlash"], phasing: true,
-    stage: 2, evolvesTo: "floatThousandBlade", evolveLevel: 30,
+    stage: 2, evolvesTo: "floatThousandBlade", evolveLevel: 30, enemyEvoExp: 92,
   },
   floatThousandBlade: {
     name: "浮遊千刃", symbol: "†", sprite: "blade3", color: "#ffffff", hp: 12, atk: 4, def: 1, exp: 15,
@@ -69,13 +71,13 @@ Game.MONSTERS = {
     name: "赤龍", symbol: "D", sprite: "dragon1", color: "#ff4a3a", hp: 20, atk: 5, def: 2, exp: 30,
     rarity: 5, growth: { hp: 8, atk: 2 }, skills: ["crimsonRoar"],
     breath: { range: 7, power: 0.8, cooldown: 2 },
-    stage: 1, evolvesTo: "gurenDragon", evolveLevel: 5,
+    stage: 1, evolvesTo: "gurenDragon", evolveLevel: 5, enemyEvoExp: 250,
   },
   gurenDragon: {
     name: "紅蓮龍", symbol: "D", sprite: "dragon2", color: "#ff8a1a", hp: 26, atk: 6, def: 3, exp: 40,
     rarity: 5, growth: { hp: 9, atk: 3 }, skills: ["crimsonRoar", "flameFang"],
     breath: { range: 7, power: 0.8, cooldown: 2 },
-    stage: 2, evolvesTo: "enteiDragon", evolveLevel: 30,
+    stage: 2, evolvesTo: "enteiDragon", evolveLevel: 30, enemyEvoExp: 334,
   },
   enteiDragon: {
     name: "焔帝龍", symbol: "D", sprite: "dragon3", color: "#ffd23a", hp: 32, atk: 7, def: 3, exp: 55,
@@ -87,12 +89,12 @@ Game.MONSTERS = {
   boroDoll: {
     name: "ボロ人形", symbol: "P", sprite: "doll1", color: "#c8a8e8", hp: 10, atk: 4, def: 1, exp: 10,
     rarity: 2, growth: { hp: 3, atk: 1 }, skills: ["threadBind"], humanoid: true,
-    stage: 1, evolvesTo: "karakuriDoll", evolveLevel: 5,
+    stage: 1, evolvesTo: "karakuriDoll", evolveLevel: 5, enemyEvoExp: 36,
   },
   karakuriDoll: {
     name: "からくり人形", symbol: "P", sprite: "doll2", color: "#d8b060", hp: 14, atk: 5, def: 2, exp: 13,
     rarity: 3, growth: { hp: 4, atk: 1 }, skills: ["threadBind", "gearHammer"], humanoid: true,
-    stage: 2, evolvesTo: "kikouShogun", evolveLevel: 30,
+    stage: 2, evolvesTo: "kikouShogun", evolveLevel: 30, enemyEvoExp: 61,
   },
   kikouShogun: {
     name: "機巧将軍", symbol: "P", sprite: "doll3", color: "#ffdd88", hp: 18, atk: 6, def: 2, exp: 17,
@@ -103,12 +105,12 @@ Game.MONSTERS = {
   tsumujiDori: {
     name: "つむじ鳥", symbol: "B", sprite: "bird1", color: "#88ddee", hp: 7, atk: 4, def: 0, exp: 6,
     rarity: 1, growth: { hp: 2, atk: 1 }, skills: ["kamaitachi"],
-    stage: 1, evolvesTo: "arashiDori", evolveLevel: 5,
+    stage: 1, evolvesTo: "arashiDori", evolveLevel: 5, enemyEvoExp: 17,
   },
   arashiDori: {
     name: "嵐つむじ", symbol: "B", sprite: "bird2", color: "#55aaff", hp: 11, atk: 5, def: 1, exp: 10,
     rarity: 2, growth: { hp: 3, atk: 2 }, skills: ["kamaitachi", "beakGust"],
-    stage: 2, evolvesTo: "tenkuuTsumuji", evolveLevel: 30,
+    stage: 2, evolvesTo: "tenkuuTsumuji", evolveLevel: 30, enemyEvoExp: 36,
   },
   tenkuuTsumuji: {
     name: "天空つむじ王", symbol: "B", sprite: "bird3", color: "#bbeeff", hp: 15, atk: 6, def: 1, exp: 16,

@@ -58,6 +58,7 @@ Game.refresh = function (message) {
   Game.items.markSeen();
   Game.rescue.markSeen();
   Game.updateStatus(message);
+  Game.music.update(); // ボスがいればボス戦の曲を流す
   Game.log.render();
   if (Game.state === "base") Game.base.renderPartyPanel();
   else Game.allies.render();

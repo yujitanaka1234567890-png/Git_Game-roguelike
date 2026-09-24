@@ -128,7 +128,8 @@ Game.enemies = {
   // ---------- 敵どうしの事故と、敵の進化 ----------
   // 敵が他の敵を（技の巻き添えで）倒すと、倒した敵に「敵の経験値」が入る（主人公・仲間には入らない。仲間にもならない）。
   //   ・もらえる量 ＝ 倒された敵の強さ（経験値の値）→ 強い敵を倒すほど多い
-  //   ・進化に必要な量 ＝ 倒した敵自身の強さ × enemyEvoFactor → 強い敵ほど多く必要
+  //   ・進化に必要な量 ＝ 図鑑データの enemyEvoExp（書いていない時だけ 自分の強さ × enemyEvoFactor）
+  //   ・一覧は管理者用図鑑（admin/bestiary.html）の「敵としての進化」の表
   //   例）赤龍（強さ90）はぬめりん（強さ5）を50体倒して進化。ぬめりん（強さ5）は赤龍を1体倒すと一気にぬめ大王まで進化する
   killByEnemy: function (victim, killer) {
     this.remove(victim);
@@ -140,6 +141,8 @@ Game.enemies = {
 
   // 敵が進化するのに必要な「敵の経験値」
   evoNeed: function (e) {
+    var t = this.types[e.type];
+    if (t.enemyEvoExp) return t.enemyEvoExp;
     return Math.max(1, Math.round(this.statsOf(e.type).exp * Game.config.enemyEvoFactor));
   },
 

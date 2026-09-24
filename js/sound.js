@@ -1,6 +1,7 @@
 // 効果音。録音データや外部の音素材は一切使わず、ブラウザの音声合成（Web Audio API）で
 // その場で波形（音の高さ・長さ・音色）を組み立てて鳴らす。すべてこのゲームのためのオリジナル。
-// ・レベルアップの「yeah」は、ブラウザに入っている読み上げ機能（speechSynthesis）で声にする。
+// ・レベルアップの「ジャジャーン」は、のこぎり波を歪ませてエレキギター風のパワーコードにしている。
+// ・ボス戦のBGMは、このゲームのために作ったオリジナルの曲（music.js）。
 // ・ゲームオーバーの曲は、J.S.バッハ「トッカータとフーガ ニ短調」の冒頭（18世紀の曲で著作権は切れている）を
 //   この場で合成して鳴らしている（録音は使っていない）。
 // ブラウザの決まりで、最初にキーを押すまでは音が出ない（unlock）。M キーで音のオン／オフ。
@@ -94,6 +95,55 @@ Game.sound = {
     src.start(t0);
   },
 
+  // 歪み（ディストーション）の形。エレキギターのような「ジャーン」という音にするのに使う
+  distCurve: null,
+  distortion: function () {
+    if (!this.distCurve) {
+      var n = 1024, curve = new Float32Array(n), k = 40;
+      for (var i = 0; i < n; i++) {
+        var x = (i * 2) / n - 1;
+        curve[i] = ((3 + k) * x * 20 * (Math.PI / 180)) / (Math.PI + k * Math.abs(x));
+      }
+      this.distCurve = curve;
+    }
+    var ws = this.ctx.createWaveShaper();
+    ws.curve = this.distCurve;
+    ws.oversample = "4x";
+    return ws;
+  },
+
+  // エレキギター風のパワーコード（freqs の音を同時に、歪ませて鳴らす）
+  guitar: function (freqs, dur, delay, vol) {
+    var ctx = this.ctx;
+    var t0 = ctx.currentTime + (delay || 0);
+    var dist = this.distortion();
+    var tone = ctx.createBiquadFilter();
+    tone.type = "lowpass";
+    tone.frequency.value = 2800;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.3, t0 + 0.01);
+    g.gain.setValueAtTime(vol || 0.3, t0 + dur * 0.35);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    dist.connect(tone);
+    tone.connect(g);
+    g.connect(this.master);
+    for (var i = 0; i < freqs.length; i++) {
+      for (var d = -1; d <= 1; d += 2) {
+        var osc = ctx.createOscillator();
+        osc.type = "sawtooth";
+        osc.frequency.value = freqs[i];
+        osc.detune.value = d * 7; // 少しずらして厚みを出す
+        var pre = ctx.createGain();
+        pre.gain.value = 0.35;
+        osc.connect(pre);
+        pre.connect(dist);
+        osc.start(t0);
+        osc.stop(t0 + dur + 0.05);
+      }
+    }
+  },
+
   // 音の高さを順番に鳴らす（メロディ）
   seq: function (freqs, step, type, vol) {
     for (var i = 0; i < freqs.length; i++) this.tone(freqs[i], step * 1.4, type, vol, null, i * step);
@@ -136,9 +186,10 @@ Game.sound = {
       this.tone(1500, 0.14, "sawtooth", 0.18, 380);
       this.tone(95, 0.12, "sine", 0.3, 60, 0.05);
     },
-    // レベルアップ「yeah」（読み上げが使えなければ上がっていく音）
+    // レベルアップ「ジャジャーン」：エレキギター風のパワーコードを短く→長く
     levelup: function () {
-      if (!this.say("Yeah!", "en-US", 1.3, 1.0)) this.seq([523, 659, 784, 1047], 0.08, "square", 0.25);
+      this.guitar([82.4, 123.5, 164.8], 0.16, 0, 0.3); // ジャ（E のパワーコード）
+      this.guitar([110, 164.8, 220], 1.3, 0.2, 0.34); // ジャーン（A のパワーコード）
     },
     allyLevelup: function () { this.seq([659, 880], 0.06, "square", 0.15); }, // 仲間のレベルアップ（控えめ）
     pickup: function () { this.seq([880, 1175], 0.05, "sine", 0.3); },

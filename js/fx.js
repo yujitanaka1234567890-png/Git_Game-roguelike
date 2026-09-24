@@ -28,11 +28,45 @@ Game.fx = {
     this.generation++;
   },
 
-  // ---------- 攻撃を受けた時の動き ----------
-  // 攻撃されたキャラは、攻撃された方向と逆に少し傾き（のけぞり）、攻撃された側に赤いとげとげ（攻撃マーク）が出る
-  hits: [], // [{ unit, dx, dy, until }]  dx, dy = 攻撃者から見た向き（のけぞる向き）
-  attacks: [], // 攻撃した側 [{ unit, dx, dy, until }]  dx, dy = 攻撃した向き（3D表示の攻撃ポーズに使う）
-  hitMs: 260,
+  // ---------- 攻撃の動き ----------
+  // 攻撃した側は相手の方へ踏み込み（3D表示）、攻撃されたキャラは逆向きにのけぞり、攻撃された側に赤いとげとげが出る。
+  // 同じターンの攻撃（主人公→仲間→敵…）は、見た目と音を gapMs ずつずらして順番に見せる（交互に殴り合って見える）。
+  // ※ゲームの計算はその場で終わっている。ずらすのは見た目と音だけ
+  hits: [], // [{ unit, dx, dy, start, until }]  dx, dy = 攻撃者から見た向き（のけぞる向き）
+  attacks: [], // 攻撃した側 [{ unit, dx, dy, start, until }]  dx, dy = 攻撃した向き
+  hitMs: 260, // のけぞり・踏み込みの長さ
+  gapMs: 200, // 次の攻撃の動きを始めるまでの間
+  impactMs: 90, // 踏み込み始めてから当たるまで
+  seqEnd: 0, // 次の攻撃の動きを始められる時刻
+  lastSlot: { at: 0, impact: 0 },
+
+  // 攻撃1回分の動きの開始時刻を決める（前の攻撃が動いている最中なら、その後ろに並ぶ）
+  slot: function () {
+    var now = Date.now();
+    var start = this.seqEnd > now && this.seqEnd - now < 800 ? this.seqEnd : now;
+    this.seqEnd = start + this.gapMs;
+    this.lastSlot = { at: now, impact: start + this.impactMs };
+    this.redrawAt(start + this.impactMs);
+    this.redrawAt(start + this.impactMs + this.hitMs + 10); // のけぞりを元に戻して描き直す
+    return start;
+  },
+
+  redrawAt: function (time) {
+    var gen = this.generation;
+    var self = this;
+    setTimeout(function () {
+      if (gen === self.generation && Game.renderer.ctx) Game.renderer.draw();
+    }, Math.max(0, time - Date.now()) + 5);
+  },
+
+  // 攻撃の踏み込み（外れた時も）。当たった時は hitMark から呼ばれる
+  swing: function (source, target, start) {
+    if (!source || !target || source === target || source.x < 0) return;
+    if (start === undefined) start = this.slot();
+    var now = Date.now();
+    this.attacks = this.attacks.filter(function (a) { return a.until > now; });
+    this.attacks.push({ unit: source, dx: Math.sign(target.x - source.x), dy: Math.sign(target.y - source.y), start: start, until: start + this.hitMs });
+  },
 
   hitMark: function (target, source) {
     if (!target || target.x < 0) return;
@@ -40,35 +74,35 @@ Game.fx = {
     var dy = source ? Math.sign(target.y - source.y) : 0;
     if (dx === 0 && dy === 0) dy = 1;
     var now = Date.now();
-    this.hits = this.hits.filter(function (h) { return h.unit !== target && h.until > now; });
-    this.hits.push({ unit: target, dx: dx, dy: dy, until: now + this.hitMs });
-    if (source && source !== target) {
-      this.attacks = this.attacks.filter(function (a) { return a.unit !== source && a.until > now; });
-      this.attacks.push({ unit: source, dx: dx, dy: dy, until: now + this.hitMs });
-    }
-    var gen = this.generation;
-    var self = this;
-    setTimeout(function () {
-      if (gen === self.generation && Game.renderer.ctx) Game.renderer.draw(); // のけぞりを元に戻して描き直す
-    }, this.hitMs + 10);
+    var start = this.slot();
+    this.hits = this.hits.filter(function (h) { return h.until > now; });
+    this.hits.push({ unit: target, dx: dx, dy: dy, start: start + this.impactMs, until: start + this.impactMs + this.hitMs });
+    this.swing(source, target, start);
   },
 
-  // unit が今攻撃している最中なら、その向き {dx, dy, until}。なければ null
-  attackOf: function (unit) {
+  // 今鳴らす効果音を、直前に並べた攻撃が当たる時刻まで遅らせる量（ミリ秒）
+  soundDelay: function () {
     var now = Date.now();
-    for (var i = 0; i < this.attacks.length; i++) {
-      if (this.attacks[i].unit === unit && this.attacks[i].until > now) return this.attacks[i];
+    if (now - this.lastSlot.at > 20) return 0;
+    return Math.max(0, this.lastSlot.impact - now);
+  },
+
+  find: function (list, unit) {
+    var now = Date.now();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].unit === unit && list[i].start <= now && list[i].until > now) return list[i];
     }
     return null;
+  },
+
+  // unit が今攻撃している最中なら、その向き {dx, dy, start, until}。なければ null
+  attackOf: function (unit) {
+    return this.find(this.attacks, unit);
   },
 
   // unit が今のけぞっているなら、その向き {dx, dy}。なければ null
   tiltOf: function (unit) {
-    var now = Date.now();
-    for (var i = 0; i < this.hits.length; i++) {
-      if (this.hits[i].unit === unit && this.hits[i].until > now) return this.hits[i];
-    }
-    return null;
+    return this.find(this.hits, unit);
   },
 
   // 赤いとげとげ（攻撃マーク）を描く：攻撃された側（のけぞる向きの反対側）のマスの端に
@@ -76,7 +110,7 @@ Game.fx = {
     var now = Date.now();
     for (var i = 0; i < this.hits.length; i++) {
       var h = this.hits[i];
-      if (h.until <= now || h.unit.x < 0) continue;
+      if (h.start > now || h.until <= now || h.unit.x < 0) continue;
       if (h.unit !== Game.player && Game.allies.list.indexOf(h.unit) < 0 && !Game.fov.isVisible(h.unit.x, h.unit.y)) continue;
       var cx = h.unit.x * ts + ts / 2 - h.dx * ts * 0.42;
       var cy = h.unit.y * ts + ts / 2 - h.dy * ts * 0.42;

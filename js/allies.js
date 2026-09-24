@@ -148,12 +148,14 @@ Game.allies = {
   die: function (ally) {
     this.remove(ally);
     Game.sound.play("death");
-    if (ally.fromBase) Game.log.add(ally.name + "は力尽きて、元の姿で拠点へ戻っていった…", "bad");
-    else Game.log.add(ally.name + "は倒れてしまった…", "bad");
+    var tag = ally.squad ? "【分隊" + ally.squad.id + "】" : "";
+    if (ally.fromBase) Game.log.add(tag + ally.name + "は力尽きて、元の姿で拠点へ戻っていった…", "bad");
+    else Game.log.add(tag + ally.name + "は倒れてしまった…", "bad");
   },
 
   // 新しい階に着いた時、主人公の近くに並べる
   placeNear: function (x, y) {
+    Game.squad.onNewFloor(); // 分隊は解散して合流
     // いったん全員を盤面から外してから、空いている場所を探す
     for (var i = 0; i < this.list.length; i++) {
       this.list[i].x = this.list[i].y = -1;
@@ -197,6 +199,9 @@ Game.allies = {
       return;
     }
 
+    // 分隊（squad.js）の子は、任された部屋の中で独立して動く
+    if (Game.squad.act(a)) return;
+
     // 2. 見えている一番近い敵へ向かう（主人公から leash マス以内の敵だけ）
     var target = null, best = 999;
     for (var k = 0; k < Game.enemies.list.length; k++) {
@@ -237,7 +242,8 @@ Game.allies = {
     for (var i = 0; i < this.list.length; i++) {
       (function (index, a) {
         options.push({
-          label: a.baseName + " Lv" + a.level + " と入れ替える" + (a.fromBase ? "（拠点へ帰る）" : "（お別れ）"),
+          label: a.baseName + " Lv" + a.level + "（" + Game.enemies.rarityOf(a.type).label + "・HP " + a.hp + "/" + a.maxHp +
+            " 攻撃力 " + a.atk + " 防御力 " + a.def + "）と入れ替える" + (a.fromBase ? "（拠点へ帰る）" : "（お別れ）"),
           onChoose: function () {
             self.resolvePending(index);
             onDone();
@@ -252,7 +258,11 @@ Game.allies = {
     options.push({ label: "仲間にしない", onChoose: decline });
     Game.dialog.open({
       title: t.name + "（" + Game.enemies.rarityOf(cand.type).label + "）が心を開いた！",
-      lines: ["HP " + s.hp + "　攻撃力 " + s.atk + "　仲間はいっぱいだ。誰かと入れ替える？"],
+      lines: [
+        "新しい子：HP " + s.hp + "　攻撃力 " + s.atk + "　防御力 " + s.def + "（Lv1）　技：" +
+          Game.specials.skillsOf({ type: cand.type }).map(function (sk) { return sk.def.name; }).join("・"),
+        "仲間はいっぱいだ。誰かと入れ替える？（今の仲間はレア度・今の強さ）",
+      ],
       options: options,
       onCancel: decline,
     });
@@ -284,7 +294,7 @@ Game.allies = {
         document.createTextNode(
           a.baseName + " Lv" + a.level + "　HP " + a.hp + "/" + a.maxHp +
           "　経験 " + a.exp + "/" + Game.leveling.expForLevel(a.level + 1) +
-          (a.fromBase ? "" : "　★新入り")
+          (a.fromBase ? "" : "　★新入り") + (a.squad ? "　［分隊" + a.squad.id + "］" : "")
         )
       );
       el.appendChild(item);

@@ -53,8 +53,15 @@ Object.assign(Game.view3d, {
   },
 
   // 壁・床の模様（2D と同じ描き方）。variant で床の小石の位置を変える
-  tileSlot: function (kind, color, variant) {
+  // style があれば模様つき（variant = マスの位置を4で割った余り x + y×4 で、4×4マスで模様がつながる）
+  tileSlot: function (kind, color, variant, style) {
     var v = variant || 0;
+    if (style) {
+      return this.slot(kind + "|" + style + "|" + color + "|" + v, 24, 24, function (ctx) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(Game.pixel.styledTile(kind, style, color, v % 4, Math.floor(v / 4)), 0, 0, 24, 24);
+      });
+    }
     return this.slot(kind + "|" + color + "|" + v, 24, 24, function (ctx) {
       var vx = v * 5 + 1, vy = v * 3 + 2; // 2D の模様はマスの位置で決まるので、仮の位置を渡す
       ctx.translate(-vx * 24, -vy * 24);

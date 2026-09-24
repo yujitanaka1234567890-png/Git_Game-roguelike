@@ -5,6 +5,7 @@ Game.combat = {
     var friendly = attacker === Game.player || Game.allies.list.indexOf(attacker) >= 0;
     if (Math.random() >= Game.config.hitRate) {
       Game.log.add(attacker.name + "の攻撃は外れた", "miss");
+      Game.fx.swing(attacker, defender); // 外れても踏み込む動きは見せる
       Game.sound.play("miss");
       return false;
     }

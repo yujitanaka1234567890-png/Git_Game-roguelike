@@ -21,6 +21,10 @@ Game.view3d = {
   fov: 50, // 縦の視野角（度）
   lean: 25, // 板（キャラ）をカメラ側へ傾ける角度（度）。0 だと真っ直ぐ立つが、上から見ると潰れて見える
   dim: 0.45, // 探索済みで今見えていない所の明るさ
+  zoom: 1, // カメラの距離の倍率（＋／－キー。小さいほど寄る）
+  zoomMin: 0.55,
+  zoomMax: 1.6,
+  zoomKey: "dimension-roguelike-zoom",
 
   canvas: null,
   gl: null,
@@ -31,6 +35,8 @@ Game.view3d = {
   init: function () {
     try {
       if (window.localStorage.getItem(this.prefKey) === "3d") this.enabled = true;
+      var z = parseFloat(window.localStorage.getItem(this.zoomKey));
+      if (z >= this.zoomMin && z <= this.zoomMax) this.zoom = z;
     } catch (e) {
       // 覚えておけなくても切り替えはできる
     }
@@ -51,6 +57,18 @@ Game.view3d = {
     this.lastTiles = null; // 動きの記録をやり直す
     if (!this.enabled) this.show(false);
     return this.enabled ? "表示：3D（試作）" : "表示：2D";
+  },
+
+  // ＋／－キー：カメラを寄せる（dir = -1）・引く（dir = 1）。表示するメッセージを返す
+  zoomBy: function (dir) {
+    if (!this.enabled) return "カメラの寄り引きは3D表示の時に使える（3 キー）";
+    this.zoom = Math.max(this.zoomMin, Math.min(this.zoomMax, Math.round((this.zoom + dir * 0.15) * 100) / 100));
+    try {
+      window.localStorage.setItem(this.zoomKey, String(this.zoom));
+    } catch (e) {
+      // 覚えておけなくても使える
+    }
+    return "カメラ：" + Math.round(this.zoom * 100) + "%（＋で寄る・－で引く）";
   },
 
   // 3D で描く場面か（倒れた時の画面は 2D の方で出す）
@@ -80,6 +98,11 @@ Game.view3d = {
     }
     var game = document.getElementById("game");
     game.parentNode.insertBefore(cv, game.nextSibling);
+    var self = this;
+    cv.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      Game.refresh(self.zoomBy(e.deltaY > 0 ? 1 : -1));
+    }, { passive: false });
     this.canvas = cv;
     this.gl = gl;
 
@@ -165,7 +188,9 @@ Game.view3d = {
     var fov = Game.fov;
     var c = Game.config.colors;
     var inBase = Game.state === "base";
-    var wc = inBase ? null : Game.WORLDS[Game.currentDungeon().world].colors;
+    var dg = inBase ? null : Game.currentDungeon();
+    var wc = dg ? dg.colors || Game.WORLDS[dg.world].colors : null;
+    var style = dg ? dg.style || null : null;
     var wallColor = wc ? wc.wall : c.wall;
     var floorColor = wc ? wc.floor : c.floor;
     var H = this.wallHeight;
@@ -180,8 +205,9 @@ Game.view3d = {
     Game.anim3d.sweep(now);
 
     // ---- 1. 地形（画面に映る範囲だけ） ----
-    var x1 = Math.max(0, Math.floor(cam.x) - 20), x2 = Math.min(map.width - 1, Math.floor(cam.x) + 20);
-    var z1 = Math.max(0, Math.floor(cam.z) - 17), z2 = Math.min(map.height - 1, Math.floor(cam.z) + 9);
+    var zr = Math.max(1, this.zoom); // 引くほど広く組み立てる
+    var x1 = Math.max(0, Math.floor(cam.x - 20 * zr)), x2 = Math.min(map.width - 1, Math.floor(cam.x + 20 * zr));
+    var z1 = Math.max(0, Math.floor(cam.z - 17 * zr)), z2 = Math.min(map.height - 1, Math.floor(cam.z + 9 * zr));
     var flats = []; // 床に置く設備（階段・脱出口）
     var stands = []; // 立てる設備（収納箱・門など）
     for (var z = z1; z <= z2; z++) {
@@ -191,7 +217,7 @@ Game.view3d = {
         var lit = inBase || fov.isVisible(x, z);
         var m = lit ? 1 : this.dim;
         if (tile === "#") {
-          var ws = this.tileSlot("wall", wallColor);
+          var ws = style ? this.tileSlot("wall", wallColor, (x % 4) + (z % 4) * 4, style) : this.tileSlot("wall", wallColor);
           this.quad([x, H, z + 1], [x + 1, H, z + 1], [x + 1, H, z], [x, H, z], ws, [m, m, m, 1]);
           var tS = this.shadeCol(m, 0.78), tE = this.shadeCol(m, 0.62), tN = this.shadeCol(m, 0.45);
           if (this.open(x, z + 1)) this.quad([x, 0, z + 1], [x + 1, 0, z + 1], [x + 1, H, z + 1], [x, H, z + 1], ws, tS);
@@ -204,7 +230,7 @@ Game.view3d = {
         var fsl;
         if (tile === ",") fsl = this.tileSlot("grass", c.grass, variant);
         else if (inBase) fsl = this.tileSlot("floor", tile === "G" ? c.gate : c.houseFloor, variant);
-        else fsl = this.tileSlot("floor", floorColor, variant);
+        else fsl = style ? this.tileSlot("floor", floorColor, (x % 4) + (z % 4) * 4, style) : this.tileSlot("floor", floorColor, variant);
         this.quad([x, 0, z + 1], [x + 1, 0, z + 1], [x + 1, 0, z], [x, 0, z], fsl, [m, m, m, 1]);
         var spr = Game.renderer.tileSprites[tile];
         if (spr) {
@@ -228,7 +254,8 @@ Game.view3d = {
     for (i = 0; i < units.length; i++) {
       var u = units[i];
       this.flat(u.x - 0.5, u.z - 0.5, 0.006, u.boss ? 1.3 : 0.7, sh, u.boss ? [1, 0.15, 0.15, 0.8] : [1, 1, 1, 1]);
-      if (u.ally) this.flat(u.x - 0.5, u.z - 0.5, 0.008, 0.92, ring, this.rgb("#4aa0ff"));
+      if (u.ally) this.flat(u.x - 0.5, u.z - 0.5, 0.008, 0.92, ring, this.rgb(u.squad ? "#ffaa33" : "#4aa0ff"));
+      if (u.rescueRing) this.flat(u.x - 0.5, u.z - 0.5, 0.008, 1, ring, this.rgb("#b066ff"));
       if (u.charge) this.flat(u.x - 0.5, u.z - 0.5, 0.009, 0.96, ring, this.rgb(u.charge));
     }
     var fl = Game.fx.list;
@@ -266,7 +293,7 @@ Game.view3d = {
     for (i = 0; i < Game.fx.hits.length; i++) {
       var hm = Game.fx.hits[i];
       var pu = units.byObj.get(hm.unit);
-      if (hm.until <= now || !pu) continue;
+      if (hm.start > now || hm.until <= now || !pu) continue;
       this.board(pu.x - hm.dx * 0.42, pu.z - hm.dy * 0.42, 0.55, 0.55, spike, [1, 1, 1, 1], 0.2);
     }
     var spriteEnd = this.n;
@@ -326,7 +353,8 @@ Game.view3d = {
     // キャラ1体：obj = 動きを覚えておく相手（主人公・仲間・敵・牧場の子）
     var mon = function (t, x, y, obj, unit, extra) {
       var pose = Game.anim3d.pose(obj, x + 0.5, y + 0.5, now, false);
-      var o = { s: self.spriteSlot(t.sprite, t.overlay, t.color, t.symbol), m: 1, boss: !!t.boss, stage: t.stage };
+      var spr = pose.suffix && Game.SPRITES[t.sprite + pose.suffix] ? t.sprite + pose.suffix : t.sprite; // 歩き・攻撃の絵
+      var o = { s: self.spriteSlot(spr, t.overlay, t.color, t.symbol), m: 1, boss: !!t.boss, stage: t.stage };
       for (var pk in pose) o[pk] = pose[pk];
       if (unit) { o.hp = unit.hp; o.maxHp = unit.maxHp; }
       for (var k in extra) o[k] = extra[k];
@@ -348,13 +376,18 @@ Game.view3d = {
     }
     var mk = Game.rescue.marker;
     if (mk && mk.seen) {
-      add({ x: mk.x + 0.5, z: mk.y + 0.5, s: this.spriteSlot("marker", null, "#66ffee", "◇"), m: fov.isVisible(mk.x, mk.y) ? 1 : this.dim, item: true });
+      // はぐれた仲間：モンスターの姿のまま動かず、紫の枠の中に立っている
+      var lt = Game.MONSTERS[mk.type];
+      add({
+        x: mk.x + 0.5, z: mk.y + 0.5, m: fov.isVisible(mk.x, mk.y) ? 1 : this.dim, rescueRing: true,
+        s: lt ? this.spriteSlot(lt.sprite, lt.overlay, lt.color, lt.symbol) : this.spriteSlot("marker", null, "#66ffee", "◇"),
+      });
     }
     var allies = Game.allies.list;
     for (var a = 0; a < allies.length; a++) {
       var al = allies[a];
       if (al.x < 0) continue;
-      add(mon(Game.MONSTERS[al.type], al.x, al.y, al, al, { ally: true, charge: al.charge ? "#66ccff" : null }));
+      add(mon(Game.MONSTERS[al.type], al.x, al.y, al, al, { ally: true, squad: !!al.squad, charge: al.charge ? "#66ccff" : null }));
     }
     var es = Game.enemies.list;
     for (var i = 0; i < es.length; i++) {
@@ -377,9 +410,9 @@ Game.view3d = {
   // ---------- カメラ（行列の計算） ----------
   cameraMatrix: function () {
     var aspect = this.canvas.width / this.canvas.height;
-    var f = 1 / Math.tan((this.fov * Math.PI) / 360), near = 0.5, far = 60;
+    var f = 1 / Math.tan((this.fov * Math.PI) / 360), near = 0.5, far = 90;
     var P = [f / aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, (far + near) / (near - far), -1, 0, 0, (2 * far * near) / (near - far), 0];
-    var eye = [this.cam.x, this.camHeight, this.cam.z + this.camBack];
+    var eye = [this.cam.x, this.camHeight * this.zoom, this.cam.z + this.camBack * this.zoom];
     var at = [this.cam.x, 0, this.cam.z - 0.3];
     var zx = eye[0] - at[0], zy = eye[1] - at[1], zz = eye[2] - at[2];
     var zl = Math.hypot(zx, zy, zz);

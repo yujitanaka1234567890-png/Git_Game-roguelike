@@ -143,6 +143,21 @@ Game.onKey = function (key) {
     Game.refresh(Game.view3d.toggle());
     return;
   }
+  // N：全体マップの大きさ（3D表示の時）、＋／－：カメラを寄せる・引く（3D表示の時）
+  if (lower === "n") {
+    Game.refresh(Game.minimap.cycle());
+    return;
+  }
+  if (key === "+" || key === ";" || key === "=" || key === "-") {
+    Game.refresh(Game.view3d.zoomBy(key === "-" ? 1 : -1));
+    return;
+  }
+  // O：分隊への指示（ダンジョンで、ウィンドウが開いていない時）
+  if (lower === "o" && Game.state === "playing" && !Game.dialog.isOpen()) {
+    Game.squad.openMenu();
+    Game.refresh();
+    return;
+  }
   if (lower === "m") {
     Game.refresh(Game.sound.toggle() ? "効果音：オン" : "効果音：オフ");
     return;
@@ -226,13 +241,21 @@ Game.endTurn = function () {
   Game.allies.regen(Game.turn);
   Game.mind.tick();
   Game.enemies.tryRespawn();
+  var byMind = false;
+  if (Game.mind.isGone() && Game.player.hp > 0) {
+    // 精神力が0の間は、闇に心身をむしばまれて毎ターンダメージ
+    var dmg = Math.min(Game.config.mind.zeroDamage, Game.player.hp);
+    Game.player.hp -= dmg;
+    Game.player.wasHit = true;
+    Game.log.add("闇が心身をむしばむ… " + dmg + " のダメージ（精神力が0）", "bad");
+    byMind = Game.player.hp <= 0;
+  }
   if (Game.player.wasHit) Game.hitPauseUntil = Date.now() + Game.config.hitPauseMs;
   if (Game.player.hp <= 0) {
     Game.log.add("あなたは B" + Game.floor + "F で倒れた… Enter で拠点へ戻る", "bad");
-    Game.onDeath("B" + Game.floor + "F で倒れてしまった…");
-  } else if (Game.mind.isGone()) {
-    Game.log.add("あなたの意識は闇に溶け、ダンジョンの魔物になってしまった… Enter で拠点へ戻る", "bad");
-    Game.onDeath("B" + Game.floor + "F に長居しすぎて、ダンジョンに取り込まれてしまった…（精神力が尽きた）");
+    Game.onDeath(byMind
+      ? "B" + Game.floor + "F で精神力が尽き、闇にむしばまれて倒れてしまった…"
+      : "B" + Game.floor + "F で倒れてしまった…");
   }
 };
 
@@ -266,6 +289,7 @@ Game.onDeath = function (headline) {
   if (Game.inventory.items.length > 0) lines.push("持ち物はすべて失った。");
   Game.inventory.clear();
   Game.base.save();
+  Game.base.keepLastLog(Game.log.lines); // なぜ倒れたのか、拠点に戻ってからも読めるように
   Game.base.lastResult = { kind: "death", lines: lines.concat(missionLines) };
 };
 
@@ -492,6 +516,12 @@ Game.showBase = function () {
   document.body.classList.add("in-base");
 
   Game.log.clear();
+  // 倒れた冒険のログを下（古い側）に残しておく
+  var prev = Game.base.lastLog;
+  if (prev && prev.length > 0) {
+    for (var p = 0; p < prev.length; p++) Game.log.add(prev[p].text, prev[p].type, prev[p].meta);
+    Game.log.add("―――― ここから下は、倒れた冒険のログ（次の冒険に出るまで残る） ――――", "warn");
+  }
   Game.log.add("拠点に戻ってきた。");
   var res = Game.base.lastResult;
   if (res) {
@@ -530,6 +560,7 @@ Game.startAdventure = function (dungeonId) {
   Game.player.init(Game.map.startX, Game.map.startY);
   Game.inventory.clear();
   for (var j = 0; j < items.length; j++) Game.inventory.add(items[j]);
+  Game.base.keepLastLog(null);
   Game.log.clear();
   Game.log.add(Game.currentDungeon().name + "に入った。（全" + Game.currentDungeon().floors + "階）");
   if (party.length > 0) {
@@ -560,9 +591,11 @@ Game.enterFloor = function () {
 Game.start = function () {
   Game.pixel.init();
   Game.view3d.init();
+  Game.minimap.init();
   Game.sound.init();
   Game.input.init(Game.onPlayerMove, Game.startDash, Game.onKey);
   Game.base.load();
+  Game.base.loadLastLog();
   Game.showBase();
 };
 

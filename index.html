@@ -56,7 +56,10 @@
           <li>I：持ち物（T で投げる）</li>
           <li>階段の上で ↓↓：降りる</li>
           <li>R を2回：冒険をあきらめる</li>
+          <li>O：分隊への指示（人型の仲間を隊長に、この部屋を任せる／呼び戻す）</li>
           <li>3：3D ⇔ 2D　V：ドット絵 ⇔ 文字</li>
+          <li>＋／－（またはマウスホイール）：カメラを寄せる・引く（3D）</li>
+          <li>N：全体マップの大きさ（非表示・小・中・大）</li>
           <li>M：効果音オン ⇔ オフ</li>
         </ul>
         <div class="help-title">見方</div>
@@ -65,10 +68,11 @@
           <li>黄色い枠と「!」= 敵の技の溜め中</li>
           <li>青い枠 = 仲間の技の溜め中</li>
           <li>青い下地・青い四角 = 仲間（ぶつかると入れ替わる）</li>
-          <li>精神 = ダンジョンにいると少しずつ減り、0でダンジョンに取り込まれる</li>
-          <li>◇ = はぐれた仲間の気配（踏むと救出）</li>
+          <li>橙の四角 = 分隊の仲間（任せた部屋で独立行動）</li>
+          <li>精神 = ダンジョンにいると少しずつ減る。同じ階に長居すると速く減る（広い階ほど長く居られる）。0になると毎ターン2ダメージ</li>
+          <li>紫の枠の中に立つ仲間 = はぐれた仲間（ぶつかる・乗ると救出）</li>
           <li>最下層はボス部屋</li>
-          <li>3D表示では左上に全体マップ（水色＝自分・青＝仲間・赤＝敵・黄＝アイテム）</li>
+          <li>3D表示では左上に全体マップ（水色＝自分・青＝仲間・橙＝分隊・赤＝敵・黄＝アイテム・紫＝はぐれた仲間）</li>
         </ul>
       </div>
       <div class="help help-base">
@@ -99,6 +103,7 @@
   <script src="js/data/worlds.js"></script>
   <script src="js/data/sprites.js"></script>
   <script src="js/data/characters.js"></script>
+  <script src="js/data/char_frames.js"></script>
   <script src="js/dungeon.js"></script>
   <script src="js/map.js"></script>
   <script src="js/fov.js"></script>
@@ -120,6 +125,7 @@
   <script src="js/specials.js"></script>
   <script src="js/pathfind.js"></script>
   <script src="js/allies.js"></script>
+  <script src="js/squad.js"></script>
   <script src="js/rescue.js"></script>
   <script src="js/base.js"></script>
   <script src="js/savecode.js"></script>

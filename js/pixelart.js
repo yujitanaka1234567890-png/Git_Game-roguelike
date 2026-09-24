@@ -82,8 +82,72 @@ Game.pixel = {
     return true;
   },
 
-  // 壁：レンガ模様
-  drawWall: function (ctx, x, y, ts, base) {
+  // ---------- 模様つきの地形（ダンジョンの style） ----------
+  // 12×12 の小さな絵を作って覚えておく。マスの位置 (x, y) を 4 で割った余りで模様が決まり、
+  // 4×4マスで模様がつながって繰り返す（隣のマスと継ぎ目なくつながる）
+  hash: function (ix, iy, seed) {
+    var h = (Math.imul(ix, 374761393) + Math.imul(iy, 668265263) + Math.imul(seed, 1442695041)) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+  },
+
+  // なめらかなまだら（period ドットごとに繰り返す）
+  noise: function (px, py, cell, period, seed) {
+    var n = period / cell;
+    var gx = px / cell, gy = py / cell;
+    var ix = Math.floor(gx), iy = Math.floor(gy);
+    var fx = gx - ix, fy = gy - iy;
+    fx = fx * fx * (3 - 2 * fx);
+    fy = fy * fy * (3 - 2 * fy);
+    var self = this;
+    var v = function (a, b) { return self.hash(((a % n) + n) % n, ((b % n) + n) % n, seed); };
+    var top = v(ix, iy) * (1 - fx) + v(ix + 1, iy) * fx;
+    var bot = v(ix, iy + 1) * (1 - fx) + v(ix + 1, iy + 1) * fx;
+    return top * (1 - fy) + bot * fy;
+  },
+
+  styledTile: function (kind, style, base, x, y) {
+    var vx = ((x % 4) + 4) % 4, vy = ((y % 4) + 4) % 4;
+    var key = "tile|" + kind + "|" + style + "|" + base + "|" + vx + "|" + vy;
+    if (this.cache[key]) return this.cache[key];
+    var cv = document.createElement("canvas");
+    cv.width = cv.height = 12;
+    var ctx = cv.getContext("2d");
+    var dark = this.shade(base, -0.35), darker = this.shade(base, -0.55), light = this.shade(base, 0.14), lighter = this.shade(base, 0.28);
+    for (var j = 0; j < 12; j++) {
+      for (var i = 0; i < 12; i++) {
+        var px = vx * 12 + i, py = vy * 12 + j;
+        var col;
+        if (kind === "wall") {
+          // 時空を思わせる鈍い斑：大きなまだら＋細かいまだら。ところどころに、古い星の光のような点
+          var n = 0.6 * this.noise(px, py, 8, 48, 1) + 0.4 * this.noise(px, py, 4, 48, 2);
+          col = n < 0.33 ? darker : n < 0.47 ? dark : n < 0.64 ? base : n < 0.8 ? light : lighter;
+          if (this.noise(px, py, 6, 48, 3) > 0.72 && n > 0.5) col = this.shade("#4f7486", -0.1 + (n - 0.5)); // 鈍い青緑のにじみ
+          if (this.hash(px, py, 9) < 0.012) col = "#c9d3ff";
+          if (j === 0) col = this.shade(col.charAt(0) === "#" ? col : base, 0.12);
+        } else {
+          // 床：継ぎ目のある石板に、うっすらとしたまだら。まれに時の粒が光る
+          var m = this.noise(px, py, 6, 48, 5);
+          col = m < 0.4 ? this.shade(base, -0.12) : m > 0.7 ? this.shade(base, 0.1) : base;
+          if (i === 0 || j === 0) col = this.shade(base, -0.4);
+          if (i === 1 && j > 0 || j === 1 && i > 0) col = this.shade(base, 0.08);
+          if (this.hash(px, py, 11) < 0.006) col = "#5fe0d0";
+        }
+        ctx.fillStyle = col;
+        ctx.fillRect(i, j, 1, 1);
+      }
+    }
+    this.cache[key] = cv;
+    return cv;
+  },
+
+  // 壁：レンガ模様（style があればその模様）
+  drawWall: function (ctx, x, y, ts, base, style) {
+    if (style) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(this.styledTile("wall", style, base, x, y), x * ts, y * ts, ts, ts);
+      return;
+    }
     ctx.fillStyle = base;
     ctx.fillRect(x * ts, y * ts, ts, ts);
     ctx.fillStyle = this.shade(base, -0.4);
@@ -101,8 +165,13 @@ Game.pixel = {
     ctx.fillRect(ox, oy, ts, px);
   },
 
-  // 床：ところどころに小石
-  drawFloor: function (ctx, x, y, ts, base) {
+  // 床：ところどころに小石（style があればその模様）
+  drawFloor: function (ctx, x, y, ts, base, style) {
+    if (style) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(this.styledTile("floor", style, base, x, y), x * ts, y * ts, ts, ts);
+      return;
+    }
     ctx.fillStyle = base;
     ctx.fillRect(x * ts, y * ts, ts, ts);
     var px = ts / 12;

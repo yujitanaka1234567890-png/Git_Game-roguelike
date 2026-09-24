@@ -7,7 +7,7 @@
 //     結果は次の冒険から戻った時にわかる。成功ならはぐれた仲間は牧場へ、
 //     失敗なら、はぐれた仲間はダンジョンに帰る（＝仲間にならなかったことになる）。隊員は無事に戻る。
 Game.rescue = {
-  marker: null, // 今の階にある気配 { recordId, x, y, seen }
+  marker: null, // 今の階にいるはぐれた仲間 { recordId, type（見える姿）, x, y, seen }。紫の枠の中にじっと立っている
 
   // ---------- はぐれた記録 ----------
 
@@ -79,8 +79,8 @@ Game.rescue = {
     for (var tries = 0; tries < 30; tries++) {
       var t = Game.dungeon.randomTileIn(Game.pick(rooms.length > 0 ? rooms : Game.map.rooms));
       if (Game.map.tileAt(t.x, t.y) !== "." || Game.items.at(t.x, t.y) || Game.path.isOccupied(t.x, t.y)) continue;
-      this.marker = { recordId: rec.id, x: t.x, y: t.y, seen: false };
-      Game.log.add("…この階のどこかに、はぐれた " + this.memberNames(rec) + " の気配を感じる。（◇を探そう）", "ally");
+      this.marker = { recordId: rec.id, type: rec.members[0], x: t.x, y: t.y, seen: false };
+      Game.log.add("…この階のどこかに、はぐれた " + this.memberNames(rec) + " の気配を感じる。（紫の枠の中で待っている姿を探そう）", "ally");
       return;
     }
   },

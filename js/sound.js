@@ -150,14 +150,24 @@ Game.sound = {
   },
 
   // 効果音の名前で鳴らす
+  // 攻撃の音（見た目の攻撃に合わせて少し遅らせて鳴らす。fx.js の soundDelay）
+  combatSounds: { hit: true, hurt: true, kill: true, miss: true, death: true },
+
   play: function (name) {
     if (!this.enabled || !this.ctx) return;
-    try {
-      var r = this.recipes[name];
-      if (r) r.call(this);
-    } catch (e) {
-      // 音が鳴らせなくてもゲームは止めない
-    }
+    var self = this;
+    var r = this.recipes[name];
+    if (!r) return;
+    var run = function () {
+      try {
+        r.call(self);
+      } catch (e) {
+        // 音が鳴らせなくてもゲームは止めない
+      }
+    };
+    var delay = this.combatSounds[name] && Game.fx ? Game.fx.soundDelay() : 0;
+    if (delay > 5) setTimeout(run, delay);
+    else run();
   },
 
   // 声（ブラウザの読み上げ機能）。使えないブラウザでは何もしない
@@ -187,6 +197,75 @@ Game.sound = {
       this.tone(95, 0.12, "sine", 0.3, 60, 0.05);
     },
     // レベルアップ「ジャジャーン」：エレキギター風のパワーコードを短く→長く
+    // 精神力が半分を切った時など：遠くでオオカミが遠吠えしている（高さがうねりながら上がって、ゆっくり下がる）
+    howl: function () {
+      var ctx = this.ctx, t0 = ctx.currentTime;
+      [[1, 0.16], [2, 0.05], [3, 0.02]].forEach(function (h) {
+        var osc = ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(330 * h[0], t0);
+        osc.frequency.linearRampToValueAtTime(560 * h[0], t0 + 0.5);
+        osc.frequency.linearRampToValueAtTime(600 * h[0], t0 + 1.6);
+        osc.frequency.linearRampToValueAtTime(430 * h[0], t0 + 2.6);
+        var vib = ctx.createOscillator();
+        vib.frequency.value = 5.5;
+        var vibAmt = ctx.createGain();
+        vibAmt.gain.value = 9 * h[0];
+        vib.connect(vibAmt);
+        vibAmt.connect(osc.frequency);
+        var g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(h[1], t0 + 0.4);
+        g.gain.setValueAtTime(h[1], t0 + 1.8);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.7);
+        var f = ctx.createBiquadFilter();
+        f.type = "lowpass";
+        f.frequency.value = 1800;
+        osc.connect(g);
+        g.connect(f);
+        f.connect(this.master);
+        osc.start(t0);
+        vib.start(t0);
+        osc.stop(t0 + 2.8);
+        vib.stop(t0 + 2.8);
+      }, this);
+    },
+    // 「ひそひそひそ…」：だれかが小声で話しているような、かすれた息の音の粒
+    whisper: function () {
+      var ctx = this.ctx, t0 = ctx.currentTime + 0.05;
+      var len = Math.floor(ctx.sampleRate * 2.2);
+      var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      var f = ctx.createBiquadFilter();
+      f.type = "bandpass";
+      f.Q.value = 4;
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      var t = t0;
+      for (var k = 0; k < 11; k++) {
+        var syl = 0.07 + Math.random() * 0.1; // 1音の長さ
+        f.frequency.setValueAtTime(1400 + Math.random() * 2600, t); // 口の形が変わるように、こもり方を変える
+        g.gain.exponentialRampToValueAtTime(0.05 + Math.random() * 0.05, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + syl);
+        t += syl + 0.02 + Math.random() * (k % 4 === 3 ? 0.25 : 0.06); // ときどき間があく
+      }
+      var pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+      src.connect(f);
+      f.connect(g);
+      if (pan) {
+        pan.pan.setValueAtTime(-0.6, t0);
+        pan.pan.linearRampToValueAtTime(0.6, t); // 耳元を横切る
+        g.connect(pan);
+        pan.connect(this.master);
+      } else {
+        g.connect(this.master);
+      }
+      src.start(t0);
+      src.stop(t + 0.1);
+    },
     levelup: function () {
       this.guitar([82.4, 123.5, 164.8], 0.16, 0, 0.3); // ジャ（E のパワーコード）
       this.guitar([110, 164.8, 220], 1.3, 0.2, 0.34); // ジャーン（A のパワーコード）

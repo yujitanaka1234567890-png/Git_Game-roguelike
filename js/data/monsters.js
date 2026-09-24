@@ -109,7 +109,7 @@ Game.MONSTERS = {
   },
   arashiDori: {
     name: "嵐つむじ", symbol: "B", sprite: "bird2", color: "#55aaff", hp: 11, atk: 5, def: 1, exp: 10,
-    rarity: 2, growth: { hp: 3, atk: 2 }, skills: ["kamaitachi", "beakGust"],
+    rarity: 2, growth: { hp: 3, atk: 2 }, skills: ["stormKamaitachi", "beakGust"],
     stage: 2, evolvesTo: "tenkuuTsumuji", evolveLevel: 30, enemyEvoExp: 36,
   },
   tenkuuTsumuji: {

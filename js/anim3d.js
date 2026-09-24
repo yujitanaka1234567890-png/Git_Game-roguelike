@@ -1,8 +1,8 @@
 // 3D表示の「紙芝居」の動き（見た目だけ。ゲームのルールには影響しない）。
 // キャラごとに、表示している位置・向きを覚えておき、描くたびに次のような見た目を計算する：
-//   ・移動：マスからマスへすべるように動く（主人公は歩きの絵を交互に、モンスターはぴょんと跳ねる）
+//   ・移動：マスからマスへすべるように動く（主人公もモンスターも歩きの絵を交互に。モンスターはぴょんと跳ねる）
 //   ・向き：左右に動くとその向きを向く。向きを変える時は紙をくるっと裏返すように細くなってから反対を向く
-//   ・攻撃：相手の方へ一瞬踏み込む（主人公は攻撃の絵）
+//   ・攻撃：相手の方へ一瞬踏み込む（攻撃の絵。モンスターの絵は data/char_frames.js）
 //   ・やられ：のけぞる（主人公はやられの絵、モンスターは赤っぽくなる）
 //   ・待機：主人公はネオンが明滅、モンスターは息をするように伸び縮みする
 // 攻撃・やられは fx.js の attackOf / tiltOf（攻撃した時に記録される）から判断する。
@@ -59,7 +59,7 @@ Game.anim3d = {
     o.flip = p < 1 ? Math.max(0.08, Math.abs(Math.cos(p * Math.PI))) * (p < 0.5 ? -st.face : st.face) : st.face;
 
     if (atk) {
-      var q = Math.max(0, Math.min(1, 1 - (atk.until - now) / Game.fx.hitMs));
+      var q = Math.max(0, Math.min(1, (now - atk.start) / Game.fx.hitMs));
       var lunge = Math.sin(q * Math.PI) * 0.3;
       o.x += atk.dx * lunge;
       o.z += atk.dy * lunge;
@@ -79,6 +79,7 @@ Game.anim3d = {
       else o.frame = Math.floor(now / 600) % 2 ? "hero_idle2" : "hero_idle1";
       if (moving) o.lift = Math.sin(k * Math.PI) * 0.05;
     } else {
+      o.suffix = atk ? "_attack" : moving && st.steps % 2 ? "_walk" : "";
       var b = Math.sin(now / 350 + st.seed);
       o.sy = 1 + 0.045 * b;
       o.sx = 1 - 0.03 * b;

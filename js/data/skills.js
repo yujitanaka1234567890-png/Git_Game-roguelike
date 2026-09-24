@@ -1,6 +1,6 @@
 // 【図鑑データ】技（必殺技）の一覧。モンスターは monsters.js の skills にここのIDを並べて持つ。
 // 名前はすべてオリジナル。
-//   shape：single（隣の1体）/ around（隣の全員）/ sight（見えている全員）
+//   shape：single（隣の1体）/ around（隣の全員）/ sight（見えている全員）/ range（使い手から range マス以内で見えている全員）
 //   mult ：使い手の攻撃力にかける倍率 / hits：連続で当たる回数（省略時1） / color：エフェクトの色
 //   windup / charging：敵が使う時の予兆ログ（予告1ターン目 / 2ターン目）
 Game.SKILLS = {
@@ -71,15 +71,19 @@ Game.SKILLS = {
   },
   // ---- つむじ鳥系 ----
   kamaitachi: {
-    name: "かまいたち", shape: "sight", mult: 1.2, color: "#aaffff",
+    name: "かまいたち", shape: "range", range: 2, mult: 1.2, color: "#aaffff",
     windup: "翼を大きく広げ始めた…", charging: "周りの空気が渦を巻いている…！",
+  },
+  stormKamaitachi: {
+    name: "嵐のかまいたち", shape: "range", range: 3, mult: 1.4, color: "#88eeff",
+    windup: "翼で激しく風をかき集め始めた…", charging: "鋭い風の刃がいくつも渦巻いている…！",
   },
   beakGust: {
     name: "突風くちばし", shape: "single", mult: 2.8, color: "#88ddff",
     windup: "くちばしを低く構えた…", charging: "風をまとって体が浮き上がっている…！",
   },
   greatTornado: {
-    name: "大竜巻", shape: "sight", mult: 1.9, color: "#66ccff",
+    name: "大竜巻", shape: "range", range: 4, mult: 1.9, color: "#66ccff",
     windup: "上空で大きく旋回し始めた…", charging: "巨大な竜巻が形になりつつある…！",
   },
   // ---- ボス ----

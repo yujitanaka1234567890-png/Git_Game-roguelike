@@ -171,7 +171,7 @@
 
   // ---------- モンスター一覧（系統ごと） ----------
   content.appendChild(el("h2", "モンスター（" + Object.keys(M).length + " 種類）"));
-  var shapeLabel = { single: "隣の1体", around: "隣の全員", sight: "見えている全員" };
+  var shapeLabel = { single: "隣の1体", around: "隣の全員", sight: "見えている全員", range: "使い手からNマス以内" };
   var rows = Object.keys(M).map(function (id) {
     var t = M[id], s = stats(id), r = R[t.rarity] || {};
     var sym = spriteCanvas(t.sprite, t.overlay, t.color, t.symbol);

@@ -1,5 +1,7 @@
 // 【図鑑データ】ダンジョンの一覧。
 //   world     ：属する世界（worlds.js）。壁や床の色、拾ったアイテムの「世界」が決まる
+//   colors    ：（省略可）このダンジョンだけの壁・床の色（世界の色の代わりに使う）
+//   style     ：（省略可）壁・床の模様（pixelart.js）。"timeGarden" = 時空を思わせる鈍い斑の壁と、継ぎ目のある床
 //   floors    ：階数（最後の階に脱出口がある）
 //   unlockedBy：このダンジョンを踏破すると行けるようになる（null なら最初から行ける）
 //   enemyBase ：1階の敵の数（1階深くなるごとに+1、最大は config.dungeon.maxEnemies）
@@ -9,8 +11,10 @@
 // 3段階目の進化個体のような強い種類は、強いダンジョンにだけ出す。
 Game.DUNGEONS = {
   beginnerCave: {
-    name: "はじまりの洞窟",
+    name: "はじまりの箱庭",
     world: "magic",
+    colors: { wall: "#4a4666", wallDim: "#2a283b", floor: "#1f2030", floorDim: "#131320" },
+    style: "timeGarden",
     floors: 10,
     unlockedBy: null,
     enemyBase: 3,

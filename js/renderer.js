@@ -37,7 +37,9 @@ Game.renderer = {
     var fov = Game.fov;
     var pixel = Game.pixel.enabled;
     // ダンジョンでは、その世界（js/data/worlds.js）の壁・床の色を使う
-    var wc = Game.state === "base" ? null : Game.WORLDS[Game.currentDungeon().world].colors;
+    var dg = Game.state === "base" ? null : Game.currentDungeon();
+    var wc = dg ? dg.colors || Game.WORLDS[dg.world].colors : null;
+    this.style = dg ? dg.style || null : null; // 壁・床の模様（はじまりの箱庭など）
     var colors = {
       wall: wc ? wc.wall : c.wall, wallDim: wc ? wc.wallDim : c.wallDim,
       floor: wc ? wc.floor : c.floor, floorDim: wc ? wc.floorDim : c.floorDim,
@@ -80,7 +82,15 @@ Game.renderer = {
     var mk = Game.rescue.marker;
     if (mk && mk.seen) {
       var litMk = fov.isVisible(mk.x, mk.y);
-      this.drawThing("marker", null, "#66ffee", mk.x, mk.y, "◇", litMk ? "#66ffee" : "#337777");
+      // はぐれた仲間：モンスターの姿のまま、紫の枠の中でじっと待っている
+      var mt2 = Game.MONSTERS[mk.type];
+      if (mt2) this.drawThing(mt2.sprite, mt2.overlay, mt2.color, mk.x, mk.y, mt2.symbol, litMk ? mt2.color : "#555");
+      else this.drawThing("marker", null, "#66ffee", mk.x, mk.y, "◇", litMk ? "#66ffee" : "#337777");
+      var tsz = Game.config.tileSize;
+      ctx.strokeStyle = "#b066ff";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(mk.x * tsz + 1, mk.y * tsz + 1, tsz - 2, tsz - 2);
+      ctx.lineWidth = 1;
       if (!litMk) this.dimCell(mk.x, mk.y);
     }
 
@@ -160,7 +170,7 @@ Game.renderer = {
 
     // ドット絵
     if (tile === "#") {
-      Game.pixel.drawWall(ctx, x, y, ts, lit ? colors.wall : colors.wallDim);
+      Game.pixel.drawWall(ctx, x, y, ts, lit ? colors.wall : colors.wallDim, this.style);
       return;
     }
     if (tile === ",") {
@@ -168,7 +178,7 @@ Game.renderer = {
       return;
     }
     var floorColor = inBase ? (tile === "G" ? c.gate : c.houseFloor) : lit ? colors.floor : colors.floorDim;
-    Game.pixel.drawFloor(ctx, x, y, ts, floorColor);
+    Game.pixel.drawFloor(ctx, x, y, ts, floorColor, inBase ? null : this.style);
     var spr = this.tileSprites[tile];
     if (spr) {
       var name = spr.sprite;

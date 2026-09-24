@@ -12,14 +12,13 @@ Game.specials = {
   showInfo: function (id) {
     var d = Game.SKILLS[id];
     if (!d) return;
-    var shapes = { single: "隣の1体", around: "隣にいる全員", sight: "使い手から見えている全員" };
     var users = Object.keys(Game.MONSTERS)
       .filter(function (m) { return (Game.MONSTERS[m].skills || []).indexOf(id) >= 0; })
       .map(function (m) { return Game.MONSTERS[m].name; });
     Game.dialog.open({
       title: "技：「" + d.name + "」",
       lines: [
-        "範囲：" + (shapes[d.shape] || d.shape),
+        "範囲：" + this.shapeText(d),
         "威力：使い手の攻撃力 × " + d.mult + (d.hits ? "（" + d.hits + "連撃）" : ""),
         "予兆：「" + d.windup + "」→ 2ターン後に発動（それまでに離れれば避けられる）",
         "受けるダメージは最大HPの " + Math.round(Game.config.specialMaxRatio * 100) + "% まで（即死はしない）",
@@ -28,6 +27,12 @@ Game.specials = {
       options: [{ label: "閉じる" }],
     });
     Game.refresh();
+  },
+
+  // 技の範囲の説明
+  shapeText: function (def) {
+    if (def.shape === "range") return "使い手から " + def.range + " マス以内で見えている全員";
+    return { single: "隣の1体", around: "隣にいる全員", sight: "使い手から見えている全員" }[def.shape] || def.shape;
   },
 
   // unit（敵・仲間）が持っている技 [{id, def}]
@@ -54,6 +59,9 @@ Game.specials = {
     }
     return candidates.filter(function (u) {
       if (def.shape === "sight") return Game.fov.canSee(user.x, user.y, u.x, u.y);
+      if (def.shape === "range") {
+        return Math.max(Math.abs(u.x - user.x), Math.abs(u.y - user.y)) <= def.range && Game.fov.canSee(user.x, user.y, u.x, u.y);
+      }
       return Game.path.canReach(user, u);
     });
   },
@@ -152,6 +160,7 @@ Game.specials = {
     // 派手なエフェクト
     if (def.shape === "around") Game.fx.flash(Game.fx.around(user.x, user.y, 1), def.color, 500);
     if (def.shape === "sight") Game.fx.flash(Game.fx.viewCells(user.x, user.y), def.color, 600);
+    if (def.shape === "range") Game.fx.flash(Game.fx.around(user.x, user.y, def.range), def.color, 600);
 
     for (var i = 0; i < targets.length; i++) this.hit(user, targets[i], def, side);
   },

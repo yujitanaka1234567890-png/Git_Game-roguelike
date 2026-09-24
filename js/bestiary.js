@@ -65,7 +65,6 @@ Game.bestiary = {
     var t = Game.MONSTERS[id];
     var s = Game.enemies.statsOf(id);
     var r = Game.enemies.rarityOf(id);
-    var shapes = { single: "隣の1体", around: "隣にいる全員", sight: "見えている全員" };
     var lines = [
       "HP " + s.hp + "　攻撃力 " + s.atk + "　防御力 " + s.def + "（Lv1の時）　倒した時の経験値 " + s.exp,
       "レア度：" + r.label + (t.boss ? "（ボスは仲間にならない）" : "（倒した時に仲間になる確率 " + Math.round(r.recruit * 100) + "%）"),
@@ -73,7 +72,7 @@ Game.bestiary = {
     var skills = Game.specials.skillsOf({ type: id });
     if (skills.length === 0) lines.push("技：なし");
     skills.forEach(function (sk) {
-      lines.push("技「" + sk.def.name + "」：" + (shapes[sk.def.shape] || sk.def.shape) + "に 攻撃力×" + sk.def.mult +
+      lines.push("技「" + sk.def.name + "」：" + Game.specials.shapeText(sk.def) + "に 攻撃力×" + sk.def.mult +
         (sk.def.hits ? "（" + sk.def.hits + "連撃）" : "") + "。予兆「" + sk.def.windup + "」");
     });
     var feats = [];

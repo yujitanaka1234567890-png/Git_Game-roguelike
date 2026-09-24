@@ -13,6 +13,8 @@ Game.base = {
   seen: {}, // 出会ったことのある種類 { typeId: true }（プレイヤー用の図鑑 bestiary.js に載る）
   lost: [], // はぐれた仲間の記録 [{id, dungeonId, floor, members: [種類ID], mission: null | {team, chance}}]（rescue.js）
   lastResult: null, // 直前の冒険の結果 { kind: "escape" | "death" | "info", lines: [...] }
+  lastLog: null, // 倒れた冒険のログ（拠点のログの下に続けて出す。次の冒険に出るまで残る）[{text, type, meta}]
+  lastLogKey: "dimension-roguelike-lastlog",
   saveKey: "dimension-roguelike-save-v1",
 
   load: function () {
@@ -53,6 +55,26 @@ Game.base = {
     this.lost = (data.lost || []).filter(function (r) {
       return Game.DUNGEONS[r.dungeonId] && r.members.every(function (t) { return Game.MONSTERS[t]; });
     });
+  },
+
+  // 倒れた冒険のログを覚えておく（ブラウザを閉じても、次の冒険に出るまで拠点で読める。記録の呪文には入れない）
+  keepLastLog: function (lines) {
+    this.lastLog = lines ? lines.slice() : null;
+    try {
+      if (this.lastLog) window.localStorage.setItem(this.lastLogKey, JSON.stringify(this.lastLog));
+      else window.localStorage.removeItem(this.lastLogKey);
+    } catch (e) {
+      // 覚えておけなくても遊べる
+    }
+  },
+
+  loadLastLog: function () {
+    try {
+      var raw = window.localStorage.getItem(this.lastLogKey);
+      this.lastLog = raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      this.lastLog = null;
+    }
   },
 
   // 保存する中身（ブラウザの自動記録と、記録の呪文 savecode.js で共通）

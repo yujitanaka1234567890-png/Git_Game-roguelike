@@ -2,7 +2,30 @@
 // 探索済みの床・階段・アイテム・仲間・見えている敵・主人公を小さな点で描く。見た目だけでルールには影響しない。
 Game.minimap = {
   canvas: null,
-  cell: 4, // 1マスの大きさ（px）
+  sizes: [0, 3, 5, 7], // 1マスの大きさ（px）。N キーで 非表示 → 小 → 中 → 大 と切り替え
+  sizeNames: ["非表示", "小", "中", "大"],
+  sizeIndex: 2,
+  prefKey: "dimension-roguelike-minimap",
+
+  init: function () {
+    try {
+      var v = parseInt(window.localStorage.getItem(this.prefKey), 10);
+      if (v >= 0 && v < this.sizes.length) this.sizeIndex = v;
+    } catch (e) {
+      // 覚えておけなくても使える
+    }
+  },
+
+  // N キー：大きさを切り替えて、表示するメッセージを返す
+  cycle: function () {
+    this.sizeIndex = (this.sizeIndex + 1) % this.sizes.length;
+    try {
+      window.localStorage.setItem(this.prefKey, String(this.sizeIndex));
+    } catch (e) {
+      // 覚えておけなくても切り替えはできる
+    }
+    return "全体マップ：" + this.sizeNames[this.sizeIndex] + (Game.view3d.enabled ? "" : "（3D表示の時に出る）");
+  },
 
   // ゲーム画面（3D）の上に重ねる canvas を用意する
   setup: function () {
@@ -19,8 +42,12 @@ Game.minimap = {
 
   draw: function () {
     this.setup();
-    var map = Game.map, fov = Game.fov, cs = this.cell;
+    var map = Game.map, fov = Game.fov, cs = this.sizes[this.sizeIndex];
     var cv = this.canvas;
+    if (!cs) {
+      cv.style.display = "none";
+      return;
+    }
     cv.style.display = "";
     if (cv.width !== map.width * cs || cv.height !== map.height * cs) {
       cv.width = map.width * cs;
@@ -48,7 +75,7 @@ Game.minimap = {
     var items = Game.items.floorItems;
     for (var i = 0; i < items.length; i++) if (items[i].seen) dot(items[i].x, items[i].y, "#ffd84a");
     var mk = Game.rescue.marker;
-    if (mk && mk.seen) dot(mk.x, mk.y, "#66ffee");
+    if (mk && mk.seen) dot(mk.x, mk.y, "#b066ff");
     if (Game.state === "base") {
       var ms = Game.baseScene.monsters;
       for (var b = 0; b < ms.length; b++) dot(ms[b].x, ms[b].y, "#8fd18f");
@@ -56,7 +83,7 @@ Game.minimap = {
     var es = Game.enemies.list;
     for (var e = 0; e < es.length; e++) if (fov.isVisible(es[e].x, es[e].y)) dot(es[e].x, es[e].y, "#ff4a4a");
     var al = Game.allies.list;
-    for (var a = 0; a < al.length; a++) if (al[a].x >= 0) dot(al[a].x, al[a].y, "#4aa0ff");
+    for (var a = 0; a < al.length; a++) if (al[a].x >= 0) dot(al[a].x, al[a].y, al[a].squad ? "#ffaa33" : "#4aa0ff");
     dot(Game.player.x, Game.player.y, "#37f2ff", true);
   },
 };

@@ -1,0 +1,49 @@
+Copyright (c) 2026 yujitanaka1234567890-png. All rights reserved.
+
+【日本語】
+
+このリポジトリに含まれるすべての内容（プログラム、ドット絵、効果音・音楽の作り方、文章、
+モンスター・アイテム・技・地名などの名称、ゲームの設計を含みます。以下「本ソフトウェア」）の
+著作権その他の権利は、著作権者に帰属します。
+
+著作権者の事前の書面による許可なく、次の行為を禁止します。
+
+  1. 本ソフトウェアの全部または一部の複製
+  2. 改変、翻案、二次的著作物の作成
+  3. 配布、再配布、公衆送信、再公開（ミラーや改変版の公開を含みます）
+  4. 販売、貸与、その他の商用利用
+  5. 機械学習・人工知能の学習データとしての利用
+
+ただし、著作権者が公式に公開した場所で、本ゲームを個人的に遊ぶことは許可します。
+GitHub 上で公開されている場合、GitHub の利用規約で認められる範囲（GitHub 上での閲覧・フォーク）は、
+その規約に従います。これは上記以外の権利を許諾するものではありません。
+
+本ソフトウェアは「現状のまま」提供され、明示・黙示を問わず、いかなる保証もありません。
+著作権者は、本ソフトウェアの利用または利用できないことによって生じたいかなる損害についても、
+責任を負いません。
+
+利用の許可に関するお問い合わせは、著作権者の GitHub アカウントまでご連絡ください。
+
+
+[English]
+
+All content in this repository (including the program code, pixel art, sound and music synthesis,
+text, names of monsters, items, skills and places, and the game design; the "Software") is the
+property of the copyright holder.
+
+Without the prior written permission of the copyright holder, you may NOT:
+
+  1. copy the Software, in whole or in part;
+  2. modify, adapt, or create derivative works of the Software;
+  3. distribute, redistribute, publicly transmit, or republish the Software
+     (including mirrors and modified versions);
+  4. sell, rent, lease, or otherwise use the Software for commercial purposes;
+  5. use the Software as training data for machine learning or artificial intelligence.
+
+You may play the game for personal use at locations officially published by the copyright holder.
+If this repository is public on GitHub, viewing and forking on GitHub are governed by the GitHub
+Terms of Service; no other rights are granted.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED. IN NO EVENT
+SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DAMAGES ARISING FROM THE USE OF, OR INABILITY TO USE,
+THE SOFTWARE.

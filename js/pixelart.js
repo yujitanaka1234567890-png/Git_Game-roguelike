@@ -118,7 +118,29 @@ Game.pixel = {
       for (var i = 0; i < 12; i++) {
         var px = vx * 12 + i, py = vy * 12 + j;
         var col;
-        if (kind === "wall") {
+        if (kind === "water") {
+          // 水たまり：深い所・浅い所のまだらに、細いさざ波の光
+          var w = this.noise(px, py, 6, 48, 13);
+          col = w < 0.35 ? this.shade(base, -0.22) : w < 0.7 ? base : this.shade(base, 0.14);
+          var rip = this.noise(px, py, 4, 48, 17);
+          if (rip > 0.56 && rip < 0.6) col = this.shade(base, 0.4);
+        } else if (style === "seaCity" && kind === "wall") {
+          // 海に沈んだ都の石組み：ずらして積んだ石のブロック、下の方に海藻、ところどころにフジツボ
+          var brow = Math.floor(py / 6), bx = (px + (brow % 2) * 3) % 6, by = py % 6;
+          var sn = this.noise(px, py, 4, 48, 21);
+          col = sn < 0.35 ? dark : sn < 0.72 ? base : light;
+          if (this.noise(px, py, 6, 48, 23) > 0.62 && by >= 3) col = this.shade("#3f7a4a", (sn - 0.5) * 0.5); // 海藻
+          if (this.hash(px, py, 25) < 0.02) col = "#d8d2c0"; // フジツボ
+          if (by === 5 || bx === 5) col = darker; // 石の継ぎ目
+          if (j === 0) col = lighter;
+        } else if (style === "seaCity") {
+          // 沈んだ都の石畳：大きな敷石の継ぎ目、うっすら砂、まれにサンゴのかけら
+          var fn = this.noise(px, py, 6, 48, 27);
+          col = fn < 0.4 ? this.shade(base, -0.1) : fn > 0.72 ? this.shade(base, 0.12) : base;
+          if (px % 6 === 0 || py % 6 === 0) col = this.shade(base, -0.38);
+          if (this.hash(px, py, 29) < 0.012) col = "#e0a080";
+          else if (this.hash(px, py, 31) < 0.02) col = this.shade(base, 0.25);
+        } else if (kind === "wall") {
           // 時空を思わせる鈍い斑：大きなまだら＋細かいまだら。ところどころに、古い星の光のような点
           var n = 0.6 * this.noise(px, py, 8, 48, 1) + 0.4 * this.noise(px, py, 4, 48, 2);
           col = n < 0.33 ? darker : n < 0.47 ? dark : n < 0.64 ? base : n < 0.8 ? light : lighter;
@@ -163,6 +185,12 @@ Game.pixel = {
     // 光の当たる縁
     ctx.fillStyle = this.shade(base, 0.18);
     ctx.fillRect(ox, oy, ts, px);
+  },
+
+  // 水たまり（~）
+  drawWater: function (ctx, x, y, ts, base) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(this.styledTile("water", "water", base, x, y), x * ts, y * ts, ts, ts);
   },
 
   // 床：ところどころに小石（style があればその模様）

@@ -8,10 +8,12 @@
 Game.dungeon = {
   generate: function (floor) {
     var cfg = Game.config.dungeon;
-    if (floor >= Game.currentDungeon().floors && Game.currentDungeon().boss) return this.bossFloor(cfg);
-    for (var attempt = 0; attempt < 50; attempt++) {
-      var result = this.tryGenerate(cfg, floor);
-      if (result) return result;
+    var result = null;
+    if (floor >= Game.currentDungeon().floors && Game.currentDungeon().boss) result = this.bossFloor(cfg);
+    for (var attempt = 0; attempt < 50 && !result; attempt++) result = this.tryGenerate(cfg, floor);
+    if (result) {
+      if (Game.currentDungeon().puddles) this.addPuddles(result);
+      return result;
     }
     throw new Error("ダンジョン生成に失敗しました");
   },
@@ -148,6 +150,27 @@ Game.dungeon = {
       enemySpawns: enemySpawns, itemSpawns: itemSpawns,
       bossSpawn: { x: room.x2 - 5, y: cy },
     };
+  },
+
+  // 水たまり（~）：部屋ごとに0〜2か所、まるく広がる。主人公の初期位置・階段の上には作らない
+  addPuddles: function (d) {
+    var tiles = d.tiles;
+    for (var i = 0; i < d.rooms.length; i++) {
+      var room = d.rooms[i];
+      var count = Game.randInt(0, 2) + (room.x2 - room.x1 > 8 ? 1 : 0);
+      for (var n = 0; n < count; n++) {
+        var c = this.randomTileIn(room);
+        var r = Game.randInt(1, 2) + Math.random() * 0.6;
+        for (var y = Math.floor(c.y - r); y <= Math.ceil(c.y + r); y++) {
+          for (var x = Math.floor(c.x - r); x <= Math.ceil(c.x + r); x++) {
+            if (y < room.y1 || y > room.y2 || x < room.x1 || x > room.x2) continue;
+            if ((x - c.x) * (x - c.x) + (y - c.y) * (y - c.y) > r * r) continue;
+            if (tiles[y][x] !== "." || (x === d.startX && y === d.startY)) continue;
+            tiles[y][x] = "~";
+          }
+        }
+      }
+    }
   },
 
   fillRect: function (tiles, x1, y1, x2, y2) {

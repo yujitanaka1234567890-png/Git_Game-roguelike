@@ -266,7 +266,7 @@ Game.items = {
     visited[x + "," + y] = true;
     while (queue.length > 0) {
       var cur = queue.shift();
-      if (!this.at(cur.x, cur.y) && Game.map.tileAt(cur.x, cur.y) === ".") return cur;
+      if (!this.at(cur.x, cur.y) && Game.map.isFloor(Game.map.tileAt(cur.x, cur.y))) return cur;
       if (cur.d >= 2) continue; // 2マス以内で探す
       for (var i = 0; i < Game.DIRS8.length; i++) {
         var dir = Game.DIRS8[i];

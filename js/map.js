@@ -25,6 +25,8 @@ Game.map = {
     this.enemySpawns = d.enemySpawns;
     this.itemSpawns = d.itemSpawns;
     this.bossSpawn = d.bossSpawn || null; // ボス部屋ならボスの位置
+    this.stairsX = d.stairsX; // 階段（ボス部屋では、帰還のゲートの予備の場所）
+    this.stairsY = d.stairsY;
   },
 
   // 文字で描いた固定マップを読み込む（拠点用）。@ の位置を初期位置にする
@@ -59,6 +61,11 @@ Game.map = {
       if (x >= r.x1 - 1 && x <= r.x2 + 1 && y >= r.y1 - 1 && y <= r.y2 + 1) return r;
     }
     return null;
+  },
+
+  // 歩ける床か（ふつうの床と水たまり）
+  isFloor: function (t) {
+    return t === "." || t === "~";
   },
 
   tileAt: function (x, y) {

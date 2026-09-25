@@ -181,6 +181,7 @@
     if (t.breath) feats.push("ブレス（" + t.breath.range + "マス・" + t.breath.cooldown + "ターンに1度）");
     if (t.breedOnly) feats.push("交配専用");
     if (t.humanoid) feats.push("人型（救出隊に派遣できる）");
+    if (t.element === "water") feats.push("水属性（水たまりで強化）");
     if (t.boss) feats.push("ボス（仲間にならない）");
     return [
       sym, id, t.name, "段階" + (t.stage || 1),

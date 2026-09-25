@@ -228,6 +228,13 @@ Game.view3d = {
         }
         var variant = (x * 7 + z * 13) % 4;
         var fsl;
+        if (tile === "~") {
+          // 水たまり：ゆらゆらと明るさが揺れる
+          var wv = m * (0.85 + 0.15 * Math.sin(now / 500 + x * 0.7 + z * 1.3));
+          this.quad([x, 0, z + 1], [x + 1, 0, z + 1], [x + 1, 0, z], [x, 0, z],
+            this.tileSlot("water", (wc && wc.water) || c.water, (x % 4) + (z % 4) * 4, "water"), [wv, wv, wv, 1]);
+          continue;
+        }
         if (tile === ",") fsl = this.tileSlot("grass", c.grass, variant);
         else if (inBase) fsl = this.tileSlot("floor", tile === "G" ? c.gate : c.houseFloor, variant);
         else fsl = style ? this.tileSlot("floor", floorColor, (x % 4) + (z % 4) * 4, style) : this.tileSlot("floor", floorColor, variant);

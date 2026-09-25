@@ -173,7 +173,7 @@ Game.specials = {
     var hits = def.hits || 1;
     var total = 0;
     for (var h = 0; h < hits; h++) {
-      total += Math.max(1, Math.round((user.atk * def.mult - t.def) * (0.9 + Math.random() * 0.2)));
+      total += Math.max(1, Math.round((user.atk * Game.water.atkMul(user) * def.mult - t.def) * (0.9 + Math.random() * 0.2)));
       Game.fx.flash([{ x: t.x, y: t.y }], def.color, 180, h * 220); // 連撃は点滅を重ねる
     }
     if (side === "enemy" && ours) total = Math.min(total, Math.ceil(t.maxHp * Game.config.specialMaxRatio));

@@ -78,7 +78,8 @@ Game.bestiary = {
     var feats = [];
     if (t.phasing) feats.push("壁をすり抜ける");
     if (t.breath) feats.push("離れた相手にブレス（" + t.breath.range + "マス先まで・" + t.breath.cooldown + "ターンに1度）");
-    if (t.humanoid) feats.push("人型（救出隊に出せる）");
+    if (t.humanoid) feats.push("人型（救出隊・分隊の隊長になれる）");
+    if (t.element === "water") feats.push("水属性（水たまりの上で攻撃力" + Game.water.powerMul + "倍・毎ターン" + Game.water.heal + "回復）");
     if (t.boss) feats.push("ダンジョン最下層の主");
     if (feats.length > 0) lines.push("特徴：" + feats.join("・"));
     if (t.evolvesTo) {

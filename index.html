@@ -53,7 +53,7 @@
           <li>Shift＋矢印2つ同時：斜め</li>
           <li>Shift＋矢印1つ：ダッシュ（Shiftを離すと止まる）</li>
           <li>スペース：足踏み</li>
-          <li>I：持ち物（T で投げる）</li>
+          <li>I または W：持ち物（T で投げる）</li>
           <li>階段の上で ↓↓：降りる</li>
           <li>R を2回：冒険をあきらめる</li>
           <li>.（ドット）：分隊への指示（人型の仲間を隊長に独立行動させる／呼び戻す。分隊と同じ部屋にいる時だけ）</li>
@@ -71,7 +71,8 @@
           <li>青い下地・青い四角 = 仲間（ぶつかると入れ替わる）</li>
           <li>橙の四角 = 分隊の仲間（独立行動中）</li>
           <li>体力ゲージ：緑 = 仲間、赤 = 敵</li>
-          <li>精神 = ダンジョンにいると少しずつ減る。同じ階に長居すると速く減る（広い階ほど長く居られる）。0になると毎ターン2ダメージ（0が続くと10ターンごとに倍）。50%で遠吠え・25%でささやき</li>
+          <li>精神 = ダンジョンにいると少しずつ減る。同じ階に長居すると速く減る（広い階ほど長く居られる）。0になると3ターンのうちに戻さないとダンジョンに取り込まれる。50%で遠吠え・25%でささやき</li>
+          <li>≈ 水色の床 = 水たまり（水属性の敵はその上で強くなり、回復する）</li>
           <li>紫の枠の中に立つ仲間 = はぐれた仲間（ぶつかる・乗ると救出）</li>
           <li>最下層はボス部屋（倒すと帰還のゲートが現れる）</li>
           <li>3D表示では左上に全体マップ（水色＝自分・青＝仲間・橙＝分隊・赤＝敵・黄＝アイテム・紫＝はぐれた仲間）</li>
@@ -107,6 +108,7 @@
   <script src="js/data/worlds.js"></script>
   <script src="js/data/sprites.js"></script>
   <script src="js/data/characters.js"></script>
+  <script src="js/data/sea_characters.js"></script>
   <script src="js/data/char_frames.js"></script>
   <script src="js/dungeon.js"></script>
   <script src="js/map.js"></script>
@@ -118,6 +120,7 @@
   <script src="js/music.js"></script>
   <script src="js/pixelart.js"></script>
   <script src="js/dimension.js"></script>
+  <script src="js/water.js"></script>
   <script src="js/combat.js"></script>
   <script src="js/leveling.js"></script>
   <script src="js/items.js"></script>

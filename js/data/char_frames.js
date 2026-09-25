@@ -149,10 +149,11 @@ Game.CHAR_FRAMES = {
     for (var r in spec.rows || {}) rows[r] = spec.rows[r];
     return rows;
   }
-  for (var name in Game.CHAR_FRAMES) {
+  var all = Object.assign({}, Game.CHAR_FRAMES, Game.EXTRA_FRAMES || {}); // EXTRA_FRAMES は sea_characters.js など
+  for (var name in all) {
     var base = Game.SPRITES[name];
     if (!base) continue;
-    var f = Game.CHAR_FRAMES[name];
+    var f = all[name];
     if (f.walk) Game.SPRITES[name + "_walk"] = make(base, f.walk);
     if (f.attack) Game.SPRITES[name + "_attack"] = make(base, f.attack);
   }

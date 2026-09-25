@@ -106,7 +106,7 @@ Game.enemies = {
   // ボスが倒れた時：倒れたマスに帰還のゲート（脱出口 O）が現れる
   bossDown: function (boss) {
     var x = boss.x, y = boss.y;
-    if (Game.map.tileAt(x, y) !== "." || Game.items.at(x, y)) {
+    if (!Game.map.isFloor(Game.map.tileAt(x, y)) || Game.items.at(x, y)) {
       x = Game.map.stairsX;
       y = Game.map.stairsY;
     }

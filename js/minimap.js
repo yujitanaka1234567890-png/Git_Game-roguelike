@@ -58,7 +58,7 @@ Game.minimap = {
     ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
     ctx.fillRect(0, 0, cv.width, cv.height);
 
-    var colors = { ">": "#4aa0ff", "O": "#ffe066", "G": "#c8a8ff" };
+    var colors = { ">": "#4aa0ff", "O": "#ffe066", "G": "#c8a8ff", "~": "#3a7ac8" };
     for (var y = 0; y < map.height; y++) {
       for (var x = 0; x < map.width; x++) {
         var t = map.tiles[y][x];

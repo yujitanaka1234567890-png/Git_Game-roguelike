@@ -43,6 +43,7 @@ Game.renderer = {
     var colors = {
       wall: wc ? wc.wall : c.wall, wallDim: wc ? wc.wallDim : c.wallDim,
       floor: wc ? wc.floor : c.floor, floorDim: wc ? wc.floorDim : c.floorDim,
+      water: (wc && wc.water) || c.water, waterDim: (wc && wc.waterDim) || c.waterDim,
     };
 
     // ---- マップ：未探索は真っ黒、探索済みで今見えていない所は暗く、見えている所は明るく ----
@@ -157,6 +158,7 @@ Game.renderer = {
       else if (tile === ">") ctx.fillStyle = lit ? c.stairs : c.stairsDim;
       else if (tile === "O") ctx.fillStyle = lit ? c.exit : c.exitDim;
       else if (tile === ",") ctx.fillStyle = c.grass;
+      else if (tile === "~") ctx.fillStyle = lit ? colors.water : colors.waterDim;
       else if (tile === "G") ctx.fillStyle = c.gate;
       else if (inBase) ctx.fillStyle = c.houseFloor;
       else ctx.fillStyle = lit ? colors.floor : colors.floorDim;
@@ -165,6 +167,7 @@ Game.renderer = {
       ctx.strokeRect(x * ts, y * ts, ts, ts);
       var ts1 = this.tileSprites[tile];
       if (ts1) this.drawChar(ts1.char, x, y, lit || inBase ? ts1.charColor : "#667");
+      if (tile === "~") this.drawChar("≈", x, y, lit ? "#9fd4ff" : "#4a6a88");
       return;
     }
 
@@ -175,6 +178,10 @@ Game.renderer = {
     }
     if (tile === ",") {
       Game.pixel.drawGrass(ctx, x, y, ts, c.grass);
+      return;
+    }
+    if (tile === "~") {
+      Game.pixel.drawWater(ctx, x, y, ts, lit ? colors.water : colors.waterDim);
       return;
     }
     var floorColor = inBase ? (tile === "G" ? c.gate : c.houseFloor) : lit ? colors.floor : colors.floorDim;

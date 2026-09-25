@@ -18,7 +18,7 @@ Game.combat = {
 
   // ダメージ = (攻撃力 − 防御力) に ±20% のばらつき。最低でも1
   calcDamage: function (attacker, defender) {
-    var base = attacker.atk - defender.def;
+    var base = attacker.atk * Game.water.atkMul(attacker) - defender.def; // 水属性は水たまりの上で強い
     var rand = 0.8 + Math.random() * 0.4;
     return Math.max(1, Math.round(base * rand));
   },

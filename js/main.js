@@ -178,7 +178,7 @@ Game.onKey = function (key) {
   }
 
   if (Game.state === "playing" && !Game.dashing) {
-    if (lower === "i") {
+    if (lower === "i" || lower === "w") {
       Game.state = "menu";
       Game.inventory.open = true;
       Game.stairsPending = false;
@@ -200,7 +200,7 @@ Game.onKey = function (key) {
   }
 
   if (Game.state === "menu") {
-    if (key === "Escape" || lower === "i") Game.closeMenu();
+    if (key === "Escape" || lower === "i" || lower === "w") Game.closeMenu();
     else if (key === "Enter" || lower === "z") Game.useSelectedItem();
     else if (lower === "d") Game.dropSelectedItem();
     else if (lower === "t" && Game.inventory.items.length > 0) {
@@ -240,22 +240,20 @@ Game.endTurn = function () {
   Game.player.regen(Game.turn);
   Game.allies.regen(Game.turn);
   Game.mind.tick();
+  Game.water.tick(); // 水たまりの上の水属性は少しずつ回復
   Game.enemies.tryRespawn();
-  var byMind = false;
-  if (Game.mind.isGone() && Game.player.hp > 0) {
-    // 精神力が0の間は、闇に心身をむしばまれて毎ターンダメージ。0が続くと zeroDoubleEvery ターンごとに倍になる
-    var dmg = Math.min(Game.mind.zeroDamage(), Game.player.hp);
-    Game.player.hp -= dmg;
-    Game.player.wasHit = true;
-    Game.log.add("闇が心身をむしばむ… " + dmg + " のダメージ（精神力が0。" + Game.config.mind.zeroDoubleEvery + "ターンごとに倍になる）", "bad");
-    byMind = Game.player.hp <= 0;
+  // 精神力が0の間はカウントダウン。尽きるとダンジョンに取り込まれる
+  var left = Game.mind.countdownLeft();
+  if (left !== null && left > 0 && Game.player.hp > 0) {
+    Game.log.add("⚠ 意識が闇に呑まれていく… あと " + left + " ターンで取り込まれる！（精神力を1以上に）", "warn");
   }
   if (Game.player.wasHit) Game.hitPauseUntil = Date.now() + Game.config.hitPauseMs;
   if (Game.player.hp <= 0) {
     Game.log.add("あなたは B" + Game.floor + "F で倒れた… Enter で拠点へ戻る", "bad");
-    Game.onDeath(byMind
-      ? "B" + Game.floor + "F で精神力が尽き、闇にむしばまれて倒れてしまった…"
-      : "B" + Game.floor + "F で倒れてしまった…");
+    Game.onDeath("B" + Game.floor + "F で倒れてしまった…");
+  } else if (Game.mind.isTaken()) {
+    Game.log.add("あなたの意識は闇に溶け、ダンジョンに取り込まれてしまった… Enter で拠点へ戻る", "bad");
+    Game.onDeath("B" + Game.floor + "F で精神力が尽き、ダンジョンに取り込まれてしまった…");
   }
 };
 

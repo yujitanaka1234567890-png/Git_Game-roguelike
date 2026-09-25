@@ -16,6 +16,7 @@
 //   breath   ：離れた相手へのブレス（敵の時）
 //   breedOnly：交配でしか手に入らない（ダンジョンには出ない）
 //   humanoid ：人型で知能が高い（救出隊には人型が1体は必要）
+//   element  ："water"（水属性）なら、水たまり（~）の上で攻撃力が上がり、少しずつ回復する（water.js）
 //   boss     ：ダンジョン最下層のボス（dungeons.js の boss）。仲間にならず、進化もしない。大きく描かれる
 Game.MONSTERS = {
   // ---- ぬめ系 ----
@@ -125,6 +126,59 @@ Game.MONSTERS = {
   abyssMaw: {
     name: "深淵の大口", symbol: "Ψ", sprite: "maw", color: "#3a6aa0", hp: 60, atk: 6, def: 2, exp: 90,
     rarity: 5, growth: { hp: 0, atk: 0 }, skills: ["whirlpool", "swallow"], stage: 1, boss: true,
+  },
+  // ---- 水属性：カニ系 ----
+  abukuGani: {
+    name: "あぶくガニ", symbol: "C", sprite: "crab1", color: "#ff8866", hp: 9, atk: 3, def: 1, exp: 6,
+    rarity: 1, growth: { hp: 3, atk: 1 }, skills: ["bubbleShot"], element: "water",
+    stage: 1, evolvesTo: "tekkakuGani", evolveLevel: 5, enemyEvoExp: 17,
+  },
+  tekkakuGani: {
+    name: "鉄殻ガニ", symbol: "C", sprite: "crab2", color: "#c86a4a", hp: 14, atk: 4, def: 3, exp: 11,
+    rarity: 2, growth: { hp: 4, atk: 1 }, skills: ["bubbleShot", "bigPincer"], element: "water",
+    stage: 2, evolvesTo: "oouzuGani", evolveLevel: 30, enemyEvoExp: 39,
+  },
+  oouzuGani: {
+    name: "大渦ガニ", symbol: "C", sprite: "crab3", color: "#ff5a3a", hp: 20, atk: 6, def: 3, exp: 18,
+    rarity: 4, growth: { hp: 5, atk: 2 }, skills: ["whirlPincer", "bigPincer"], element: "water",
+    stage: 3,
+  },
+  // ---- 水属性：クラゲ系 ----
+  tadayoiKurage: {
+    name: "ただよいクラゲ", symbol: "J", sprite: "jelly1", color: "#b9a8ff", hp: 7, atk: 3, def: 0, exp: 6,
+    rarity: 1, growth: { hp: 2, atk: 1 }, skills: ["numbTentacle"], element: "water",
+    stage: 1, evolvesTo: "akariKurage", evolveLevel: 5, enemyEvoExp: 17,
+  },
+  akariKurage: {
+    name: "灯りクラゲ", symbol: "J", sprite: "jelly2", color: "#88ccff", hp: 11, atk: 4, def: 1, exp: 12,
+    rarity: 3, growth: { hp: 3, atk: 2 }, skills: ["numbTentacle", "lanternPulse"], element: "water",
+    stage: 2, evolvesTo: "tomoshibiOu", evolveLevel: 30, enemyEvoExp: 56,
+  },
+  tomoshibiOu: {
+    name: "深淵の灯王", symbol: "J", sprite: "jelly3", color: "#7affd8", hp: 16, atk: 6, def: 1, exp: 17,
+    rarity: 4, growth: { hp: 4, atk: 2 }, skills: ["abyssGlow", "numbTentacle"], element: "water",
+    stage: 3,
+  },
+  // ---- 水属性：うろこ系（人型） ----
+  urokoHei: {
+    name: "うろこ兵", symbol: "F", sprite: "fish1", color: "#5aa0c8", hp: 11, atk: 4, def: 1, exp: 10,
+    rarity: 2, growth: { hp: 3, atk: 1 }, skills: ["tridentThrust"], element: "water", humanoid: true,
+    stage: 1, evolvesTo: "urokoKishi", evolveLevel: 5, enemyEvoExp: 36,
+  },
+  urokoKishi: {
+    name: "うろこ騎士", symbol: "F", sprite: "fish2", color: "#4a80b0", hp: 15, atk: 5, def: 3, exp: 14,
+    rarity: 3, growth: { hp: 4, atk: 2 }, skills: ["tridentThrust", "tideCharge"], element: "water", humanoid: true,
+    stage: 2, evolvesTo: "shioNoShou", evolveLevel: 30, enemyEvoExp: 67,
+  },
+  shioNoShou: {
+    name: "潮の将", symbol: "F", sprite: "fish3", color: "#3ad0c0", hp: 19, atk: 6, def: 3, exp: 18,
+    rarity: 4, growth: { hp: 5, atk: 2 }, skills: ["tidalCommand", "tridentThrust"], element: "water", humanoid: true,
+    stage: 3,
+  },
+  // ---- ボス（水底の都） ----
+  shiosaiKyokaku: {
+    name: "潮鳴りの巨殻", symbol: "Ж", sprite: "shellboss", color: "#d8a070", hp: 70, atk: 6, def: 3, exp: 100,
+    rarity: 5, growth: { hp: 0, atk: 0 }, skills: ["tsunami", "shellCrush"], element: "water", stage: 1, boss: true,
   },
   // ---- 交配でしか生まれない種類（breeding.js） ----
   togeNume: {

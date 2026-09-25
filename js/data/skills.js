@@ -103,6 +103,51 @@ Game.SKILLS = {
     name: "丸呑み", shape: "single", mult: 3.5, color: "#ff4466",
     windup: "大きな口をゆっくりと開き始めた…", charging: "口の奥の暗闇がこちらを見ている…！",
   },
+  // ---- 水属性（水底の都） ----
+  bubbleShot: {
+    name: "あぶく弾", shape: "range", range: 3, mult: 1.3, color: "#88ddff",
+    windup: "口から泡をぶくぶく溜め始めた…", charging: "大きな泡がいくつも膨らんでいる…！",
+  },
+  bigPincer: {
+    name: "大バサミ", shape: "single", mult: 2.8, color: "#ff8866",
+    windup: "ハサミを大きく振り上げた…", charging: "ハサミがぎりぎりと音を立てている…！",
+  },
+  whirlPincer: {
+    name: "渦潮バサミ", shape: "around", mult: 2.4, color: "#66aaff",
+    windup: "ハサミで水を渦巻かせ始めた…", charging: "足元の水が激しく渦を巻いている…！",
+  },
+  numbTentacle: {
+    name: "しびれ触手", shape: "around", mult: 1.7, color: "#e0e070",
+    windup: "触手をゆらゆらと広げ始めた…", charging: "触手がぱちぱちと光っている…！",
+  },
+  lanternPulse: {
+    name: "灯りの波動", shape: "range", range: 3, mult: 1.5, color: "#ffe88a",
+    windup: "体の灯りがゆっくり強くなっていく…", charging: "まぶしいほどに光が満ちている…！",
+  },
+  abyssGlow: {
+    name: "深淵の光", shape: "sight", mult: 1.9, color: "#7affd8",
+    windup: "冠が暗く瞬き始めた…", charging: "あたりの闇がすべて光に吸い込まれていく…！",
+  },
+  tridentThrust: {
+    name: "三叉突き", shape: "single", mult: 2.5, color: "#9fe8ff",
+    windup: "三叉の槍を低く構えた…", charging: "槍の先に水の渦がまとわりついている…！",
+  },
+  tideCharge: {
+    name: "波濤突撃", shape: "around", mult: 2.0, color: "#5ab0ff",
+    windup: "盾を構えて身を沈めた…", charging: "背後に大波がせり上がっている…！",
+  },
+  tidalCommand: {
+    name: "大潮の号令", shape: "sight", mult: 1.8, color: "#3ad0c0",
+    windup: "槍を高く掲げ、潮を呼び始めた…", charging: "遠くから潮鳴りが近づいてくる…！",
+  },
+  tsunami: {
+    name: "大津波", shape: "sight", mult: 1.7, color: "#3a8aff",
+    windup: "殻の奥から低い潮鳴りが響き始めた…", charging: "部屋の奥から大波が押し寄せてくる…！",
+  },
+  shellCrush: {
+    name: "殻砕き", shape: "around", mult: 2.6, color: "#d8a070",
+    windup: "巨大な殻を大きく持ち上げた…", charging: "殻がきしみ、床の水が跳ね上がる…！",
+  },
   // ---- 交配で生まれる種類 ----
   stickyNeedles: {
     name: "ねばトゲ弾", shape: "around", mult: 2.2, color: "#aaff88",

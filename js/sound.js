@@ -197,38 +197,87 @@ Game.sound = {
       this.tone(95, 0.12, "sine", 0.3, 60, 0.05);
     },
     // レベルアップ「ジャジャーン」：エレキギター風のパワーコードを短く→長く
-    // 精神力が半分を切った時など：遠くでオオカミが遠吠えしている（高さがうねりながら上がって、ゆっくり下がる）
+    // 精神力が半分を切った時など：遠くでオオカミが「ウォーン」と遠吠えする
+    //   低い声（のこぎり波）を「ウ」→「オ」の口の形（こもり方）で響かせ、高さをゆっくり上げてから下げる。
+    //   息の音を少し混ぜて、生き物の声らしくする
     howl: function () {
-      var ctx = this.ctx, t0 = ctx.currentTime;
-      [[1, 0.16], [2, 0.05], [3, 0.02]].forEach(function (h) {
-        var osc = ctx.createOscillator();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(330 * h[0], t0);
-        osc.frequency.linearRampToValueAtTime(560 * h[0], t0 + 0.5);
-        osc.frequency.linearRampToValueAtTime(600 * h[0], t0 + 1.6);
-        osc.frequency.linearRampToValueAtTime(430 * h[0], t0 + 2.6);
-        var vib = ctx.createOscillator();
-        vib.frequency.value = 5.5;
-        var vibAmt = ctx.createGain();
-        vibAmt.gain.value = 9 * h[0];
-        vib.connect(vibAmt);
-        vibAmt.connect(osc.frequency);
-        var g = ctx.createGain();
-        g.gain.setValueAtTime(0.0001, t0);
-        g.gain.exponentialRampToValueAtTime(h[1], t0 + 0.4);
-        g.gain.setValueAtTime(h[1], t0 + 1.8);
-        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.7);
-        var f = ctx.createBiquadFilter();
-        f.type = "lowpass";
-        f.frequency.value = 1800;
-        osc.connect(g);
-        g.connect(f);
-        f.connect(this.master);
-        osc.start(t0);
-        vib.start(t0);
-        osc.stop(t0 + 2.8);
-        vib.stop(t0 + 2.8);
-      }, this);
+      var ctx = this.ctx, t0 = ctx.currentTime + 0.02, dur = 3.0;
+      var out = ctx.createGain();
+      out.gain.setValueAtTime(0.0001, t0);
+      out.gain.exponentialRampToValueAtTime(0.5, t0 + 0.5);
+      out.gain.setValueAtTime(0.5, t0 + 2.0);
+      out.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      var lp = ctx.createBiquadFilter(); // 遠くで鳴っている感じにこもらせる
+      lp.type = "lowpass";
+      lp.frequency.value = 1400;
+      out.connect(lp);
+      lp.connect(this.master);
+      // 声の高さ（ウォ〜〜ン）：140Hz から 230Hz へ上がり、最後は 150Hz へ下がる
+      var voice = ctx.createOscillator();
+      voice.type = "sawtooth";
+      voice.frequency.setValueAtTime(140, t0);
+      voice.frequency.linearRampToValueAtTime(215, t0 + 0.6);
+      voice.frequency.linearRampToValueAtTime(230, t0 + 1.9);
+      voice.frequency.exponentialRampToValueAtTime(150, t0 + dur);
+      var vib = ctx.createOscillator();
+      vib.frequency.value = 4.5;
+      var vibAmt = ctx.createGain();
+      vibAmt.gain.value = 3;
+      vib.connect(vibAmt);
+      vibAmt.connect(voice.frequency);
+      // 口の形：最初は「ウ」（低くこもる）、だんだん「オ」（少し開く）へ
+      var f1 = ctx.createBiquadFilter();
+      f1.type = "bandpass";
+      f1.Q.value = 4;
+      f1.frequency.setValueAtTime(330, t0);
+      f1.frequency.linearRampToValueAtTime(480, t0 + 0.8);
+      f1.frequency.linearRampToValueAtTime(420, t0 + dur);
+      var f2 = ctx.createBiquadFilter();
+      f2.type = "bandpass";
+      f2.Q.value = 5;
+      f2.frequency.setValueAtTime(700, t0);
+      f2.frequency.linearRampToValueAtTime(850, t0 + 0.8);
+      var g1 = ctx.createGain();
+      g1.gain.value = 0.9;
+      var g2 = ctx.createGain();
+      g2.gain.value = 0.35;
+      voice.connect(f1);
+      voice.connect(f2);
+      f1.connect(g1);
+      f2.connect(g2);
+      g1.connect(out);
+      g2.connect(out);
+      // 胸に響く低い成分（1オクターブ下）
+      var body = ctx.createOscillator();
+      body.type = "triangle";
+      body.frequency.setValueAtTime(70, t0);
+      body.frequency.linearRampToValueAtTime(110, t0 + 0.6);
+      body.frequency.linearRampToValueAtTime(115, t0 + 1.9);
+      body.frequency.exponentialRampToValueAtTime(75, t0 + dur);
+      var bg = ctx.createGain();
+      bg.gain.value = 0.25;
+      body.connect(bg);
+      bg.connect(out);
+      // 息の音
+      var len = Math.floor(ctx.sampleRate * dur);
+      var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var k = 0; k < len; k++) data[k] = Math.random() * 2 - 1;
+      var breath = ctx.createBufferSource();
+      breath.buffer = buf;
+      var bf = ctx.createBiquadFilter();
+      bf.type = "bandpass";
+      bf.frequency.value = 600;
+      bf.Q.value = 1.2;
+      var bgn = ctx.createGain();
+      bgn.gain.value = 0.06;
+      breath.connect(bf);
+      bf.connect(bgn);
+      bgn.connect(out);
+      [voice, vib, body, breath].forEach(function (n) {
+        n.start(t0);
+        n.stop(t0 + dur + 0.05);
+      });
     },
     // 「ひそひそひそ…」：声を出さずに息だけで話す音（ささやき）を、子音と母音に分けて合成する
     //   ひ＝息の「h」→ 口のすぼまった「i」、そ＝鋭い「s」→ 丸い「o」。これを小声で早口にくり返す

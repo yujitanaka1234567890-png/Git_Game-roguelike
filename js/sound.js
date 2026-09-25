@@ -2,7 +2,7 @@
 // その場で波形（音の高さ・長さ・音色）を組み立てて鳴らす。すべてこのゲームのためのオリジナル。
 // ・レベルアップの「ジャジャーン」は、のこぎり波を歪ませてエレキギター風のパワーコードにしている。
 // ・ボス戦のBGMは、このゲームのために作ったオリジナルの曲（music.js）。
-// ・ゲームオーバーの曲は、J.S.バッハ「トッカータとフーガ ニ短調」の冒頭（18世紀の曲で著作権は切れている）を
+// ・ゲームオーバーの曲は、ショパン「ピアノソナタ第2番」第3楽章（葬送行進曲）の冒頭（1840年の曲で著作権は切れている）を
 //   この場で合成して鳴らしている（録音は使っていない）。
 // ブラウザの決まりで、最初にキーを押すまでは音が出ない（unlock）。M キーで音のオン／オフ。
 Game.sound = {
@@ -399,23 +399,31 @@ Game.sound = {
     recruit: function () { this.seq([523, 784, 1047], 0.09, "triangle", 0.3); },
     rescue: function () { this.seq([659, 880, 1175, 1568], 0.08, "sine", 0.3); },
     escape: function () { this.seq([392, 523, 659, 784, 1047], 0.1, "triangle", 0.3); },
-    // ゲームオーバー「チャラリ〜 チャラチャラ〜」：パイプオルガン風（トッカータとフーガ ニ短調 冒頭）
+    // ゲームオーバー：葬送行進曲（ショパン「ピアノソナタ第2番」第3楽章の冒頭。1840年の曲で著作権切れ）を、
+    // 変ロ短調でゆっくり、暗いオルガンと鐘のような低音で合成して演奏する
     gameover: function () {
       var self = this;
-      var organ = function (freq, t, dur) {
-        self.tone(freq, dur, "square", 0.12, null, t);
-        self.tone(freq / 2, dur, "sine", 0.22, null, t);
-        self.tone(freq * 2, dur, "sine", 0.05, null, t);
+      var b = 0.78; // 1拍の長さ（秒）。遅いほど重々しい
+      // 旋律：暗いオルガン（三角波＋1オクターブ下の正弦波＋かすかな矩形波）
+      var voice = function (freq, beat, beats) {
+        var t = beat * b, d = beats * b * 0.95;
+        self.tone(freq, d, "triangle", 0.2, null, t);
+        self.tone(freq / 2, d, "sine", 0.16, null, t);
+        self.tone(freq, d, "square", 0.025, null, t);
       };
-      // チャラリ〜（ラ・ソ・ラ〜）
-      organ(880, 0.0, 0.13);
-      organ(784, 0.13, 0.13);
-      organ(880, 0.26, 1.0);
-      // チャラチャラ〜（ソ・ファ・ミ・レ・ド#・レ〜）
-      var run = [784, 698, 659, 587, 554];
-      for (var i = 0; i < run.length; i++) organ(run[i], 1.5 + i * 0.14, i === 4 ? 0.5 : 0.15);
-      organ(587, 1.5 + 5 * 0.14 + 0.36, 1.6);
-      organ(294, 1.5 + 5 * 0.14 + 0.36, 1.6); // 低いレを重ねて重々しく
+      // 伴奏：1拍ごとに低い和音を鐘のように鳴らす（変ロ短調 ⇔ 変ト長調を交互に）
+      var chord = function (freqs, beat) {
+        for (var i = 0; i < freqs.length; i++) self.tone(freqs[i], b * 0.9, "sine", i === 0 ? 0.22 : 0.08, freqs[i] * 0.995, beat * b);
+      };
+      var Bbm = [58.27, 87.31, 138.59], Gb = [46.25, 69.3, 116.54];
+      for (var k = 0; k < 9; k++) chord(k % 2 === 0 ? Bbm : Gb, k);
+      var Bb = 233.08, A = 220, C = 261.63, Db = 277.18;
+      // ダン、ダ・ダン、ダーン（同じ音を重く4回）
+      voice(Bb, 0, 1); voice(Bb, 1, 0.75); voice(Bb, 1.75, 0.25); voice(Bb, 2, 2);
+      // ダン・ダ ダン・ダ ダン・ダ ダーン（少し上がって、ゆっくり沈む）
+      voice(Db, 4, 0.75); voice(C, 4.75, 0.25); voice(C, 5, 0.75); voice(Bb, 5.75, 0.25);
+      voice(Bb, 6, 0.75); voice(A, 6.75, 0.25); voice(Bb, 7, 2.2);
+      self.tone(58.27, b * 3, "sine", 0.25, 55, 7 * b); // 最後に深い低音を長く残す
     },
     death: function () { this.tone(330, 0.5, "sawtooth", 0.25, 110); }, // 仲間が倒れた
     cursor: function () { this.tone(1200, 0.025, "sine", 0.08); },

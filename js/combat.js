@@ -3,7 +3,7 @@ Game.combat = {
   // attacker が defender を攻撃する。HPを減らしてログを出す。倒したら true を返す
   attack: function (attacker, defender) {
     var friendly = attacker === Game.player || Game.allies.list.indexOf(attacker) >= 0;
-    if (Math.random() >= Game.config.hitRate) {
+    if (Math.random() >= Game.config.hitRate + Game.equip.hitMod(attacker)) { // 武器で命中率が変わる
       Game.log.add(attacker.name + "の攻撃は外れた", "miss");
       Game.fx.swing(attacker, defender); // 外れても踏み込む動きは見せる
       Game.sound.play("miss");
@@ -13,18 +13,22 @@ Game.combat = {
     this.applyDamage(attacker, defender, dmg);
     Game.log.add(attacker.name + "の攻撃！ " + defender.name + "に " + dmg + " のダメージ", friendly ? "good" : "bad");
     Game.sound.play(friendly ? "hit" : "hurt");
+    Game.equip.afterHit(attacker, defender); // グローブ：ときどきひるませる
     return defender.hp <= 0;
   },
 
   // ダメージ = (攻撃力 − 防御力) に ±20% のばらつき。最低でも1
   calcDamage: function (attacker, defender) {
-    var base = attacker.atk * Game.water.atkMul(attacker) - defender.def; // 水属性は水たまりの上で強い
+    var def = Game.equip.pierces(attacker) ? 0 : defender.def; // ドリルは防御力を無視
+    var base = attacker.atk * Game.water.atkMul(attacker) - def; // 水属性は水たまりの上で強い
     var rand = 0.8 + Math.random() * 0.4;
     return Math.max(1, Math.round(base * rand));
   },
 
   // HPを減らす。敵が受けたダメージは「誰が与えたか」を記録する（倒した時の経験値の分配に使う）
   applyDamage: function (source, defender, dmg) {
+    dmg = Game.equip.guardDamage(defender, dmg); // 守護の札：主人公が受けるダメージ半分
+    Game.equip.wake(defender); // 攻撃を受けると起きる
     var actual = Math.min(dmg, defender.hp); // 残りHPを超えた分は数えない
     defender.hp -= actual;
     defender.wasHit = true; // ダッシュの間あけなどの判定用

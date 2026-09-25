@@ -25,14 +25,14 @@
 - `js/rescue.js` 救出（はぐれた仲間の記録・紫の枠の中に立つはぐれた仲間・救出隊の派遣と結果・拠点の掲示板）
 - `js/log.js` メッセージログ（新しい行が上・最大300行・技名クリックで説明 meta.skill） / `js/dialog.js` 共通の選択ウィンドウ（入れ替え確認・拠点の会話・収納箱・門・結果表示） / `js/fx.js` 見た目だけのエフェクト（光）
 - `js/water.js` 水たまり（~）と水属性（element: "water"。水たまりの上で攻撃力×1.3・毎ターン1回復）/ `js/combat.js` 命中・ダメージ計算・ダメージ記録（applyDamage）・攻撃相手選択 / `js/leveling.js` レベル・経験値（主人公・仲間共通）
-- `js/items.js` アイテム種類・床アイテム・使用/投げ効果 / `js/inventory.js` 持ち物と持ち物メニュー / `js/throw.js` 投げる（軌道・アニメ・着地）
+- `js/items.js` アイテム種類・床アイテム・使用/投げ効果 / `js/equip.js` 武器の装備と状態（眠り sleep・技封じ silenced・守り guardTurns）/ `js/shoot.js` 銃と杖（方向を選んで撃つ・残り回数 charges）/ `js/inventory.js` 持ち物と持ち物メニュー / `js/throw.js` 投げる（軌道・アニメ・着地）
 - `js/player.js` 主人公 / `js/enemy.js` 敵（types＝Game.MONSTERS、レア度倍率 statsOf、ダンジョン別出現 pickType）・AI・壁抜け移動・経験値分配 / `js/specials.js` 技（敵は予告→溜め→発動、仲間は即時）とブレス
 - `js/pathfind.js` 移動の共通処理（isOccupied/isFree、8方向BFS stepToward、canReach、freeTilesNear）
 - `js/allies.js` 仲間（仲間化判定・入れ替え確認・AI・一覧表示）/ `js/squad.js` 分隊（.キー。人型を隊長に最大4体、階を自由に探索して独立行動。指示は同じ部屋にいる時だけ）
 - `js/savecode.js` 記録の呪文（セーブ用パスワード：JIGEN1-検出番号-中身。拠点の記録の石碑で書き出し・地面に書く。成功ログ「地面に書いた文字が浮かび上がり光った。記録された世界線へ移動した」）
 - `js/base.js` 拠点のデータ（牧場・倉庫・連れて行く/持って行く選択・踏破記録 cleared・交配 breed・発見済み discovered・localStorage保存 key=dimension-roguelike-save-v1）
 - `js/basemap.js` 拠点の空間（固定マップ・牧場を歩く仲間・会話・収納箱・掲示板＝仲間選び/救出・交配小屋・門でのダンジョン選択）/ `js/bestiary.js` プレイヤー用モンスター図鑑（出会った種類 base.seen だけ詳しく載る）
-- `js/data/sprites.js` ドット絵（アイテム・設備。12×12 の文字で手描き・オリジナル）/ `js/data/characters.js` 主人公・モンスターのドット絵（16×16・右向き。主人公は紙芝居用に hero_idle1/2・walk1/2・attack・hurt）と重ねる小物 / `js/data/sea_characters.js` 水属性モンスターの絵と歩き・攻撃の指定（Game.EXTRA_FRAMES）/ `js/data/char_frames.js` モンスターの歩き・攻撃の絵（元の絵をずらし＋行の描き直しで作る。名前_walk・名前_attack）/ `js/pixelart.js` ドット絵の描画（壁・床は模様をその場で描く）/ `js/sound.js` 効果音（Web Audio API で合成）/ `js/music.js` BGM（合成で演奏するオリジナル曲。今はボス戦のみ。refresh で update）
+- `js/data/sprites.js` ドット絵（アイテム・設備。12×12 の文字で手描き・オリジナル）/ `js/data/characters.js` 主人公・モンスターのドット絵（16×16・右向き。主人公は紙芝居用に hero_idle1/2・walk1/2・attack・hurt）と重ねる小物 / `js/data/sea_characters.js` 水属性モンスターの絵と歩き・攻撃の指定（Game.EXTRA_FRAMES）/ `js/data/char_frames.js` モンスターの歩き・攻撃の絵（元の絵をずらし＋行の描き直しで作る。名前_walk・名前_attack）/ `js/pixelart.js` ドット絵の描画（壁・床は模様をその場で描く。grid＝色のマス目）/ `js/hires.js` キャラの高解像度版（16→32：ドット絵向け2倍拡大＋外側の輪郭を細く＋左上から光の陰影。3D表示と図鑑で使う）/ `js/sound.js` 効果音（Web Audio API で合成）/ `js/music.js` BGM（合成で演奏するオリジナル曲。今はボス戦のみ。refresh で update）
 - `js/renderer.js` 描画（2D） / `js/render3d.js` 3D表示（試作・WebGL直書き・外部ライブラリなし。3 キーで切替、renderer.draw の先頭で分岐。ルールには触れない）＋ `js/render3d_parts.js`（アトラス・四角形の組み立て）/ `js/anim3d.js` 紙芝居の動き / `js/minimap.js` 3D時の左上の全体マップ / `js/input.js` キー入力 / `js/main.js` 状態遷移・ターン進行（endTurn→afterAction）・ダッシュ・脱出・死亡処理
 - `docs/roadmap.md` 開発ステップ / `docs/design_notes.md` 仕様面の課題メモ
 
@@ -94,3 +94,9 @@
 - 課題リスト：docs/issues.md（大きな課題と、これまでに見つかった課題）。終わったら「完了」へ移す。
 - 水底の都：style "seaCity"（石組みの壁に海藻・フジツボ、敷石の床にサンゴのかけら）、puddles: true → dungeon.addPuddles で部屋に丸い水たまり（~、歩ける。map.isFloor）。3Dでは水面の明るさが揺れる。全体マップでは青。map は stairsX/stairsY も記録（ボス部屋のゲートの予備の場所）。
 - 遠吠え（howl）：低いのこぎり波（140→230→150Hz）を「ウ」→「オ」の口の形（バンドパス）で響かせ、1オクターブ下の成分と息の音を混ぜた「ウォーン」。
+- キャラの絵：手描きは16×16。3D表示とプレイヤー用図鑑は hires.js で32×32に高解像度化（pixel.build の hi=true）。2Dは16×16のまま。全モンスターに 待機（元の絵）・歩き(_walk)・攻撃(_attack)・やられ(_hurt、指定がなければ後ろ下へ1ドットずらす) の絵（char_frames.js）。
+- 武器（items の group "weapon"）：持ち物で「使う」＝装備／外す（1ターン）。同時に1つ。持ち物から外れると自動で外れ、冒険ごとに外れた状態から。ナイフ 攻+2・命中+8% ／ 刀 攻+4 ／ ハンマー 攻+6・命中-15% ／ ドリル 攻+3・防御無視 ／ グローブ 攻+2・当てると20%で1ターンひるみ。
+- 銃（effect "aim"）：方向を選んで撃つ。8マス・6発、ダメージは攻撃力に関係なく4−相手の防御（最低1）。杖（effect "aim"）：夢見の杖＝5ターン眠り（攻撃で起きる・ボス2ターン、4回）／反発の杖＝5マスはじき飛ばし、止まったら3ダメージ（4回）／放逐の杖＝階の遠くへ飛ばす、ボスに無効（3回）。弾・光は仲間にも当たる。使い切っても消えない（撃てないだけ。投げられる）。
+- お札（group "ofuda"、読み上げる）：千里眼の札＝階の地形とアイテムが全部わかる／守護の札＝15ターン受けるダメージ半分／静寂の札＝見えている敵20ターン技を使えない（溜めも止まる）。
+- 眠っている相手は3Dで青っぽく表示。
+

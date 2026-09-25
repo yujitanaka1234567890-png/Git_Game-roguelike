@@ -88,7 +88,7 @@ Game.bestiary = {
     lines.push("見つかる場所：" + this.whereText(id));
     Game.dialog.open({
       title: this.no(cursor) + "　" + t.name,
-      image: Game.pixel.build(t.sprite, t.overlay, t.color),
+      image: Game.pixel.build(t.sprite, t.overlay, t.color, true),
       lines: lines,
       options: [
         { label: "一覧に戻る", onChoose: function () { self.open(cursor); } },

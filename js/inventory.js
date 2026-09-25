@@ -10,6 +10,7 @@ Game.inventory = {
     this.items = [];
     this.selected = 0;
     this.open = false;
+    Game.equip.reset(); // 冒険の始め・終わりは武器を外した状態
   },
 
   // 持ち物に加える（種類ID でも アイテムデータ でもよい）。いっぱいなら false
@@ -44,6 +45,7 @@ Game.inventory = {
     if (this.items.length === 0) return null;
     var entry = this.items.splice(this.selected, 1)[0];
     if (this.selected >= this.items.length) this.selected = Math.max(0, this.items.length - 1);
+    Game.equip.onRemoved(entry); // 装備中の武器なら外れる
     return entry;
   },
 
@@ -119,7 +121,7 @@ Game.inventory = {
 
     var help = document.createElement("div");
     help.className = "inv-help";
-    help.textContent = "↑↓：選ぶ　Enter：使う　T：投げる　D：置く　Esc / I：閉じる";
+    help.textContent = "↑↓：選ぶ　Enter：使う（武器は装備／外す、銃・杖は方向を選ぶ）　T：投げる　D：置く　Esc / I / W：閉じる";
     el.appendChild(help);
   },
 };

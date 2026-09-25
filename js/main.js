@@ -104,7 +104,10 @@ Game.onPlayerMove = function (dx, dy, isRepeat) {
     return;
   }
   if (Game.state === "aim") {
-    if (dx !== 0 || dy !== 0) Game.throwSelectedItem(dx, dy);
+    if (dx !== 0 || dy !== 0) {
+      if (Game.aimMode === "use") Game.shootSelectedItem(dx, dy);
+      else Game.throwSelectedItem(dx, dy);
+    }
     return;
   }
   if (Game.state !== "playing" || Game.dashing) return;
@@ -205,6 +208,7 @@ Game.onKey = function (key) {
     else if (lower === "d") Game.dropSelectedItem();
     else if (lower === "t" && Game.inventory.items.length > 0) {
       // 投げる方向の選択へ（アイテムはまだ持ち物に残しておく）
+      Game.aimMode = "throw";
       Game.state = "aim";
       Game.inventory.open = false;
       Game.refresh(Game.aimMessage());
@@ -240,6 +244,7 @@ Game.endTurn = function () {
   Game.player.regen(Game.turn);
   Game.allies.regen(Game.turn);
   Game.mind.tick();
+  Game.equip.tick(); // 守護の札の残り
   Game.water.tick(); // 水たまりの上の水属性は少しずつ回復
   Game.enemies.tryRespawn();
   // 精神力が0の間はカウントダウン。尽きるとダンジョンに取り込まれる
@@ -446,15 +451,31 @@ Game.closeMenu = function () {
   Game.refresh();
 };
 
+// 方向を選ぶ時の案内。aimMode = "throw"（投げる）/ "use"（銃・杖を使う）
+Game.aimMode = "throw";
 Game.aimMessage = function () {
   var t = Game.items.types[Game.inventory.selectedEntry().type];
-  return t.name + "を投げる方向は？（矢印／Shift＋矢印2つで斜め／Esc で戻る）";
+  var verb = Game.aimMode === "use" ? (t.category === "gun" ? "撃つ" : "振る") : "投げる";
+  return t.name + "を" + verb + "方向は？（矢印／Shift＋矢印2つで斜め／Esc で戻る）";
 };
 
 // 選んだアイテムを使う（1ターン消費）。使ってもなくならない物（リボルバートイ等）は持ち物に残る
 Game.useSelectedItem = function () {
   var entry = Game.inventory.selectedEntry();
   if (!entry) return;
+  if (Game.items.types[entry.type].effect === "aim") {
+    // 銃・杖：先に方向を選ぶ
+    var why = Game.shoot.check(entry);
+    if (why) {
+      Game.refresh(why);
+      return;
+    }
+    Game.aimMode = "use";
+    Game.state = "aim";
+    Game.inventory.open = false;
+    Game.refresh(Game.aimMessage());
+    return;
+  }
   Game.inventory.open = false;
   Game.state = "playing";
   var consumed = Game.items.use(entry);
@@ -471,6 +492,19 @@ Game.throwSelectedItem = function (dx, dy) {
   Game.state = "animating"; // 飛んでいる間は操作を受け付けない
   Game.refresh();
   Game.throwing.start(entry, dx, dy, function () {
+    Game.state = "playing";
+    Game.endTurn();
+    Game.afterAction();
+  });
+};
+
+// 選んだ銃・杖を (dx, dy) 方向へ使う（1ターン消費）。使ってもなくならない
+Game.shootSelectedItem = function (dx, dy) {
+  var entry = Game.inventory.selectedEntry();
+  if (!entry) return;
+  Game.state = "animating";
+  Game.refresh();
+  Game.shoot.start(entry, dx, dy, function () {
     Game.state = "playing";
     Game.endTurn();
     Game.afterAction();

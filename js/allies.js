@@ -193,6 +193,8 @@ Game.allies = {
     var p = Game.player;
     var path = Game.path;
 
+    if (Game.equip.asleep(a)) return; // 眠っている（杖が当たった時など）
+
     // 0. 技の溜め中なら溜めを続ける／発動。そうでなければ、ときどき溜めを始める（届く相手がいる時だけ）
     if (a.charge) {
       Game.specials.allyContinue(a);

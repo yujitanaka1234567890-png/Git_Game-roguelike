@@ -71,8 +71,9 @@ Game.dialog = {
     if (c.title) add("div", "inv-title", c.title);
     if (c.image) {
       var big = add("canvas", "dialog-image");
-      big.width = c.image.width * 5;
-      big.height = c.image.height * 5;
+      var zoom = Math.max(2, Math.round(96 / c.image.width)); // どの大きさの絵もだいたい96pxで見せる
+      big.width = c.image.width * zoom;
+      big.height = c.image.height * zoom;
       var bctx = big.getContext("2d");
       bctx.imageSmoothingEnabled = false;
       bctx.drawImage(c.image, 0, 0, big.width, big.height);

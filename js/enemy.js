@@ -265,6 +265,8 @@ Game.enemies = {
     var p = Game.player;
     var path = Game.path;
     if (e.breathCd > 0) e.breathCd--;
+    if (e.silenced > 0) e.silenced--;
+    if (Game.equip.asleep(e)) return; // 眠っている・ひるんでいる
 
     // 0. 必殺技の溜め中
     if (e.charge) {

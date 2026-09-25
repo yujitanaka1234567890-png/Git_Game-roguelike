@@ -38,17 +38,11 @@ Game.pixel = {
     return "rgb(" + r + "," + g + "," + b + ")";
   },
 
-  // 絵（と重ねる小物）を小さな canvas に描いて返す（アイテム・設備は 12×12、キャラは 16×16）
-  build: function (spriteName, overlayName, color) {
-    var key = spriteName + "|" + (overlayName || "") + "|" + color;
-    if (this.cache[key]) return this.cache[key];
+  // 絵（と重ねる小物）の色をマス目で返す：{ size, cells[y][x] = 色の文字列 or null（透明） }
+  grid: function (spriteName, overlayName, color) {
     var rows = Game.SPRITES[spriteName];
     if (!rows) return null;
     var size = rows.length;
-    var cv = document.createElement("canvas");
-    cv.width = size;
-    cv.height = size;
-    var ctx = cv.getContext("2d");
     var pal = {
       a: color,
       b: this.shade(color, -0.35),
@@ -56,19 +50,40 @@ Game.pixel = {
       d: this.shade(color, -0.6),
       e: this.shade(color, 0.75),
     };
-    var paint = function (grid) {
+    var cells = [];
+    for (var y = 0; y < size; y++) cells.push(new Array(size).fill(null));
+    var paint = function (g) {
       for (var y = 0; y < size; y++) {
-        var row = grid[y] || "";
+        var row = g[y] || "";
         for (var x = 0; x < size; x++) {
           var ch = row[x];
           if (!ch || ch === ".") continue;
-          ctx.fillStyle = pal[ch] || Game.SPRITE_COLORS[ch] || color;
-          ctx.fillRect(x, y, 1, 1);
+          cells[y][x] = pal[ch] || Game.SPRITE_COLORS[ch] || color;
         }
       }
     };
     paint(rows);
     if (overlayName && Game.SPRITE_OVERLAYS[overlayName]) paint(Game.SPRITE_OVERLAYS[overlayName]);
+    return { size: size, cells: cells };
+  },
+
+  // 絵を小さな canvas に描いて返す。hi = true なら高解像度版（キャラは 32×32。hires.js）
+  build: function (spriteName, overlayName, color, hi) {
+    if (hi) return Game.hires.build(spriteName, overlayName, color);
+    var key = spriteName + "|" + (overlayName || "") + "|" + color;
+    if (this.cache[key]) return this.cache[key];
+    var g = this.grid(spriteName, overlayName, color);
+    if (!g) return null;
+    var cv = document.createElement("canvas");
+    cv.width = cv.height = g.size;
+    var ctx = cv.getContext("2d");
+    for (var y = 0; y < g.size; y++) {
+      for (var x = 0; x < g.size; x++) {
+        if (!g.cells[y][x]) continue;
+        ctx.fillStyle = g.cells[y][x];
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
     this.cache[key] = cv;
     return cv;
   },

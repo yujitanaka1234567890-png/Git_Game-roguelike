@@ -283,7 +283,7 @@ Game.view3d = {
       var size = un.boss ? 2 : un.item ? 0.7 : 1.3; // 引きで見ても分かるよう、キャラは1マスより少し大きく
       var fp = un.flip === undefined ? 1 : un.flip;
       var w = size * Math.abs(fp) * (un.sx || 1), h = size * (un.sy || 1);
-      var tint = un.tint || [1, 1, 1];
+      var tint = un.tint || (un.unitRef && un.unitRef.sleep > 0 ? [0.6, 0.7, 1.15] : [1, 1, 1]); // 眠っていると青っぽい
       this.board(un.x, un.z, w, h, un.s, [un.m * tint[0], un.m * tint[1], un.m * tint[2], 1], un.lift || 0, un.roll || 0, 0, fp);
       var top = h + (un.lift || 0);
       if (un.hp !== undefined && un.hp < un.maxHp) {
@@ -364,7 +364,7 @@ Game.view3d = {
       var spr = pose.suffix && Game.SPRITES[t.sprite + pose.suffix] ? t.sprite + pose.suffix : t.sprite; // 歩き・攻撃の絵
       var o = { s: self.spriteSlot(spr, t.overlay, t.color, t.symbol), m: 1, boss: !!t.boss, stage: t.stage };
       for (var pk in pose) o[pk] = pose[pk];
-      if (unit) { o.hp = unit.hp; o.maxHp = unit.maxHp; }
+      if (unit) { o.hp = unit.hp; o.maxHp = unit.maxHp; o.unitRef = unit; }
       for (var k in extra) o[k] = extra[k];
       list.byObj.set(obj, o);
       return o;

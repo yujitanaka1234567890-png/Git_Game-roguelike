@@ -3,7 +3,8 @@
 //   dx / dy ：絵全体を右（dx）・下（dy）にずらす（マイナスで左・上）
 //   squash  ：その行を消して上に空行を入れる（ぷにっと縮む）
 //   rows    ：{ 行番号: "16文字" } その行を描き直す（ずらした後の絵に対して）
-// できた絵は「元の名前_walk」「元の名前_attack」になる（例：nume1_walk）。
+// できた絵は「元の名前_walk」「元の名前_attack」「元の名前_hurt」になる（例：nume1_walk）。
+// hurt（やられ）は指定がなければ、後ろ（左）へ1ドット・下へ1ドットずらした絵になる。
 // 3D表示では、歩く時は元の絵と _walk を交互に、攻撃の瞬間は _attack を見せる（anim3d.js）。
 Game.CHAR_FRAMES = {
   // ---- ぬめ系：歩きは押しつぶれて横に広がる、攻撃は口を大きく開けて前へ ----
@@ -156,5 +157,6 @@ Game.CHAR_FRAMES = {
     var f = all[name];
     if (f.walk) Game.SPRITES[name + "_walk"] = make(base, f.walk);
     if (f.attack) Game.SPRITES[name + "_attack"] = make(base, f.attack);
+    Game.SPRITES[name + "_hurt"] = make(base, f.hurt || { dx: -1, dy: 1 }); // やられ：後ろへのけぞって沈む
   }
 })();

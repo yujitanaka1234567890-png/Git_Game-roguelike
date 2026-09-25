@@ -9,6 +9,9 @@
 Game.items = {
   // 名前はすべてこのゲームで使う一般的な名前（既存作品のアイテム名・商標は使わない）
   // category：plant（植物）/ talisman（符）/ fruit（木の実）/ tool（道具）/ incense（香）/ smoke（煙草）/ puzzle（パズル）/ fidget（手遊び道具）
+  //           weapon（近接武器）/ gun（銃）/ staff（杖）/ ofuda（お札）
+  // 近接武器：weapon = { atk: 攻撃力の上乗せ, hit: 命中率の増減, pierce: 防御力を無視, stun: ひるませる確率 }（equip.js）
+  // 銃・杖：effect "aim"（方向を選んで使う）。charges＝使える回数、shot＝当たった時の効果（shoot.js）、range＝届くマス数
   // group：持ち物の並び順の分類（groupOrder の順に自動で並ぶ）
   // sprite：ドット絵（data/sprites.js の絵の名前）  weight：出やすさ（大きいほど出やすい）
   // effect = 使った時の効果（effects） / throwEffect = 投げて誰かに当たった時の効果（throwEffects）
@@ -61,6 +64,74 @@ Game.items = {
         { power: 4, text: "リボルバーを回転させた。多少は気分転換になったが壊れた" },
       ],
     },
+    // ---- 近接武器（装備すると主人公の攻撃力が上がる） ----
+    knife: {
+      name: "ナイフ", group: "weapon", sprite: "knife", category: "weapon", symbol: "ナ", color: "#c8d0dc", weight: 3,
+      effect: "equip", throwEffect: "bonk", power: 0, weapon: { atk: 2, hit: 0.08, note: "軽くて当てやすい" },
+      desc: "装備すると攻撃力+2。軽くて扱いやすく、攻撃が少し当たりやすくなる。",
+    },
+    katana: {
+      name: "刀", group: "weapon", sprite: "katana", category: "weapon", symbol: "刀", color: "#d8dde8", weight: 2,
+      effect: "equip", throwEffect: "bonk", power: 0, weapon: { atk: 4 },
+      desc: "装備すると攻撃力+4。よく切れる片刃の刀。",
+    },
+    hammer: {
+      name: "ハンマー", group: "weapon", sprite: "hammer", category: "weapon", symbol: "槌", color: "#9a8a7a", weight: 2,
+      effect: "equip", throwEffect: "bonk", power: 0, weapon: { atk: 6, hit: -0.15, note: "重くて外しやすい" },
+      desc: "装備すると攻撃力+6。とても重く、攻撃が少し外れやすくなる。",
+    },
+    drill: {
+      name: "ドリル", group: "weapon", sprite: "drill", category: "weapon", symbol: "螺", color: "#e0b040", weight: 2,
+      effect: "equip", throwEffect: "bonk", power: 0, weapon: { atk: 3, pierce: true, note: "硬い相手にも効く" },
+      desc: "装備すると攻撃力+3。回転する刃で、相手の防御力を無視してダメージを与える。",
+    },
+    glove: {
+      name: "グローブ", group: "weapon", sprite: "glove", category: "weapon", symbol: "拳", color: "#e05a3a", weight: 2,
+      effect: "equip", throwEffect: "bonk", power: 0, weapon: { atk: 2, stun: 0.2, note: "当てると時々ひるませる" },
+      desc: "装備すると攻撃力+2。攻撃が当たると、20%の確率で相手をよろめかせ1ターン動けなくする。",
+    },
+    // ---- 銃（遠くから撃てるが弱め） ----
+    gun: {
+      name: "銃", group: "attack", sprite: "gun", category: "gun", symbol: "銃", color: "#7a8290", weight: 2,
+      effect: "aim", throwEffect: "bonk", shot: "bullet", power: 4, charges: 6, range: 8,
+      boltSymbol: "•", boltColor: "#ffe066", emptyText: "弾が残っていない。",
+      desc: "向いた方向に弾を撃つ（8マスまで・6発）。ダメージは攻撃力に関係なく4（相手の防御力を引く）。",
+    },
+    // ---- 杖（方向を選んで振る。当たった相手に特殊な効果） ----
+    dreamStaff: {
+      name: "夢見の杖", group: "staff", sprite: "staff", category: "staff", symbol: "杖", color: "#b9a8ff", weight: 2,
+      effect: "aim", throwEffect: "bonk", shot: "sleep", power: 5, charges: 4, range: 10,
+      boltSymbol: "✦", boltColor: "#b9a8ff", emptyText: "杖にもう力が残っていない。",
+      desc: "振ると光の玉が飛び、当たった相手を5ターン眠らせる（攻撃を受けると起きる。ボスは2ターン）。4回使える。",
+    },
+    repelStaff: {
+      name: "反発の杖", group: "staff", sprite: "staff", category: "staff", symbol: "杖", color: "#88ddff", weight: 2,
+      effect: "aim", throwEffect: "bonk", shot: "knock", power: 5, charges: 4, range: 10,
+      boltSymbol: "✦", boltColor: "#88ddff", emptyText: "杖にもう力が残っていない。",
+      desc: "当たった相手を向こうへ5マスはじき飛ばす。壁などにぶつかると3ダメージ。4回使える。",
+    },
+    banishStaff: {
+      name: "放逐の杖", group: "staff", sprite: "staff", category: "staff", symbol: "杖", color: "#cc88ff", weight: 1,
+      effect: "aim", throwEffect: "bonk", shot: "banish", power: 0, charges: 3, range: 10,
+      boltSymbol: "✦", boltColor: "#cc88ff", emptyText: "杖にもう力が残っていない。",
+      desc: "当たった相手を、この階のどこか遠くへ飛ばす（ボスには効かない）。3回使える。",
+    },
+    // ---- お札（読み上げると特殊な効果） ----
+    seerOfuda: {
+      name: "千里眼の札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#44aaff", weight: 3,
+      effect: "reveal", throwEffect: "bonk", power: 0,
+      desc: "読み上げると、この階の地形と落ちているアイテムがすべてわかる。",
+    },
+    guardOfuda: {
+      name: "守護の札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#44cc55", weight: 3,
+      effect: "guard", throwEffect: "bonk", power: 15,
+      desc: "読み上げると、15ターンの間、受けるダメージが半分になる。",
+    },
+    hushOfuda: {
+      name: "静寂の札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#ee3333", weight: 2,
+      effect: "hush", throwEffect: "bonk", power: 20,
+      desc: "読み上げると、見えている敵すべてが20ターンの間、技を使えなくなる（溜めている技も止まる）。",
+    },
     // ---- 道具 ----
     returnBell: {
       name: "帰還の鈴", group: "tool", sprite: "bell", category: "tool", symbol: "♪", color: "#88ddff", weight: 3,
@@ -70,13 +141,14 @@ Game.items = {
   },
 
   // 持ち物の並び順（効果の分類ごと）と、その見出し
-  groupOrder: ["hp", "mind", "buff", "attack", "tool"],
-  groupLabels: { hp: "体力回復", mind: "精神回復", buff: "強化", attack: "攻撃", tool: "道具" },
+  groupOrder: ["hp", "mind", "buff", "weapon", "attack", "staff", "ofuda", "tool"],
+  groupLabels: { hp: "体力回復", mind: "精神回復", buff: "強化", weapon: "武器（使うと装備）", attack: "攻撃", staff: "杖", ofuda: "お札", tool: "道具" },
 
   // 使う時の動詞（カテゴリごと）
   verbs: {
     plant: "口にした", talisman: "かざした", fruit: "食べた", tool: "鳴らした",
     incense: "焚いた", smoke: "一服した", puzzle: "そろえた",
+    gun: "撃った", staff: "振った", ofuda: "読み上げた",
   },
 
   floorItems: [], // 床のアイテム [{x, y, type, uses, origin, seen}]  seen = 一度見たか（見た物は地図に残る）
@@ -91,6 +163,8 @@ Game.items = {
   displayName: function (entry) {
     var t = this.types[entry.type];
     if (t.fidget) return t.name + "（残り" + (t.fidget.length - (entry.uses || 0)) + "回）";
+    if (t.charges) return t.name + "（残り" + Math.max(0, t.charges - (entry.uses || 0)) + "）";
+    if (Game.equip && Game.equip.isEquipped(entry)) return t.name + "［装備中］";
     return t.name;
   },
 
@@ -157,6 +231,10 @@ Game.items = {
   // アイテムを使う。使ってなくなるなら true（持ち物から取り除くのは呼び出し側）
   use: function (entry) {
     var t = this.types[entry.type];
+    if (t.effect === "equip") {
+      Game.equip.toggle(entry);
+      return false; // 装備してもなくならない
+    }
     var mul = Game.dimension.powerMul(entry); // 別の世界の品なら効き目の読み替え（dimension.js）
     if (t.effect === "fidget") {
       Game.sound.play("fidget");
@@ -220,6 +298,34 @@ Game.items = {
     mindUp: function (t, power) {
       Game.sound.play("heal");
       Game.mind.restore(power, true);
+    },
+
+    // 千里眼の札：この階の地形とアイテムがすべてわかる
+    reveal: function () {
+      for (var y = 0; y < Game.map.height; y++) {
+        for (var x = 0; x < Game.map.width; x++) Game.fov.explored[y][x] = true;
+      }
+      Game.items.floorItems.forEach(function (fi) { fi.seen = true; });
+      Game.log.add("頭の中に、この階の姿がはっきりと浮かんだ！", "good");
+    },
+
+    // 守護の札：しばらく受けるダメージが半分
+    guard: function (t, power) {
+      Game.player.guardTurns = power;
+      Game.log.add("淡い光の膜に包まれた。" + power + "ターンの間、受けるダメージが半分になる。", "good");
+    },
+
+    // 静寂の札：見えている敵が技を使えなくなる
+    hush: function (t, power) {
+      var n = 0;
+      Game.enemies.list.forEach(function (e) {
+        if (!Game.fov.isVisible(e.x, e.y)) return;
+        e.silenced = power;
+        e.charge = null;
+        n++;
+      });
+      if (n === 0) Game.log.add("しかし何も起こらなかった。", "miss");
+      else Game.log.add("あたりが静まりかえった。見えている敵は " + power + " ターンの間、技を使えない。", "good");
     },
 
     escape: function (t) {

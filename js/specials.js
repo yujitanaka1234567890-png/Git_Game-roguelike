@@ -84,6 +84,7 @@ Game.specials = {
 
   // （敵）溜めを始めるか判定する。始めたら true
   maybeStart: function (e) {
+    if (e.silenced > 0) return false; // 静寂の札で技を封じられている
     var skill = this.pickUsable(e, "enemy");
     if (!skill) return false;
     if (Math.random() >= Game.config.specialChance) return false;

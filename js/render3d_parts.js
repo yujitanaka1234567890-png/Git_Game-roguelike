@@ -37,9 +37,9 @@ Object.assign(Game.view3d, {
 
   // モンスター・アイテム・設備の絵（なければ文字）
   spriteSlot: function (sprite, overlay, color, ch) {
-    var cv = sprite ? Game.pixel.build(sprite, overlay, color) : null;
+    var cv = sprite ? Game.pixel.build(sprite, overlay, color, true) : null; // 高解像度版（hires.js）
     if (cv) {
-      return this.slot("spr|" + sprite + "|" + (overlay || "") + "|" + color, cv.width, cv.height, function (ctx) {
+      return this.slot("hspr|" + sprite + "|" + (overlay || "") + "|" + color, cv.width, cv.height, function (ctx) {
         ctx.drawImage(cv, 0, 0);
       });
     }

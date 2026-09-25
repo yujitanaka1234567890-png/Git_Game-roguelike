@@ -79,7 +79,7 @@ Game.anim3d = {
       else o.frame = Math.floor(now / 600) % 2 ? "hero_idle2" : "hero_idle1";
       if (moving) o.lift = Math.sin(k * Math.PI) * 0.05;
     } else {
-      o.suffix = atk ? "_attack" : moving && st.steps % 2 ? "_walk" : "";
+      o.suffix = hurt ? "_hurt" : atk ? "_attack" : moving && st.steps % 2 ? "_walk" : "";
       var b = Math.sin(now / 350 + st.seed);
       o.sy = 1 + 0.045 * b;
       o.sx = 1 - 0.03 * b;

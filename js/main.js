@@ -114,6 +114,8 @@ Game.onPlayerMove = function (dx, dy, isRepeat) {
   if (Game.state !== "playing" || Game.dashing) return;
   // 押しっぱなしで歩いている時、ダメージを受けた直後は少しの間止める（被弾に気づけるように）
   if (isRepeat && Date.now() < Game.hitPauseUntil) return;
+  // 精神力0の間は、前の行動から1秒たつまで次の行動を受け付けない
+  if (Date.now() < Game.mindLockUntil) return;
   Game.giveUpPending = false;
 
   // 階段の上で、その階段の方向キー → 1回目は確認、2回目で使う
@@ -265,6 +267,8 @@ Game.endTurn = function () {
   }
   Game.notice.checkHp(); // HPが残りわずかなら画面の下で知らせる
   if (Game.player.wasHit) Game.hitPauseUntil = Date.now() + Game.config.hitPauseMs;
+  // 精神力0の間は、1手ごとに次の入力まで間をあける（長押し・連打で気づかずに取り込まれないように）
+  if (Game.mind.countdownLeft() !== null) Game.mindLockUntil = Date.now() + Game.config.mind.zeroInputWaitMs;
   if (Game.player.hp <= 0) {
     Game.log.add("あなたは B" + Game.floor + "F で倒れた… Enter で拠点へ戻る", "bad");
     Game.onDeath("B" + Game.floor + "F で倒れてしまった…");
@@ -383,9 +387,11 @@ Game.descend = function () {
 Game.dashing = false;
 Game.dashToken = 0; // 拠点へ戻る・階移動の時に、古いダッシュや投げアニメを確実に止めるための番号
 Game.hitPauseUntil = 0; // この時刻（ミリ秒）までは、押しっぱなしの移動を受け付けない（被弾した直後）
+Game.mindLockUntil = 0; // この時刻（ミリ秒）までは、移動・足踏み・ダッシュを受け付けない（精神力0の間）
 
 Game.startDash = function (dx, dy) {
   if (Game.state !== "playing" || Game.dashing || Game.dialog.isOpen()) return;
+  if (Date.now() < Game.mindLockUntil) return; // 精神力0の間は1秒あける
   if (!Game.canDashStep(dx, dy)) {
     Game.refresh("そこへは進めない");
     return;
@@ -444,6 +450,7 @@ Game.dashStep = function (dx, dy, token) {
     Game.allies.list.length !== alliesBefore || // はぐれた仲間を救出した・仲間が倒れた
     Game.inventory.items.length !== bagBefore || // アイテムを拾った
     Game.enemies.adjacentTo(p.x, p.y) ||
+    Game.mind.countdownLeft() !== null || // 精神力0：ダッシュは止める（1手ずつ）
     !Game.canDashStep(dx, dy);
   if (stop) {
     Game.dashing = false;

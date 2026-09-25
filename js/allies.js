@@ -27,13 +27,23 @@ Game.allies = {
     return this.numbers[typeId];
   },
 
+  // 主人公についてくる仲間（分隊で独立行動している子は数えない）の数
+  escortCount: function () {
+    return this.list.filter(function (a) { return !a.squad; }).length;
+  },
+
+  // 仲間がいっぱいか：同行の仲間が maxAllies に達したか、分隊も合わせて全体の上限（maxAllies＋分隊の最大人数）に達したか
+  isFull: function () {
+    return this.escortCount() >= Game.config.maxAllies || this.list.length >= Game.config.maxAllies + Game.config.squad.maxMembers;
+  },
+
   // 倒した敵が仲間になるか判定する（確率はレア度で決まる）。
   // 仲間がいっぱいなら、ターンの終わりに入れ替え確認を出すため pending に入れる
   tryRecruit: function (enemy) {
     if (Game.enemies.types[enemy.type].boss) return; // ボスは仲間にならない
     if (Math.random() >= Game.enemies.rarityOf(enemy.type).recruit) return;
     var name = Game.enemies.types[enemy.type].name;
-    if (this.list.length >= Game.config.maxAllies) {
+    if (this.isFull()) {
       Game.log.add(name + "は心を開いた！ でも仲間はいっぱいだ…", "good");
       this.pending.push({ type: enemy.type, x: enemy.x, y: enemy.y });
       return;
@@ -287,7 +297,8 @@ Game.allies = {
     el.innerHTML = "";
     var title = document.createElement("span");
     title.className = "party-title";
-    title.textContent = "仲間 " + this.list.length + "/" + Game.config.maxAllies;
+    var inSquad = this.list.length - this.escortCount();
+    title.textContent = "仲間 " + this.escortCount() + "/" + Game.config.maxAllies + (inSquad > 0 ? "（＋分隊 " + inSquad + "）" : "");
     el.appendChild(title);
     if (this.list.length === 0) {
       var none = document.createElement("span");

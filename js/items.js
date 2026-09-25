@@ -51,7 +51,7 @@ Game.items = {
     },
     sixFacePuzzle: {
       name: "六面パズル", group: "mind", sprite: "cube", category: "puzzle", symbol: "▦", color: "#8a8f98", rarity: 2,
-      effect: "mindUp", throwEffect: "bonk", power: 10,
+      effect: "mindUp", throwEffect: "bonk", power: 10, sound: "puzzle",
       desc: "六つの面の色をそろえる立体パズル。そろえると達成感で精神力が10回復する（使うとなくなる）。"
     },
     revolverToy: {
@@ -268,7 +268,8 @@ Game.items = {
       return this.useFidget(entry, t, mul);
     }
     // 回復・最大値アップは効果の中で音を鳴らす。それ以外は共通の「使った」音
-    if (t.effect !== "heal" && t.effect !== "mindUp") Game.sound.play("use");
+    if (t.sound) Game.sound.play(t.sound); // アイテム専用の音（六面パズルの「カチャカチャ」など）
+    else if (t.effect !== "heal" && t.effect !== "mindUp") Game.sound.play("use");
     Game.log.add(t.name + "を" + this.verbs[t.category] + "。");
     this.effects[t.effect](t, Math.round(t.power * mul));
     return true;
@@ -323,7 +324,7 @@ Game.items = {
     },
 
     mindUp: function (t, power) {
-      Game.sound.play("heal");
+      if (!t.sound) Game.sound.play("heal");
       Game.mind.restore(power, true);
     },
 

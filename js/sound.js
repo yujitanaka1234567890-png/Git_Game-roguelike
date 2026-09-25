@@ -375,6 +375,15 @@ Game.sound = {
       this.tone(2400, 0.18, "triangle", 0.22, 2300, t + 0.22);
       this.tone(3600, 0.12, "sine", 0.12, null, t + 0.22);
     },
+    // 六面パズルを回す「カチャカチャ」：短いプラスチックの音を不規則なリズムで重ねる
+    puzzle: function () {
+      var times = [0, 0.09, 0.2, 0.27, 0.4, 0.48, 0.6];
+      for (var i = 0; i < times.length; i++) {
+        var f = 1800 + (i % 3) * 450;
+        this.noise(0.03, 0.35, times[i], 3200 + (i % 2) * 1200, 900);
+        this.tone(f, 0.02, "square", 0.06, f * 0.8, times[i]);
+      }
+    },
     throw: function () { this.noise(0.12, 0.2, 0, 1800); this.tone(500, 0.12, "sine", 0.1, 300); },
     // 階段の上り下り「ざっざっざっ」：足音3回
     stairs: function () {

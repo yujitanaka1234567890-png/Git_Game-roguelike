@@ -103,7 +103,7 @@ Game.rescue = {
     Game.log.add("はぐれていた " + this.memberNames(rec) + " を見つけた！", "good");
     Game.sound.play("rescue");
     for (var i = 0; i < rec.members.length; i++) {
-      if (Game.allies.list.length < Game.config.maxAllies) Game.allies.join(rec.members[i], x, y).rescued = true;
+      if (!Game.allies.isFull()) Game.allies.join(rec.members[i], x, y).rescued = true;
       else Game.allies.pending.push({ type: rec.members[i], x: x, y: y, rescued: true }); // いっぱいなら入れ替え確認へ
     }
     Game.log.add("（救出した仲間は、この冒険でまた倒れるともう戻らない。生きて連れ帰ろう）", "ally");

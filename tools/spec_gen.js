@@ -19,7 +19,7 @@ function where(id){const r=[];for(const k in D){const d=D[k];if(d.boss===id)r.pu
   Game.BREEDING.forEach(b=>{if(b.child===id)r.push('交配：'+M[b.parents[0]].name+' ＋ '+M[b.parents[1]].name);});
   return r.join(' / ')||'（なし）';}
 // ---- モンスター ----
-let o=['# モンスター仕様書','','> 直したい所は、その行の値を書き換えるか、`- 要望:` の後ろに文章で書いてください。','> 書き方のルールは [README.md](README.md)。技の中身は [skills.md](skills.md)。','',
+let o=['# モンスター仕様書','','> 直したい所は、その行の値を書き換えるか、`- 要望:` の後ろに文章で書いてください。','> 書き方のルールは [modify-requests-rule.md](../../modify-requests-rule.md)。技の中身は [skills.md](skills.md)。','',
 '共通：HP・攻撃力・防御力・経験値は「レア度1の時の基準値」。実際の強さはレア度の倍率（1.0 / 1.3 / 1.7 / 2.2 / 3.0）がかかる。',''];
 let last=null;
 for(const [g,id] of groups('js/data/monsters.js',M)){const t=M[id];if(g!==last){o.push('## '+g,'');last=g;}
@@ -46,10 +46,11 @@ o=['# アイテム仕様書','','> 直したい所は、その行の値を書き
 '## レア度と出やすさ','','| レア度 | 名前 | 出やすさ |','|---|---|---|'];
 for(const k in C.itemRarities)o.push('| '+C.itemRarities[k].stars+' '+k+' | '+C.itemRarities[k].label+' | '+C.itemRarities[k].spawn+' |');
 o.push('','強い・便利な物ほどレア度を高くして出にくくする。1階に落ちている数は '+C.dungeon.minItems+'〜'+C.dungeon.maxItems+' 個。','',
-'## ボスへの状態の効き方','','- 弱体（技封じ・ひるみ・放逐）: 効かない','- 眠り: 最大'+C.bossResist.sleepTurns+'ターン','- 状態異常（毒・麻痺・出血など。将来）: ターン数×'+C.bossResist.ailmentMul+'（最低1ターン）','- 要望: ','');
+'## ダメージの計算','','- 受けるダメージ = （攻撃力 − 防御力）× 0.8〜1.2 のばらつき（最低1）','- 防具を装備すると主人公の防御力が上がる（主人公の防御力は最初1）','- 守護の札：受けるダメージ×3/4','- 強いダンジョンは敵のHP・攻撃力に倍率（深淵の迷宮 ×'+D.abyssLabyrinth.enemyMul+'）','- 要望: ','','## ボスへの状態の効き方','','- 弱体（技封じ・ひるみ・放逐）: 効かない','- 眠り: 最大'+C.bossResist.sleepTurns+'ターン','- 状態異常（毒・麻痺・出血など。将来）: ターン数×'+C.bossResist.ailmentMul+'（最低1ターン）','- 要望: ','');
 for(const g of Game.items.groupOrder){o.push('## '+GL[g],'');for(const id in T){const t=T[id];if(t.group!==g)continue;
   o.push('### '+t.name+'（'+id+'）','- レア度: '+t.rarity+'（'+C.itemRarities[t.rarity].label+'）','- 効果: '+t.desc);
   if(t.weapon)o.push('- 武器: 攻撃力+'+t.weapon.atk+(t.weapon.hit?'　命中'+(t.weapon.hit>0?'+':'')+Math.round(t.weapon.hit*100)+'%':'')+(t.weapon.pierce?'　防御無視':'')+(t.weapon.stun?'　ひるみ'+Math.round(t.weapon.stun*100)+'%':''));
+  if(t.armor)o.push('- 防具: 防御力+'+t.armor.def);
   if(t.charges)o.push('- 回数: '+t.charges+'　届く距離: '+t.range+'マス');
   o.push('- 投げて当てた時: '+({heal:'相手が回復',atkUp:'相手の攻撃力+1',bonk:C.throwBonkDamage+'ダメージ'}[t.throwEffect]),'- 要望: ','');}}
 fs.writeFileSync(outDir+'/items.md',o.join('\n'));

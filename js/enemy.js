@@ -88,6 +88,11 @@ Game.enemies = {
   spawn: function (typeId, x, y) {
     var t = this.types[typeId];
     var s = this.statsOf(typeId);
+    // 強いダンジョン（dungeons.js の enemyMul）では、敵のHP・攻撃力・経験値が上がる（仲間になった時は元の強さ）
+    var dm = (Game.state !== "base" && Game.currentDungeon().enemyMul) || 1;
+    if (dm !== 1) {
+      s = { hp: Math.round(s.hp * dm), atk: Math.round(s.atk * dm), def: s.def, exp: Math.round(s.exp * dm) };
+    }
     this.list.push({
       type: typeId, name: t.name, symbol: t.symbol, color: t.color,
       maxHp: s.hp, hp: s.hp, atk: s.atk, def: s.def, exp: s.exp,

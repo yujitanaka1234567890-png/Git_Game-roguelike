@@ -53,17 +53,17 @@ Game.MONSTERS = {
   },
   // ---- 刃系（壁をすり抜ける） ----
   floatKnife: {
-    name: "浮遊ナイフ", symbol: "†", sprite: "blade1", color: "#c8d4ee", hp: 10, atk: 5, def: 1, exp: 15,
+    name: "浮遊ナイフ", symbol: "†", sprite: "blade1", color: "#a8707c", hp: 10, atk: 5, def: 1, exp: 15,
     rarity: 3, growth: { hp: 3, atk: 2 }, skills: ["slashDance"], phasing: true,
     stage: 1, evolvesTo: "floatTwinBlade", evolveLevel: 5, enemyEvoExp: 72,
   },
   floatTwinBlade: {
-    name: "浮遊双刃", symbol: "†", sprite: "blade2", color: "#88bbff", hp: 12, atk: 5, def: 1, exp: 15,
+    name: "浮遊双刃", symbol: "†", sprite: "blade2", color: "#8a70b0", hp: 12, atk: 5, def: 1, exp: 15,
     rarity: 4, growth: { hp: 4, atk: 2 }, skills: ["slashDance", "crossSlash"], phasing: true,
     stage: 2, evolvesTo: "floatThousandBlade", evolveLevel: 30, enemyEvoExp: 92,
   },
   floatThousandBlade: {
-    name: "浮遊千刃", symbol: "†", sprite: "blade3", color: "#ffffff", hp: 12, atk: 4, def: 1, exp: 15,
+    name: "浮遊千刃", symbol: "†", sprite: "blade3", color: "#c46868", hp: 12, atk: 4, def: 1, exp: 15,
     rarity: 5, growth: { hp: 5, atk: 2 }, skills: ["thousandSlash", "crossSlash"], phasing: true,
     stage: 3,
   },

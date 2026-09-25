@@ -277,14 +277,24 @@ Game.view3d = {
       var st = stands[i];
       this.board(st.x + 0.5, st.z + 0.5, 1, 1, st.s, [st.m, st.m, st.m, 1]);
     }
-    units.sort(function (a, b) { return a.z - b.z; }); // 奥から順に
+    // 奥から順に（同じ列なら左から）。キャラどうしは深さで消し合わず、後から描いた手前の子が上になる
+    units.sort(function (a, b) { return a.z - b.z || a.x - b.x; });
+    var ghosts = []; // 壁の中にいる敵（壁抜け）：壁に隠れないよう、あとで半透明で描く
+    var pulse = Game.renderer.dangerPulse();
     for (i = 0; i < units.length; i++) {
       var un = units[i];
+      if (un.inWall) {
+        ghosts.push(un);
+        continue;
+      }
       var size = un.boss ? 2 : un.item ? 0.7 : 1.3; // 引きで見ても分かるよう、キャラは1マスより少し大きく
       var fp = un.flip === undefined ? 1 : un.flip;
       var w = size * Math.abs(fp) * (un.sx || 1), h = size * (un.sy || 1);
       var tint = un.tint || (un.unitRef && un.unitRef.sleep > 0 ? [0.6, 0.7, 1.15] : [1, 1, 1]); // 眠っていると青っぽい
-      this.board(un.x, un.z, w, h, un.s, [un.m * tint[0], un.m * tint[1], un.m * tint[2], 1], un.lift || 0, un.roll || 0, 0, fp);
+      if (un.ally && un.unitRef && Game.renderer.inDanger(un.unitRef)) {
+        tint = [tint[0], tint[1] * (1 - 0.5 * pulse), tint[2] * (1 - 0.35 * pulse)]; // 死にかけの仲間は薄い紅色に点滅
+      }
+      this.board(un.x, un.z, w, h, un.s, [un.m * tint[0], un.m * tint[1], un.m * tint[2], un.alpha || 1], un.lift || 0, un.roll || 0, 0, fp);
       var top = h + (un.lift || 0);
       if (un.hp !== undefined && un.hp < un.maxHp) {
         this.board(un.x, un.z, 0.8, 0.08, white, this.rgb(c.hpBarBg), top + 0.06);
@@ -305,6 +315,20 @@ Game.view3d = {
       this.board(pu.x - hm.dx * 0.42, pu.z - hm.dy * 0.42, 0.55, 0.55, spike, [1, 1, 1, 1], 0.2);
     }
     var spriteEnd = this.n;
+
+    // ---- 3b. 壁の中の敵（半透明）とダメージの数字：壁に隠れないよう、深さを見ずに上から描く ----
+    for (i = 0; i < ghosts.length; i++) {
+      var gh = ghosts[i];
+      var gs = gh.boss ? 2 : 1.3, gfp = gh.flip === undefined ? 1 : gh.flip;
+      this.board(gh.x, gh.z, gs * Math.abs(gfp) * (gh.sx || 1), gs * (gh.sy || 1), gh.s, [1, 1, 1, 0.5], gh.lift || 0, gh.roll || 0, 0, gfp);
+    }
+    var pops = Game.fx.activePops();
+    for (i = 0; i < pops.length; i++) {
+      var pp = pops[i], pu2 = units.byObj.get(pp.pop.unit);
+      if (!pu2) continue;
+      this.board(pu2.x, pu2.z, 0.8, 0.8, this.numberSlot(pp.pop.text, pp.pop.color), [1, 1, 1, pp.alpha], 1.1 + pp.hop);
+    }
+    var ghostEnd = this.n;
 
     // ---- 4. 画面全体にかける色（精神力が減った時の紫のにじみ） ----
     var p = Game.player;
@@ -330,12 +354,17 @@ Game.view3d = {
     gl.drawArrays(gl.TRIANGLES, 0, solidEnd / 9);
     gl.depthMask(false); // 床の上の物は重なっても消し合わない
     gl.drawArrays(gl.TRIANGLES, solidEnd / 9, (decalEnd - solidEnd) / 9);
+    gl.drawArrays(gl.TRIANGLES, decalEnd / 9, (spriteEnd - decalEnd) / 9); // キャラも深さを書かない（奥から順に描いてある）
     gl.depthMask(true);
-    gl.drawArrays(gl.TRIANGLES, decalEnd / 9, (spriteEnd - decalEnd) / 9);
-    if (overlayEnd > spriteEnd) {
+    if (ghostEnd > spriteEnd) {
+      gl.disable(gl.DEPTH_TEST);
+      gl.drawArrays(gl.TRIANGLES, spriteEnd / 9, (ghostEnd - spriteEnd) / 9);
+      gl.enable(gl.DEPTH_TEST);
+    }
+    if (overlayEnd > ghostEnd) {
       gl.disable(gl.DEPTH_TEST);
       gl.uniformMatrix4fv(this.uMat, false, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-      gl.drawArrays(gl.TRIANGLES, spriteEnd / 9, (overlayEnd - spriteEnd) / 9);
+      gl.drawArrays(gl.TRIANGLES, ghostEnd / 9, (overlayEnd - ghostEnd) / 9);
       gl.enable(gl.DEPTH_TEST);
     }
   },
@@ -401,7 +430,7 @@ Game.view3d = {
     for (var i = 0; i < es.length; i++) {
       var e = es[i];
       if (!fov.isVisible(e.x, e.y)) continue;
-      add(mon(Game.MONSTERS[e.type], e.x, e.y, e, e, { charge: e.charge ? "#ffe066" : null }));
+      add(mon(Game.MONSTERS[e.type], e.x, e.y, e, e, { charge: e.charge ? "#ffe066" : null, inWall: Game.map.tileAt(e.x, e.y) === "#" }));
     }
     var p = Game.player;
     var hp = Game.anim3d.pose(p, p.x + 0.5, p.y + 0.5, now, true);

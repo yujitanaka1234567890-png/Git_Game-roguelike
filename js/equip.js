@@ -1,15 +1,32 @@
-// 武器の装備と、アイテムで起きる状態（眠り・技封じ・守り）。
-//   ・近接武器（ナイフ・刀・ハンマー・ドリル・グローブ）は持ち物から「使う」で装備／外す。装備中は主人公の攻撃力が上がる
-//     （items.js の weapon：atk＝攻撃力の上乗せ、hit＝命中率の増減、pierce＝相手の防御力を無視、stun＝当てた時に相手をひるませる確率）
-//   ・同時に装備できる武器は1つ。持ち物から外れる（投げる・置く）と自動で外れる。冒険ごとに外れた状態から始まる
-//   ・状態：sleep（眠り。その間は行動しない。攻撃を受けると起きる）、silenced（技を使えない）、主人公の guardTurns（受けるダメージ半分）
+// 装備と、アイテムで起きる状態（眠り・技封じ・守り）。
+//   ・装備は3か所（同時にそれぞれ1つ）。持ち物から「使う」で装備／外す（1ターン）
+//       weapon（近接武器：ナイフ・刀・ハンマー・ドリル・グローブ）… 主人公の攻撃力が上がる
+//         （items.js の weapon：atk＝攻撃力の上乗せ、hit＝命中率の増減、pierce＝防御力を無視、stun＝ひるませる確率）
+//       gun（銃）… V キーで向いた方向を選んで撃つ（shoot.js）
+//       armor（防具）… 主人公の防御力が上がる（items.js の armor：def＝防御力の上乗せ）
+//   ・持ち物から外れる（投げる・置く）と自動で外れる。冒険ごとに外れた状態から始まる
+//   ・状態：sleep（眠り。その間は行動しない。攻撃を受けると起きる）、silenced（技を使えない）、主人公の guardTurns（受けるダメージ3/4）
 //   ・状態をかける時は statusTurns で実際のターン数を決める（ボスは弱体が効かず、眠りは短い。config.bossResist）
 Game.equip = {
-  weapon: null, // 装備中のアイテムデータ
+  weapon: null, // 装備中の近接武器（アイテムデータ）
+  gun: null, // 装備中の銃
+  armor: null, // 装備中の防具
+  slotNames: { weapon: "武器", gun: "銃", armor: "防具" },
 
   reset: function () {
     this.weapon = null;
+    this.gun = null;
+    this.armor = null;
     Game.player.guardTurns = 0;
+  },
+
+  // アイテムの種類が入る場所（装備できなければ null）
+  slotOf: function (type) {
+    var t = Game.items.types[type];
+    if (t.weapon) return "weapon";
+    if (t.effect === "gun") return "gun";
+    if (t.armor) return "armor";
+    return null;
   },
 
   stats: function () {
@@ -17,34 +34,51 @@ Game.equip = {
   },
 
   isEquipped: function (entry) {
-    return !!entry && entry === this.weapon;
+    return !!entry && (entry === this.weapon || entry === this.gun || entry === this.armor);
   },
 
   // 使う：装備する／外す（1ターン）
   toggle: function (entry) {
-    if (this.weapon === entry) {
-      this.unequip(true);
+    var slot = this.slotOf(entry.type);
+    if (this[slot] === entry) {
+      this.unequip(slot, true);
       return;
     }
-    if (this.weapon) this.unequip(true);
+    if (this[slot]) this.unequip(slot, true);
     var t = Game.items.types[entry.type];
-    this.weapon = entry;
-    Game.player.atk += t.weapon.atk;
+    this[slot] = entry;
+    var bonus = this.applyBonus(t, 1);
     Game.sound.play("maxup");
-    Game.log.add(t.name + "を装備した！（攻撃力 +" + t.weapon.atk + "）" + (t.weapon.note ? " " + t.weapon.note : ""), "good");
+    Game.log.add(t.name + "を装備した！" + bonus + (t.weapon && t.weapon.note ? " " + t.weapon.note : "") +
+      (slot === "gun" ? "（V で撃つ）" : ""), "good");
   },
 
-  unequip: function (withLog) {
-    if (!this.weapon) return;
-    var t = Game.items.types[this.weapon.type];
-    Game.player.atk -= t.weapon.atk;
-    if (withLog) Game.log.add(t.name + "を外した。（攻撃力 -" + t.weapon.atk + "）");
-    this.weapon = null;
+  // 能力の上乗せを足す（sign=1）・引く（sign=-1）。ログ用の文字を返す
+  applyBonus: function (t, sign) {
+    var p = Game.player;
+    if (t.weapon) {
+      p.atk += sign * t.weapon.atk;
+      return "（攻撃力 " + (sign > 0 ? "+" : "-") + t.weapon.atk + "）";
+    }
+    if (t.armor) {
+      p.def += sign * t.armor.def;
+      return "（防御力 " + (sign > 0 ? "+" : "-") + t.armor.def + "）";
+    }
+    return "";
+  },
+
+  unequip: function (slot, withLog) {
+    var entry = this[slot];
+    if (!entry) return;
+    var t = Game.items.types[entry.type];
+    var bonus = this.applyBonus(t, -1);
+    if (withLog) Game.log.add(t.name + "を外した。" + bonus);
+    this[slot] = null;
   },
 
   // 持ち物から外れた時（投げる・置く）
   onRemoved: function (entry) {
-    if (entry === this.weapon) this.unequip(true);
+    for (var slot in this.slotNames) if (this[slot] === entry) this.unequip(slot, true);
   },
 
   // ---------- 戦闘への効果（主人公の攻撃の時だけ） ----------
@@ -65,7 +99,10 @@ Game.equip = {
   afterHit: function (attacker, defender) {
     var w = attacker === Game.player ? this.stats() : null;
     if (!w || !w.stun || defender.hp <= 0 || Math.random() >= w.stun) return;
-    if (this.statusTurns(defender, "debuff", 1) === 0) return;
+    if (this.statusTurns(defender, "debuff", 1) === 0) {
+      Game.log.add(defender.name + "はびくともしない。効果がなかった…（ボスはひるまない）", "miss");
+      return;
+    }
     defender.sleep = Math.max(defender.sleep || 0, 1);
     Game.log.add(defender.name + "はよろめいた！（1ターン動けない）", "good");
   },
@@ -96,9 +133,9 @@ Game.equip = {
     if (unit.sleep) unit.sleep = 0;
   },
 
-  // 主人公の守り（守護の札）：受けるダメージを半分に
+  // 主人公の守り（守護の札）：受けるダメージを3/4に
   guardDamage: function (defender, dmg) {
-    if (defender === Game.player && Game.player.guardTurns > 0) return Math.max(1, Math.ceil(dmg / 2));
+    if (defender === Game.player && Game.player.guardTurns > 0) return Math.max(1, Math.ceil(dmg * 0.75));
     return dmg;
   },
 

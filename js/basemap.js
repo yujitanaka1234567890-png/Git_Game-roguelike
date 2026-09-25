@@ -265,7 +265,7 @@ Game.baseScene = {
       (function (dungeonId, d) {
         if (base.isUnlocked(dungeonId)) {
           options.push({
-            label: "「" + d.name + "」へ出発（全" + d.floors + "階）" + (base.cleared[dungeonId] ? "　踏破済み" : ""),
+            label: "「" + d.name + "」へ出発（全" + d.floors + "階）" + (base.cleared[dungeonId] ? "　踏破済み" : "") + (d.note ? "　⚠" + d.note : ""),
             onChoose: function () { Game.startAdventure(dungeonId); },
           });
         } else {

@@ -79,7 +79,7 @@ Game.shoot = {
       var turns = Game.equip.statusTurns(target, "sleep", t.power); // ボスは短い
       target.sleep = Math.max(target.sleep || 0, turns);
       target.charge = null;
-      Game.log.add(target.name + "は深い眠りに落ちた…（" + turns + "ターン。攻撃を受けると起きる）", "good");
+      Game.log.add(target.name + "は深い眠りに落ちた…（" + turns + "ターン" + (turns < t.power ? "。ボスなので短い" : "") + "。攻撃を受けると起きる）", "good");
     },
 
     // 反発の杖：撃った向きへ power マスはじき飛ばす。途中で止まったらぶつかって 3 ダメージ
@@ -101,7 +101,7 @@ Game.shoot = {
     // 放逐の杖：この階のどこか遠く（主人公から見えない床）へ飛ばす。ボスには効かない
     banish: function (t, target) {
       if (Game.equip.statusTurns(target, "debuff", 1) === 0) {
-        Game.log.add(target.name + "には効かなかった…", "miss");
+        Game.log.add(target.name + "には効果がなかった…（ボスは飛ばせない）", "miss");
         return;
       }
       var p = Game.player, spots = [];

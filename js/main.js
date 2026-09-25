@@ -105,7 +105,8 @@ Game.onPlayerMove = function (dx, dy, isRepeat) {
   }
   if (Game.state === "aim") {
     if (dx !== 0 || dy !== 0) {
-      if (Game.aimMode === "use") Game.shootSelectedItem(dx, dy);
+      if (Game.aimMode === "fire") Game.fireGun(dx, dy);
+      else if (Game.aimMode === "use") Game.shootSelectedItem(dx, dy);
       else Game.throwSelectedItem(dx, dy);
     }
     return;
@@ -137,8 +138,8 @@ Game.onPlayerMove = function (dx, dy, isRepeat) {
 Game.onKey = function (key) {
   var lower = key.length === 1 ? key.toLowerCase() : key;
 
-  // V：ドット絵／文字表示の切り替え、M：効果音のオン／オフ（いつでも使える）
-  if (lower === "v") {
+  // G：ドット絵／文字表示の切り替え、M：効果音のオン／オフ（いつでも使える）
+  if (lower === "g") {
     Game.refresh(Game.pixel.toggle() ? "表示：ドット絵" : "表示：文字");
     return;
   }
@@ -163,6 +164,11 @@ Game.onKey = function (key) {
   }
   if (lower === "m") {
     Game.refresh(Game.sound.toggle() ? "効果音：オン" : "効果音：オフ");
+    return;
+  }
+  // V：装備している銃を撃つ（方向を選ぶ）
+  if (lower === "v" && Game.state === "playing" && !Game.dashing && !Game.dialog.isOpen()) {
+    Game.startFireGun();
     return;
   }
 
@@ -216,10 +222,14 @@ Game.onKey = function (key) {
     return;
   }
 
-  if (Game.state === "aim" && key === "Escape") {
-    // 取り消してメニューに戻る
-    Game.state = "menu";
-    Game.inventory.open = true;
+  if (Game.state === "aim" && (key === "Escape" || (lower === "v" && Game.aimMode === "fire"))) {
+    // 取り消す：銃（V）なら探索に、それ以外はメニューに戻る
+    if (Game.aimMode === "fire") {
+      Game.state = "playing";
+    } else {
+      Game.state = "menu";
+      Game.inventory.open = true;
+    }
     Game.refresh();
   }
 };
@@ -453,10 +463,10 @@ Game.closeMenu = function () {
   Game.refresh();
 };
 
-// 方向を選ぶ時の案内。aimMode = "throw"（投げる）/ "use"（銃・杖を使う）
+// 方向を選ぶ時の案内。aimMode = "throw"（投げる）/ "use"（杖を使う）/ "fire"（装備した銃を V で撃つ）
 Game.aimMode = "throw";
 Game.aimMessage = function () {
-  var t = Game.items.types[Game.inventory.selectedEntry().type];
+  var t = Game.items.types[(Game.aimMode === "fire" ? Game.equip.gun : Game.inventory.selectedEntry()).type];
   var verb = Game.aimMode === "use" ? (t.category === "gun" ? "撃つ" : "振る") : "投げる";
   return t.name + "を" + verb + "方向は？（矢印／Shift＋矢印2つで斜め／Esc で戻る）";
 };
@@ -507,6 +517,37 @@ Game.shootSelectedItem = function (dx, dy) {
   Game.state = "animating";
   Game.refresh();
   Game.shoot.start(entry, dx, dy, function () {
+    Game.state = "playing";
+    Game.endTurn();
+    Game.afterAction();
+  });
+};
+
+// V キー：装備している銃を撃つ方向を選ぶ
+Game.startFireGun = function () {
+  var gun = Game.equip.gun;
+  if (!gun) {
+    Game.refresh("銃を装備していない（持ち物で銃を「使う」と装備できる）");
+    return;
+  }
+  var why = Game.shoot.check(gun);
+  if (why) {
+    Game.refresh(why);
+    return;
+  }
+  Game.aimMode = "fire";
+  Game.state = "aim";
+  Game.stairsPending = false;
+  Game.refresh(Game.aimMessage());
+};
+
+// 装備している銃を (dx, dy) 方向へ撃つ（1ターン消費）
+Game.fireGun = function (dx, dy) {
+  var gun = Game.equip.gun;
+  if (!gun) return;
+  Game.state = "animating";
+  Game.refresh();
+  Game.shoot.start(gun, dx, dy, function () {
     Game.state = "playing";
     Game.endTurn();
     Game.afterAction();

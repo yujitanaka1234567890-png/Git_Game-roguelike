@@ -25,6 +25,7 @@ Game.fx = {
     this.list = [];
     this.hits = [];
     this.attacks = [];
+    this.pops = [];
     this.generation++;
   },
 
@@ -78,6 +79,61 @@ Game.fx = {
     this.hits = this.hits.filter(function (h) { return h.until > now; });
     this.hits.push({ unit: target, dx: dx, dy: dy, start: start + this.impactMs, until: start + this.impactMs + this.hitMs });
     this.swing(source, target, start);
+  },
+
+  // ---------- ダメージの数字 ----------
+  // 攻撃が当たった瞬間に、受けた側の頭の上に数字がぴょんと跳ねて消える（2D・3D 共通の記録）
+  pops: [], // [{ unit, text, color, start, until }]
+  popMs: 700,
+
+  popNumber: function (target, amount) {
+    if (!target || target.x < 0) return;
+    var now = Date.now();
+    var start = now - this.lastSlot.at < 20 ? this.lastSlot.impact : now; // 直前に並べた攻撃が当たる瞬間に合わせる
+    var friendly = target === Game.player || Game.allies.list.indexOf(target) >= 0;
+    this.pops = this.pops.filter(function (p) { return p.until > now; });
+    this.pops.push({ unit: target, text: String(amount), color: friendly ? "#ff6868" : "#ffffff", start: start, until: start + this.popMs });
+    this.redrawAt(start);
+    if (Game.renderer.kick) Game.renderer.kick();
+  },
+
+  // 表示中の数字と、跳ねる高さ（マスに対する割合）・濃さ。見えない相手の分は出さない
+  activePops: function () {
+    var now = Date.now(), out = [];
+    for (var i = 0; i < this.pops.length; i++) {
+      var p = this.pops[i];
+      if (p.start > now || p.until <= now || p.unit.x < 0) continue;
+      if (p.unit !== Game.player && Game.allies.list.indexOf(p.unit) < 0 && !Game.fov.isVisible(p.unit.x, p.unit.y)) continue;
+      var t = (now - p.start) / this.popMs;
+      var hop = Math.sin(Math.min(1, t * 1.6) * Math.PI) * 0.45 + t * 0.25; // ぴょんと跳ねてから少し浮く
+      out.push({ pop: p, hop: hop, alpha: t < 0.65 ? 1 : 1 - (t - 0.65) / 0.35 });
+    }
+    return out;
+  },
+
+  hasActivePops: function () {
+    var now = Date.now();
+    return this.pops.some(function (p) { return p.until > now; });
+  },
+
+  // 2D：数字を描く
+  drawNumbers: function (ctx, ts) {
+    var list = this.activePops();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "bold " + Math.floor(ts * 0.7) + "px monospace";
+    ctx.lineWidth = 3;
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      var x = a.pop.unit.x * ts + ts / 2, y = a.pop.unit.y * ts + ts * 0.15 - a.hop * ts;
+      ctx.globalAlpha = a.alpha;
+      ctx.strokeStyle = "#1a0000";
+      ctx.strokeText(a.pop.text, x, y);
+      ctx.fillStyle = a.pop.color;
+      ctx.fillText(a.pop.text, x, y);
+    }
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 1;
   },
 
   // 今鳴らす効果音を、直前に並べた攻撃が当たる時刻まで遅らせる量（ミリ秒）

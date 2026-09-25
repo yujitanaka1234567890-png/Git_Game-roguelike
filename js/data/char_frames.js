@@ -42,7 +42,7 @@ Game.CHAR_FRAMES = {
   // ---- 刃系：歩き（浮遊）は上下にゆれる、攻撃は切っ先を突き出して目が赤く光る ----
   blade1: {
     walk: { dy: -1 },
-    attack: { dx: 1, dy: -1, rows: { 8: "....krkkbk......", 9: ".....kwkk......." } },
+    attack: { dx: 1, dy: -1, rows: { 9: "..kirrikk.......", 10: "..krwrkk........" } }, // 目が赤く光る
   },
   blade2: {
     walk: { dy: -1 },

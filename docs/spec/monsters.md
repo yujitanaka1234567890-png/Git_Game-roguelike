@@ -1,7 +1,7 @@
 # モンスター仕様書
 
 > 直したい所は、その行の値を書き換えるか、`- 要望:` の後ろに文章で書いてください。
-> 書き方のルールは [README.md](README.md)。技の中身は [skills.md](skills.md)。
+> 書き方のルールは [modify-requests-rule.md](../../modify-requests-rule.md)。技の中身は [skills.md](skills.md)。
 
 共通：HP・攻撃力・防御力・経験値は「レア度1の時の基準値」。実際の強さはレア度の倍率（1.0 / 1.3 / 1.7 / 2.2 / 3.0）がかかる。
 

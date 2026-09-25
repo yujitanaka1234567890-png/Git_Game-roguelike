@@ -52,6 +52,20 @@ Object.assign(Game.view3d, {
     });
   },
 
+  // ダメージの数字（黒いふちどりの太字）
+  numberSlot: function (text, color) {
+    return this.slot("num|" + text + "|" + color, 32, 32, function (ctx) {
+      ctx.font = "bold " + (text.length > 2 ? 15 : 20) + "px monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#1a0000";
+      ctx.strokeText(text, 16, 17);
+      ctx.fillStyle = color;
+      ctx.fillText(text, 16, 17);
+    });
+  },
+
   // 壁・床の模様（2D と同じ描き方）。variant で床の小石の位置を変える
   // style があれば模様つき（variant = マスの位置を4で割った余り x + y×4 で、4×4マスで模様がつながる）
   tileSlot: function (kind, color, variant, style) {

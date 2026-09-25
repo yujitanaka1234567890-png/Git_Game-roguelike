@@ -103,6 +103,7 @@ Game.renderer = {
       if (al.x < 0) continue;
       this.drawAllyBg(al.x, al.y);
       this.drawMonster(Game.MONSTERS[al.type], al.x, al.y, al);
+      this.drawDangerPulse(al);
       if (al.hp < al.maxHp) this.drawHpBar(al);
       if (al.charge) this.drawChargeMark(al, "#66ccff");
     }
@@ -112,7 +113,10 @@ Game.renderer = {
     for (var i = 0; i < list.length; i++) {
       var e = list[i];
       if (!fov.isVisible(e.x, e.y)) continue;
+      var inWall = Game.map.tileAt(e.x, e.y) === "#"; // 壁の中にいる（壁抜けする敵）は半透明
+      if (inWall) ctx.globalAlpha = 0.55;
       this.drawMonster(Game.MONSTERS[e.type], e.x, e.y, e);
+      ctx.globalAlpha = 1;
       if (e.hp < e.maxHp) this.drawHpBar(e);
       if (e.charge) this.drawChargeMark(e);
     }
@@ -124,8 +128,9 @@ Game.renderer = {
       self.drawThing("player", null, c.player, p.x, p.y, p.symbol, c.player);
     });
 
-    // ---- 攻撃マーク（赤いとげとげ） ----
+    // ---- 攻撃マーク（赤いとげとげ）とダメージの数字 ----
     Game.fx.drawHitMarks(ctx, ts);
+    Game.fx.drawNumbers(ctx, ts);
 
     // ---- 投げて飛んでいるアイテム ----
     var pr = Game.throwing.projectile;
@@ -149,6 +154,50 @@ Game.renderer = {
     } else {
       Game.minimap.draw(); // 全体マップ（2Dでも3Dでも左上に重ねる）
     }
+    this.kick();
+  },
+
+  // ---------- 動きのある表示（ダメージの数字・死にかけの仲間の点滅）のための描き直し ----------
+  // 2D はふだん何か起きた時だけ描き直すので、動いている物がある間だけ1秒に30回ほど描き直す（3D は render3d.js が描き直し続ける）
+  animLoop: null,
+  needsAnim: function () {
+    if (Game.state !== "playing" && Game.state !== "menu" && Game.state !== "aim" && Game.state !== "animating") return false;
+    if (Game.fx.hasActivePops()) return true;
+    return Game.allies.list.some(function (a) { return Game.renderer.inDanger(a); });
+  },
+  kick: function () {
+    if (this.animLoop || !this.ctx || Game.view3d.active() || !this.needsAnim()) return;
+    var self = this, last = 0;
+    var tick = function (t) {
+      if (Game.view3d.active() || !self.needsAnim()) {
+        self.animLoop = null;
+        if (!Game.view3d.active()) self.draw(); // 最後の1枚（数字を消す）
+        return;
+      }
+      self.animLoop = requestAnimationFrame(tick);
+      if (t - last < 33) return;
+      last = t;
+      self.draw();
+    };
+    this.animLoop = requestAnimationFrame(tick);
+  },
+
+  // 死にかけ（HPが dangerRatio 以下）の仲間か
+  dangerRatio: 0.25,
+  inDanger: function (u) {
+    return u.x >= 0 && u.hp > 0 && u.hp / u.maxHp <= this.dangerRatio;
+  },
+
+  // 点滅の強さ 0〜1（何もしていない間も薄い紅色にゆっくり点滅する）
+  dangerPulse: function () {
+    return 0.5 + 0.5 * Math.sin(Date.now() / 220);
+  },
+
+  drawDangerPulse: function (u) {
+    if (!this.inDanger(u)) return;
+    var ts = Game.config.tileSize;
+    this.ctx.fillStyle = "rgba(255, 70, 110, " + (0.12 + 0.33 * this.dangerPulse()).toFixed(2) + ")";
+    this.ctx.fillRect(u.x * ts, u.y * ts, ts, ts);
   },
 
   // 1マスの地形を描く

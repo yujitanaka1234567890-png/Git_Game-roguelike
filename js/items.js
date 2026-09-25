@@ -9,9 +9,10 @@
 Game.items = {
   // 名前はすべてこのゲームで使う一般的な名前（既存作品のアイテム名・商標は使わない）
   // category：plant（植物）/ talisman（符）/ fruit（木の実）/ tool（道具）/ incense（香）/ smoke（煙草）/ puzzle（パズル）/ fidget（手遊び道具）
-  //           weapon（近接武器）/ gun（銃）/ staff（杖）/ ofuda（お札）
+  //           weapon（近接武器）/ armor（防具）/ gun（銃）/ staff（杖）/ ofuda（お札）
   // 近接武器：weapon = { atk: 攻撃力の上乗せ, hit: 命中率の増減, pierce: 防御力を無視, stun: ひるませる確率 }（equip.js）
-  // 銃・杖：effect "aim"（方向を選んで使う）。charges＝使える回数、shot＝当たった時の効果（shoot.js）、range＝届くマス数
+  // 防具：armor = { def: 防御力の上乗せ }（equip.js）
+  // 銃：effect "gun"（使うと装備、V で撃つ）。杖：effect "aim"（方向を選んで使う）。charges＝使える回数、shot＝当たった時の効果（shoot.js）、range＝届くマス数
   // group：持ち物の並び順の分類（groupOrder の順に自動で並ぶ）
   // sprite：ドット絵（data/item_sprites.js の絵の名前）
   // rarity：レア度 1〜5（強い・便利な物ほど高い）。出やすさは config.itemRarities の spawn（レアなほど出にくい）
@@ -91,12 +92,28 @@ Game.items = {
       effect: "equip", throwEffect: "bonk", power: 0, weapon: { atk: 2, stun: 0.2, note: "当てると時々ひるませる" },
       desc: "装備すると攻撃力+2。攻撃が当たると、20%の確率で相手をよろめかせ1ターン動けなくする（ボスには効かない）。",
     },
-    // ---- 銃（遠くから撃てるが弱め） ----
+    // ---- 防具（装備すると防御力が上がる。受けるダメージ＝相手の攻撃力−防御力） ----
+    leatherVest: {
+      name: "革の胸当て", group: "armor", sprite: "vest", category: "armor", symbol: "鎧", color: "#8a6440", rarity: 1,
+      effect: "equip", throwEffect: "bonk", power: 0, armor: { def: 1 },
+      desc: "装備すると防御力+1。なめした革の軽い胸当て。",
+    },
+    chainMail: {
+      name: "鎖かたびら", group: "armor", sprite: "mail", category: "armor", symbol: "鎧", color: "#8a929c", rarity: 3,
+      effect: "equip", throwEffect: "bonk", power: 0, armor: { def: 3 },
+      desc: "装備すると防御力+3。細かい鉄の輪を編んだ服。",
+    },
+    steelArmor: {
+      name: "鋼の鎧", group: "armor", sprite: "plate", category: "armor", symbol: "鎧", color: "#9aa4b0", rarity: 4,
+      effect: "equip", throwEffect: "bonk", power: 0, armor: { def: 5 },
+      desc: "装備すると防御力+5。重く頑丈な板金の鎧。強い敵の多いダンジョンでは頼りになる。",
+    },
+    // ---- 銃（遠くから撃てるが弱め。装備して V で撃つ） ----
     gun: {
       name: "銃", group: "attack", sprite: "gun", category: "gun", symbol: "銃", color: "#5e656e", rarity: 3,
-      effect: "aim", throwEffect: "bonk", shot: "bullet", power: 4, charges: 6, range: 8,
+      effect: "gun", throwEffect: "bonk", shot: "bullet", power: 4, charges: 6, range: 8,
       boltSymbol: "•", boltColor: "#ffe066", emptyText: "弾が残っていない。",
-      desc: "向いた方向に弾を撃つ（8マスまで・6発）。ダメージは攻撃力に関係なく4（相手の防御力を引く）。",
+      desc: "使うと装備（近接武器とは別）。装備中は V キーで方向を選んで撃つ（8マスまで・6発）。ダメージは攻撃力に関係なく4（相手の防御力を引く）。",
     },
     // ---- 杖（方向を選んで振る。当たった相手に特殊な効果） ----
     dreamStaff: {
@@ -126,7 +143,7 @@ Game.items = {
     guardOfuda: {
       name: "守護の札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#5d8a50", rarity: 3,
       effect: "guard", throwEffect: "bonk", power: 15,
-      desc: "読み上げると、15ターンの間、受けるダメージが半分になる。",
+      desc: "読み上げると、15ターンの間、受けるダメージが3/4になる。",
     },
     hushOfuda: {
       name: "静寂の札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#9e453b", rarity: 4,
@@ -142,8 +159,8 @@ Game.items = {
   },
 
   // 持ち物の並び順（効果の分類ごと）と、その見出し
-  groupOrder: ["hp", "mind", "buff", "weapon", "attack", "staff", "ofuda", "tool"],
-  groupLabels: { hp: "体力回復", mind: "精神回復", buff: "強化", weapon: "武器（使うと装備）", attack: "攻撃", staff: "杖", ofuda: "お札", tool: "道具" },
+  groupOrder: ["hp", "mind", "buff", "weapon", "armor", "attack", "staff", "ofuda", "tool"],
+  groupLabels: { hp: "体力回復", mind: "精神回復", buff: "強化", weapon: "武器（使うと装備）", armor: "防具（使うと装備）", attack: "攻撃（銃は使うと装備・V で撃つ）", staff: "杖", ofuda: "お札", tool: "道具" },
 
   // 使う時の動詞（カテゴリごと）
   verbs: {
@@ -164,9 +181,9 @@ Game.items = {
   displayName: function (entry) {
     var t = this.types[entry.type];
     if (t.fidget) return t.name + "（残り" + (t.fidget.length - (entry.uses || 0)) + "回）";
-    if (t.charges) return t.name + "（残り" + Math.max(0, t.charges - (entry.uses || 0)) + "）";
-    if (Game.equip && Game.equip.isEquipped(entry)) return t.name + "［装備中］";
-    return t.name;
+    var mark = Game.equip && Game.equip.isEquipped(entry) ? "［装備中］" : "";
+    if (t.charges) return t.name + "（残り" + Math.max(0, t.charges - (entry.uses || 0)) + "）" + mark;
+    return t.name + mark;
   },
 
   init: function (spawns) {
@@ -241,8 +258,8 @@ Game.items = {
   // アイテムを使う。使ってなくなるなら true（持ち物から取り除くのは呼び出し側）
   use: function (entry) {
     var t = this.types[entry.type];
-    if (t.effect === "equip") {
-      Game.equip.toggle(entry);
+    if (t.effect === "equip" || t.effect === "gun") {
+      Game.equip.toggle(entry); // 近接武器・防具・銃
       return false; // 装備してもなくならない
     }
     var mul = Game.dimension.powerMul(entry); // 別の世界の品なら効き目の読み替え（dimension.js）
@@ -319,10 +336,10 @@ Game.items = {
       Game.log.add("頭の中に、この階の姿がはっきりと浮かんだ！", "good");
     },
 
-    // 守護の札：しばらく受けるダメージが半分
+    // 守護の札：しばらく受けるダメージが3/4
     guard: function (t, power) {
       Game.player.guardTurns = power;
-      Game.log.add("淡い光の膜に包まれた。" + power + "ターンの間、受けるダメージが半分になる。", "good");
+      Game.log.add("淡い光の膜に包まれた。" + power + "ターンの間、受けるダメージが3/4になる。", "good");
     },
 
     // 静寂の札：見えている敵が技を使えなくなる（ボスには効かない）
@@ -340,7 +357,7 @@ Game.items = {
         n++;
       });
       if (n > 0) Game.log.add("あたりが静まりかえった。見えている敵は " + power + " ターンの間、技を使えない。", "good");
-      if (resisted.length > 0) Game.log.add(resisted.join("・") + "には効かなかった…", "miss");
+      if (resisted.length > 0) Game.log.add(resisted.join("・") + "には効果がなかった…（ボスには技封じが効かない）", "miss");
       if (n === 0 && resisted.length === 0) Game.log.add("しかし何も起こらなかった。", "miss");
     },
 

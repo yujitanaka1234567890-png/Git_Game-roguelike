@@ -8,6 +8,8 @@
 //   unlockedBy：このダンジョンを踏破すると行けるようになる（null なら最初から行ける）
 //   enemyBase ：1階の敵の数（1階深くなるごとに+1、最大は config.dungeon.maxEnemies）
 //   rescueDifficulty：このダンジョンに救出隊を送る時の成功率の減少
+//   enemyMul  ：（省略可）敵のHP・攻撃力・経験値にかける倍率。1より大きいと、低い階から敵が強い（防具が必要）
+//   note      ：（省略可）門で行き先を選ぶ時に出す注意書き
 //   boss      ：最下層（広いボス部屋）に待ち構えるボス（monsters.js の boss: true の種類）。倒すと脱出口の封印が解ける
 //   spawns    ：出てくるモンスター。from〜to 階に出る（to 省略時は最後の階まで）。出やすさはレア度で決まる
 // 3段階目の進化個体のような強い種類は、強いダンジョンにだけ出す。
@@ -67,6 +69,8 @@ Game.DUNGEONS = {
     unlockedBy: "beginnerCave",
     enemyBase: 5,
     rescueDifficulty: 0.15,
+    enemyMul: 1.35,
+    note: "敵が強い。防具（鎖かたびら・鋼の鎧など）がないと、1階でも生き残るのは難しい",
     boss: "abyssMaw",
     spawns: [
       { type: "numeron", from: 1 },

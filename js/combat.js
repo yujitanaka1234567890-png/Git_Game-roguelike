@@ -34,6 +34,7 @@ Game.combat = {
     defender.hp -= actual;
     defender.wasHit = true; // ダッシュの間あけなどの判定用
     Game.fx.hitMark(defender, source); // のけぞり＋赤いとげとげ
+    Game.fx.popNumber(defender, actual); // ダメージの数字がぴょんと跳ねる
     if (defender.dmgLog && source) defender.dmgLog.push({ unit: source, amount: actual });
   },
 

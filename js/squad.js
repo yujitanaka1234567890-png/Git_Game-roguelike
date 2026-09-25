@@ -137,7 +137,7 @@ Game.squad = {
     var options = cands.map(function (a, idx) {
       var key = Game.allies.list.indexOf(a);
       return {
-        label: (picked[key] ? "【隊員】" : "　　　　") + a.symbol + " " + a.baseName + " Lv" + a.level +
+        label: (picked[key] ? "【隊員】" : "　　　　") + "[[mon:" + a.type + "]] " + a.baseName + " Lv" + a.level +
           "（HP " + a.hp + "/" + a.maxHp + "）" + (Game.MONSTERS[a.type].humanoid ? "　★人型" : ""),
         keepOpen: true,
         onChoose: function () {

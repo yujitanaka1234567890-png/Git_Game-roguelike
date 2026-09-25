@@ -239,7 +239,7 @@ Game.rescue = {
     var options = cands.map(function (r, idx) {
       var t = Game.MONSTERS[r.type];
       return {
-        label: (picked[r.id] ? "【派遣】" : "　　　　") + t.symbol + " " + t.name + "（" + Game.enemies.rarityOf(r.type).label + "）" +
+        label: (picked[r.id] ? "【派遣】" : "　　　　") + "[[mon:" + r.type + "]] " + t.name + "（" + Game.enemies.rarityOf(r.type).label + "）" +
           (t.humanoid ? "　★人型" : ""),
         keepOpen: true,
         onChoose: function () {

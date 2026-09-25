@@ -64,7 +64,7 @@ Game.dialog = {
     var add = function (tag, cls, text) {
       var e = document.createElement(tag);
       if (cls) e.className = cls;
-      if (text !== undefined) e.textContent = text;
+      if (text !== undefined) Game.icons.fill(e, text); // [[tile:C]] などの印はドット絵のアイコンになる（icons.js）
       el.appendChild(e);
       return e;
     };
@@ -87,7 +87,7 @@ Game.dialog = {
         li.className = "selected";
         selectedLi = li;
       }
-      li.textContent = c.options[j].label;
+      Game.icons.fill(li, c.options[j].label);
       ul.appendChild(li);
     }
     add("div", "inv-help", "↑↓：選ぶ　Enter / スペース：決定　Esc：閉じる");

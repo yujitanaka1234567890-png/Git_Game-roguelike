@@ -621,7 +621,7 @@ Game.showBase = function () {
   if (Game.base.firstTime) {
     // 初めて遊ぶ時：遊び方の説明を読むかたずねる
     Game.base.firstTime = false;
-    Game.log.add("ようこそ、拠点へ。家の左下の案内板（案）で、いつでも遊び方を読める。", "info");
+    Game.log.add("ようこそ、拠点へ。家の左下の案内板で、いつでも遊び方を読める。", "info");
     Game.tutorial.askFirstTime();
   }
   Game.refresh();
@@ -682,6 +682,7 @@ Game.start = function () {
   Game.pixel.init();
   Game.view3d.init();
   Game.minimap.init();
+  Game.icons.fillStatic(); // 右の説明の設備アイコン
   Game.sound.init();
   Game.input.init(Game.onPlayerMove, Game.startDash, Game.onKey);
   Game.base.load();

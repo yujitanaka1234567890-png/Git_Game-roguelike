@@ -99,8 +99,7 @@ Game.inventory = {
       if (i === this.selected) li.className = "selected";
       var icon = document.createElement("span");
       icon.className = "inv-icon";
-      icon.style.color = t.color;
-      icon.textContent = t.symbol;
+      icon.appendChild(Game.icons.make("item:" + this.items[i].type, 18));
       li.appendChild(icon);
       li.appendChild(document.createTextNode(Game.items.displayName(this.items[i])));
       ul.appendChild(li);
@@ -122,7 +121,7 @@ Game.inventory = {
 
     var help = document.createElement("div");
     help.className = "inv-help";
-    help.textContent = "↑↓：選ぶ　Enter：使う（武器は装備／外す、銃・杖は方向を選ぶ）　T：投げる　D：置く　Esc / I / W：閉じる";
+    help.textContent = "↑↓：選ぶ　Enter：使う（武器・防具・銃は装備／外す、杖は方向を選ぶ）　T：投げる　D：置く　Esc / I / W：閉じる";
     el.appendChild(help);
   },
 };

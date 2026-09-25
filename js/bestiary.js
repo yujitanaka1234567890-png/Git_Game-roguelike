@@ -44,7 +44,7 @@ Game.bestiary = {
         };
       }
       return {
-        label: self.no(idx) + "　" + t.symbol + " " + t.name + "（" + Game.enemies.rarityOf(id).label + "）",
+        label: self.no(idx) + "　[[mon:" + id + "]] " + t.name + "（" + Game.enemies.rarityOf(id).label + "）",
         onChoose: function () { self.openDetail(id, idx); },
       };
     });

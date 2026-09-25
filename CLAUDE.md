@@ -31,11 +31,11 @@
 - `js/allies.js` 仲間（仲間化判定・入れ替え確認・AI・一覧表示）/ `js/squad.js` 分隊（.キー。人型を隊長に最大4体、階を自由に探索して独立行動。指示は同じ部屋にいる時だけ）
 - `js/savecode.js` 記録の呪文（セーブ用パスワード：JIGEN1-検出番号-中身。拠点の記録の石碑で書き出し・地面に書く。成功ログ「地面に書いた文字が浮かび上がり光った。記録された世界線へ移動した」）
 - `js/saveslots.js` 記録の石碑のメニュー（記録の枠3つ＝localStorage key dimension-roguelike-slots-v1 に刻む・読み込む／最初から始める＝base.resetToNew、枠は消さない／記録の呪文へ）
-- `js/tutorial.js` 遊び方の説明（5ページ・拠点の案内板T・初回はたずねる）
+- `js/tutorial.js` 遊び方の説明（6ページ：目的・操作・仲間・分隊・精神力・拠点の設備。拠点の案内板T・初回はたずねる。画面の仕組みに触れるメタな説明は書かない）
 - `js/base.js` 拠点のデータ（牧場・倉庫・連れて行く/持って行く選択・踏破記録 cleared・交配 breed・発見済み discovered・localStorage保存 key=dimension-roguelike-save-v1）
 - `js/basemap.js` 拠点の空間（固定マップ・牧場を歩く仲間・会話・収納箱・掲示板＝仲間選び/救出・交配小屋・門でのダンジョン選択）/ `js/bestiary.js` プレイヤー用モンスター図鑑（出会った種類 base.seen だけ詳しく載る）
 - `js/data/sprites.js` ドット絵（設備。12×12 の文字で手描き・オリジナル）/ `js/data/item_sprites.js` アイテム・武器のドット絵（16×16・落ち着いた固定色＝大文字の色文字）/ `js/data/characters.js` 主人公・モンスターのドット絵（16×16・右向き。主人公は紙芝居用に hero_idle1/2・walk1/2・attack・hurt）と重ねる小物 / `js/data/sea_characters.js` 水属性モンスターの絵と歩き・攻撃の指定（Game.EXTRA_FRAMES）/ `js/data/char_frames.js` モンスターの歩き・攻撃の絵（元の絵をずらし＋行の描き直しで作る。名前_walk・名前_attack）/ `js/pixelart.js` ドット絵の描画（壁・床は模様をその場で描く。grid＝色のマス目）/ `js/hires.js` キャラの高解像度版（16→32：ドット絵向け2倍拡大＋外側の輪郭を細く＋左上から光の陰影。3D表示と図鑑で使う）/ `js/sound.js` 効果音（Web Audio API で合成）/ `js/music.js` BGM（合成で演奏するオリジナル曲。今はボス戦のみ。refresh で update）
-- `js/renderer.js` 描画（2D） / `js/render3d.js` 3D表示（試作・WebGL直書き・外部ライブラリなし。3 キーで切替、renderer.draw の先頭で分岐。ルールには触れない）＋ `js/render3d_parts.js`（アトラス・四角形の組み立て）/ `js/anim3d.js` 紙芝居の動き / `js/minimap.js` 3D時の左上の全体マップ / `js/input.js` キー入力 / `js/main.js` 状態遷移・ターン進行（endTurn→afterAction）・ダッシュ・脱出・死亡処理
+- `js/icons.js` 文章の中の小さなドット絵アイコン（[[tile:C]]・[[item:gun]]・[[mon:numerin]] の印を dialog・説明で絵にする。index.html の data-icon も）/ `js/renderer.js` 描画（2D） / `js/render3d.js` 3D表示（試作・WebGL直書き・外部ライブラリなし。3 キーで切替、renderer.draw の先頭で分岐。ルールには触れない）＋ `js/render3d_parts.js`（アトラス・四角形の組み立て）/ `js/anim3d.js` 紙芝居の動き / `js/minimap.js` 3D時の左上の全体マップ / `js/input.js` キー入力 / `js/main.js` 状態遷移・ターン進行（endTurn→afterAction）・ダッシュ・脱出・死亡処理
 - `docs/roadmap.md` 開発ステップ / `docs/design_notes.md` 仕様面の課題メモ / `docs/spec/` 仕様書（monsters・skills・items・requests。ユーザーが直接書き換えて「仕様書を反映して」と頼む。手順はリポジトリ直下の modify-requests-rule.md）/ `tools/spec_gen.js` 仕様書をデータから作り直す道具（node。ゲーム本体には入らない）
 
 ## 確定した仕様
@@ -119,3 +119,4 @@
 - 画面右上に最低限の操作を半透明の白で表示（#keyhint。ダンジョン用と拠点用を body.in-base で切り替え）。
 - 六面パズルを使うと「カチャカチャ」（sound の puzzle。items の sound でアイテム専用の音を指定）。
 - 精神力0の間は、1手ごとに次の移動・足踏み・ダッシュの入力を config.mind.zeroInputWaitMs(1000ms) 受け付けない（Game.mindLockUntil）。ダッシュも止まる。持ち物は開ける。
+- 設備・アイテム・モンスターの文字アイコン（▣・図・碑・刀など）は、説明・選択ウィンドウ・持ち物・仲間一覧ではドット絵のアイコンで出す（icons.js）。

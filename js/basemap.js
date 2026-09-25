@@ -111,7 +111,7 @@ Game.baseScene = {
       var t = Game.MONSTERS[r.type];
       var s = Game.enemies.statsOf(r.type);
       return {
-        label: (base.selected[r.id] ? "【連れて行く】" : "　　　　　　") + t.symbol + " " + t.name +
+        label: (base.selected[r.id] ? "【連れて行く】" : "　　　　　　") + "[[mon:" + r.type + "]] " + t.name +
           "（" + Game.enemies.rarityOf(r.type).label + "　HP" + s.hp + " 攻" + s.atk + "）",
         keepOpen: true,
         onChoose: function () {
@@ -215,7 +215,7 @@ Game.baseScene = {
       else Game.log.add("連れて行ける仲間は " + Game.config.maxAllies + " 体までだ。", "miss");
     };
     Game.dialog.open({
-      title: t.symbol + " " + t.name + "（" + Game.enemies.rarityOf(m.entry.type).label + "）",
+      title: "[[mon:" + m.entry.type + "]] " + t.name + "（" + Game.enemies.rarityOf(m.entry.type).label + "）",
       lines: lines,
       options: going
         ? [{ label: "連れて行くのをやめる", onChoose: toggle }, { label: "そのままにする" }]
@@ -232,7 +232,7 @@ Game.baseScene = {
       (function (index, entry) {
         var t = Game.items.types[entry.type];
         options.push({
-          label: (base.taking[entry.id] ? "【持って行く】" : "　　　　　　") + t.symbol + " " + Game.items.displayName(entry),
+          label: (base.taking[entry.id] ? "【持って行く】" : "　　　　　　") + "[[item:" + entry.type + "]] " + Game.items.displayName(entry),
           keepOpen: true,
           onChoose: function () {
             if (base.toggleTaking(entry.id) === "full") {
@@ -283,7 +283,7 @@ Game.baseScene = {
       lines: [
         "連れて行く仲間：" + (party.length > 0 ? party.join("・") : "なし"),
         "持って行く道具：" + base.countTaking() + " 個",
-        "最深部の脱出口（◎）か「帰還の鈴」で生きて帰ろう。",
+        "最深部の帰還のゲート [[tile:O]] か「帰還の鈴」 [[item:returnBell]] で生きて帰ろう。",
       ],
       options: options,
     });
@@ -309,7 +309,7 @@ Game.baseScene = {
         if (first && entry === first) return;
         var t = Game.MONSTERS[entry.type];
         options.push({
-          label: t.symbol + " " + t.name + "（" + Game.enemies.rarityOf(entry.type).label + "）",
+          label: "[[mon:" + entry.type + "]] " + t.name + "（" + Game.enemies.rarityOf(entry.type).label + "）",
           onChoose: function () {
             if (!first) self.openBreeding(entry);
             else self.confirmBreeding(first, entry);

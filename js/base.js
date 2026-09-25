@@ -259,10 +259,8 @@ Game.base = {
       var t = Game.enemies.types[party[i].type];
       var item = document.createElement("span");
       item.className = "party-member";
-      var sym = document.createElement("b");
-      sym.style.color = t.color;
-      sym.textContent = t.symbol + " ";
-      item.appendChild(sym);
+      item.appendChild(Game.icons.make("mon:" + party[i].type, 16));
+      item.appendChild(document.createTextNode(" "));
       item.appendChild(document.createTextNode(t.name));
       el.appendChild(item);
     }

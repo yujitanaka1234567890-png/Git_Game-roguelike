@@ -310,10 +310,8 @@ Game.allies = {
       var a = this.list[i];
       var item = document.createElement("span");
       item.className = "party-member";
-      var sym = document.createElement("b");
-      sym.style.color = a.color;
-      sym.textContent = a.symbol + " ";
-      item.appendChild(sym);
+      item.appendChild(Game.icons.make("mon:" + a.type, 16));
+      item.appendChild(document.createTextNode(" "));
       item.appendChild(
         document.createTextNode(
           a.baseName + " Lv" + a.level + "　HP " + a.hp + "/" + a.maxHp +

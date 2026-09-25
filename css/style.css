@@ -230,7 +230,7 @@ body.in-base .help-dungeon { display: none; }
 #inventory li.inv-group::before { content: none; }
 
 .inv-title { font-weight: bold; color: #8ab4ff; }
-.inv-icon { display: inline-block; width: 1.4em; text-align: center; font-weight: bold; }
+.inv-icon { display: inline-block; width: 1.6em; text-align: center; font-weight: bold; margin-right: 2px; }
 .inv-empty { color: #888; margin: 8px 0; }
 .inv-desc { border-top: 1px solid #334; padding-top: 6px; color: #ccc; font-size: 13px; }
 .inv-help { margin-top: 6px; color: #888; font-size: 12px; }
@@ -331,3 +331,13 @@ body.in-base .help-dungeon { display: none; }
 .keyhint-base { display: none; }
 body.in-base .keyhint-base { display: block; }
 body.in-base .keyhint-dungeon { display: none; }
+
+/* 文章の中の小さなドット絵アイコン（icons.js） */
+canvas.icon {
+  display: inline-block;
+  border: none;
+  background: transparent;
+  image-rendering: pixelated;
+  vertical-align: middle;
+  margin: 0 2px;
+}

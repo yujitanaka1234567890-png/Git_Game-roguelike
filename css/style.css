@@ -314,3 +314,20 @@ body.in-base .help-dungeon { display: none; }
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* 画面右上の最低限の操作（半透明の白。クリックの邪魔をしない） */
+.keyhint-dungeon, .keyhint-base {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 1;
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: right;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}
+.keyhint-base { display: none; }
+body.in-base .keyhint-base { display: block; }
+body.in-base .keyhint-dungeon { display: none; }

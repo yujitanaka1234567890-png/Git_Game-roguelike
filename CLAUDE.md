@@ -35,7 +35,7 @@
 - `js/basemap.js` 拠点の空間（固定マップ・牧場を歩く仲間・会話・収納箱・掲示板＝仲間選び/救出・交配小屋・門でのダンジョン選択）/ `js/bestiary.js` プレイヤー用モンスター図鑑（出会った種類 base.seen だけ詳しく載る）
 - `js/data/sprites.js` ドット絵（設備。12×12 の文字で手描き・オリジナル）/ `js/data/item_sprites.js` アイテム・武器のドット絵（16×16・落ち着いた固定色＝大文字の色文字）/ `js/data/characters.js` 主人公・モンスターのドット絵（16×16・右向き。主人公は紙芝居用に hero_idle1/2・walk1/2・attack・hurt）と重ねる小物 / `js/data/sea_characters.js` 水属性モンスターの絵と歩き・攻撃の指定（Game.EXTRA_FRAMES）/ `js/data/char_frames.js` モンスターの歩き・攻撃の絵（元の絵をずらし＋行の描き直しで作る。名前_walk・名前_attack）/ `js/pixelart.js` ドット絵の描画（壁・床は模様をその場で描く。grid＝色のマス目）/ `js/hires.js` キャラの高解像度版（16→32：ドット絵向け2倍拡大＋外側の輪郭を細く＋左上から光の陰影。3D表示と図鑑で使う）/ `js/sound.js` 効果音（Web Audio API で合成）/ `js/music.js` BGM（合成で演奏するオリジナル曲。今はボス戦のみ。refresh で update）
 - `js/renderer.js` 描画（2D） / `js/render3d.js` 3D表示（試作・WebGL直書き・外部ライブラリなし。3 キーで切替、renderer.draw の先頭で分岐。ルールには触れない）＋ `js/render3d_parts.js`（アトラス・四角形の組み立て）/ `js/anim3d.js` 紙芝居の動き / `js/minimap.js` 3D時の左上の全体マップ / `js/input.js` キー入力 / `js/main.js` 状態遷移・ターン進行（endTurn→afterAction）・ダッシュ・脱出・死亡処理
-- `docs/roadmap.md` 開発ステップ / `docs/design_notes.md` 仕様面の課題メモ / `docs/items.md` アイテム仕様書（ユーザーが要件を書く場所。アイテムを変えたら表も更新）
+- `docs/roadmap.md` 開発ステップ / `docs/design_notes.md` 仕様面の課題メモ / `docs/spec/` 仕様書（monsters・skills・items・requests。ユーザーが直接書き換えて「仕様書を反映して」と頼む。手順は docs/spec/README.md）/ `tools/spec_gen.js` 仕様書をデータから作り直す道具（node。ゲーム本体には入らない）
 
 ## 確定した仕様
 - 状態（Game.state）：base / playing / menu / aim / animating / gameover。選択ウィンドウ（Game.dialog）が開いている間は、どの状態でもウィンドウ操作が優先（↑↓・Enter/スペース・Esc）。
@@ -102,8 +102,9 @@
 - 眠っている相手は3Dで青っぽく表示。
 - 全体マップ（minimap.js）は2Dでも3Dでも左上に出す（N で大きさ・非表示）。
 - 画面下のお知らせ（notice.js）：精神力の警告（50/25/10/0%）・遠吠え/ささやきが鳴った時・長居・取り込みカウントダウン・HPが25%以下（40%を超えると再び出せる）・主人公のレベルアップ。ログにも同じ内容を出す。
-- アイテムのレア度（items の rarity 1〜5、config.itemRarities の spawn で出やすさ 10/5/2.5/1/0.3）。持ち物の説明に★表示。一覧は docs/items.md。
+- アイテムのレア度（items の rarity 1〜5、config.itemRarities の spawn で出やすさ 10/5/2.5/1/0.3）。持ち物の説明に★表示。一覧は docs/spec/items.md。
 - ボスの状態耐性（equip.statusTurns・config.bossResist）：弱体（技封じ・ひるみ・放逐）は効かない、眠りは最大2ターン、状態異常（毒・麻痺・出血など将来）はターン数半分。
 - ドリルの貫通：防御無視の代わりにダメージの元は「ドリルの攻撃力3＋主人公の素の攻撃力の半分」（equip.pierceBase）。
 - チュートリアル（tutorial.js）：初めて遊ぶ時（保存データなし）に拠点で「説明を読むか」をたずねる。拠点の家の左下の案内板（T・案）でいつでも読める。
 
+- 「仕様書を反映して」と頼まれたら：docs/spec/README.md の「Claude がやること」の手順で、書き換えられた値（spec_gen の出力と diff）・空でない「要望:」・requests.md の未対応をすべて拾って実装する。質問は必要な時だけまとめて1回。終わったら `node tools/spec_gen.js` で作り直し、requests.md の対応済みを「完了」へ（日付つき）。モンスター・技・アイテムのデータを変えた時も、いつも spec_gen で仕様書を作り直す。

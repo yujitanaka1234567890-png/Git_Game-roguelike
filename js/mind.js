@@ -63,6 +63,7 @@ Game.mind = {
     this.floorTurns++;
     if (this.floorTurns === this.grace) {
       Game.log.add("…空気が重い。この階の闇が、じわじわと心にしみこんでくる。（長居しすぎている）", "warn");
+      Game.notice.show("…空気が重い。長居しすぎている（精神力の減りが速くなった）", "warn");
     }
     var every = this.floorTurns > this.grace ? cfg.lingerDrainEvery : cfg.drainEvery;
     if (this.floorTurns % every === 0) p.mind = Math.max(0, p.mind - 1);
@@ -72,11 +73,13 @@ Game.mind = {
       Game.sound.play("howl");
     } else if (ratio < 0.5 && this.floorTurns % cfg.howlEvery === 0) {
       Game.sound.play("howl"); // 半分を切っている間は、ときどき遠吠えが聞こえる
+      Game.notice.show("オオカミの遠吠えが聞こえる…（精神力 " + p.mind + " / " + p.maxMind + "）", "warn");
     }
     if (this.warnOnce(0.25, ratio, "頭の奥で、知らない声がひそひそとささやいている…（精神力が残りわずか）")) {
       Game.sound.play("whisper");
     } else if (ratio < 0.25 && this.floorTurns % cfg.whisperEvery === 0) {
       Game.sound.play("whisper"); // 4分の1を切っている間は、ときどきささやきが聞こえる
+      Game.notice.show("知らない声がささやいている…（精神力 " + p.mind + " / " + p.maxMind + "）", "danger");
     }
     this.warnOnce(0.1, ratio, "体が闇に溶けはじめている！ 早く階段へ！（精神力が危険）");
     this.warnOnce(0, ratio, "精神力が尽きた！ " + cfg.zeroCountdown + " ターンのうちに精神力を戻さないと、ダンジョンに取り込まれる。階段か精神回復の道具を！");
@@ -87,6 +90,7 @@ Game.mind = {
     if (ratio > threshold || this.warned[threshold]) return false;
     this.warned[threshold] = true;
     Game.log.add("⚠ " + text, "warn");
+    Game.notice.show("⚠ " + text, threshold <= 0.25 ? "danger" : "warn"); // 画面の下にも出す（音が鳴った理由がわかるように）
     return true;
   },
 

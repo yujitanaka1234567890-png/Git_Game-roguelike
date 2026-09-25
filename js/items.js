@@ -13,47 +13,48 @@ Game.items = {
   // 近接武器：weapon = { atk: 攻撃力の上乗せ, hit: 命中率の増減, pierce: 防御力を無視, stun: ひるませる確率 }（equip.js）
   // 銃・杖：effect "aim"（方向を選んで使う）。charges＝使える回数、shot＝当たった時の効果（shoot.js）、range＝届くマス数
   // group：持ち物の並び順の分類（groupOrder の順に自動で並ぶ）
-  // sprite：ドット絵（data/sprites.js の絵の名前）  weight：出やすさ（大きいほど出やすい）
+  // sprite：ドット絵（data/item_sprites.js の絵の名前）
+  // rarity：レア度 1〜5（強い・便利な物ほど高い）。出やすさは config.itemRarities の spawn（レアなほど出にくい）
   // effect = 使った時の効果（effects） / throwEffect = 投げて誰かに当たった時の効果（throwEffects）
   types: {
     healMoss: {
-      name: "いやし苔", group: "hp", sprite: "leaf", category: "plant", symbol: "♣", color: "#66cc66", weight: 10,
+      name: "いやし苔", group: "hp", sprite: "leaf", category: "plant", symbol: "♣", color: "#6f9a5c", rarity: 1,
       effect: "heal", throwEffect: "heal", power: 15, maxUp: 1,
       desc: "HPを15回復する。HPが満タンなら最大HPが1上がる。投げて当てると相手が回復する。",
     },
     sunNectar: {
-      name: "ひだまり蜜", group: "hp", sprite: "jar", category: "plant", symbol: "♣", color: "#ffcc44", weight: 4,
+      name: "ひだまり蜜", group: "hp", sprite: "jar", category: "plant", symbol: "♣", color: "#c49a48", rarity: 2,
       effect: "heal", throwEffect: "heal", power: 50, maxUp: 2,
       desc: "HPを大きく回復する。HPが満タンなら最大HPが2上がる。投げて当てると相手が回復する。",
     },
     flashTalisman: {
-      name: "閃光の符", group: "attack", sprite: "talisman", category: "talisman", symbol: "≡", color: "#eeee66", weight: 5,
+      name: "閃光の符", group: "attack", sprite: "talisman", category: "talisman", symbol: "≡", color: "#d6c98e", rarity: 2,
       effect: "flash", throwEffect: "bonk", power: 12,
       desc: "見えている敵すべてに12ダメージの閃光を放つ。投げて当てると小さなダメージ。",
     },
     mightFruit: {
-      name: "剛力の実", group: "buff", sprite: "fruit", category: "fruit", symbol: "●", color: "#ff99aa", weight: 3,
+      name: "剛力の実", group: "buff", sprite: "fruit", category: "fruit", symbol: "●", color: "#a8555a", rarity: 4,
       effect: "atkUp", throwEffect: "atkUp", power: 1,
       desc: "攻撃力が永久に1上がる。投げて当てると相手の攻撃力が上がる。",
     },
     // ---- 精神力を回復する物 ----
     calmIncense: {
-      name: "澄心の香", group: "mind", sprite: "incense", category: "incense", symbol: "∽", color: "#cc99ff", weight: 4,
+      name: "澄心の香", group: "mind", sprite: "incense", category: "incense", symbol: "∽", color: "#8a7aa4", rarity: 3,
       effect: "mindUp", throwEffect: "bonk", power: 50,
       desc: "焚くと心が澄み、精神力が50回復する。",
     },
     tobacco: {
-      name: "煙草", group: "mind", sprite: "cigarette", category: "smoke", symbol: "∫", color: "#ddccaa", weight: 5,
+      name: "煙草", group: "mind", sprite: "tobaccoBox", category: "smoke", symbol: "∫", color: "#7e4a3c", rarity: 1,
       effect: "mindUp", throwEffect: "bonk", power: 7,
       desc: "一服すると気持ちが落ち着き、精神力が7回復する。"
     },
     sixFacePuzzle: {
-      name: "六面パズル", group: "mind", sprite: "cube", category: "puzzle", symbol: "▦", color: "#ff7755", weight: 5,
+      name: "六面パズル", group: "mind", sprite: "cube", category: "puzzle", symbol: "▦", color: "#8a8f98", rarity: 2,
       effect: "mindUp", throwEffect: "bonk", power: 10,
       desc: "六つの面の色をそろえる立体パズル。そろえると達成感で精神力が10回復する（使うとなくなる）。"
     },
     revolverToy: {
-      name: "リボルバートイ", group: "mind", sprite: "revolver", category: "fidget", symbol: "⊙", color: "#bbbbcc", weight: 4,
+      name: "リボルバートイ", group: "mind", sprite: "revolver", category: "fidget", symbol: "⊙", color: "#7d848c", rarity: 3,
       effect: "fidget", throwEffect: "bonk", power: 0,
       desc: "弾倉を回して遊ぶ手遊び道具。使ってもなくならないが、回すほど効き目が落ち、4回目で壊れる。",
       // 1回目〜4回目の回復量とログ（4回目で壊れる）
@@ -66,75 +67,75 @@ Game.items = {
     },
     // ---- 近接武器（装備すると主人公の攻撃力が上がる） ----
     knife: {
-      name: "ナイフ", group: "weapon", sprite: "knife", category: "weapon", symbol: "ナ", color: "#c8d0dc", weight: 3,
+      name: "ナイフ", group: "weapon", sprite: "knife", category: "weapon", symbol: "ナ", color: "#9aa2aa", rarity: 2,
       effect: "equip", throwEffect: "bonk", power: 0, weapon: { atk: 2, hit: 0.08, note: "軽くて当てやすい" },
       desc: "装備すると攻撃力+2。軽くて扱いやすく、攻撃が少し当たりやすくなる。",
     },
     katana: {
-      name: "刀", group: "weapon", sprite: "katana", category: "weapon", symbol: "刀", color: "#d8dde8", weight: 2,
+      name: "刀", group: "weapon", sprite: "katana", category: "weapon", symbol: "刀", color: "#aab0b8", rarity: 3,
       effect: "equip", throwEffect: "bonk", power: 0, weapon: { atk: 4 },
       desc: "装備すると攻撃力+4。よく切れる片刃の刀。",
     },
     hammer: {
-      name: "ハンマー", group: "weapon", sprite: "hammer", category: "weapon", symbol: "槌", color: "#9a8a7a", weight: 2,
+      name: "ハンマー", group: "weapon", sprite: "hammer", category: "weapon", symbol: "槌", color: "#7a7068", rarity: 3,
       effect: "equip", throwEffect: "bonk", power: 0, weapon: { atk: 6, hit: -0.15, note: "重くて外しやすい" },
       desc: "装備すると攻撃力+6。とても重く、攻撃が少し外れやすくなる。",
     },
     drill: {
-      name: "ドリル", group: "weapon", sprite: "drill", category: "weapon", symbol: "螺", color: "#e0b040", weight: 2,
+      name: "ドリル", group: "weapon", sprite: "drill", category: "weapon", symbol: "螺", color: "#a88a48", rarity: 4,
       effect: "equip", throwEffect: "bonk", power: 0, weapon: { atk: 3, pierce: true, note: "硬い相手にも効く" },
-      desc: "装備すると攻撃力+3。回転する刃で、相手の防御力を無視してダメージを与える。",
+      desc: "装備すると攻撃力+3。回転する刃で相手の防御力を無視する。ただしダメージは「ドリルの3＋主人公の攻撃力の半分」になる。",
     },
     glove: {
-      name: "グローブ", group: "weapon", sprite: "glove", category: "weapon", symbol: "拳", color: "#e05a3a", weight: 2,
+      name: "グローブ", group: "weapon", sprite: "glove", category: "weapon", symbol: "拳", color: "#8e4a3c", rarity: 3,
       effect: "equip", throwEffect: "bonk", power: 0, weapon: { atk: 2, stun: 0.2, note: "当てると時々ひるませる" },
-      desc: "装備すると攻撃力+2。攻撃が当たると、20%の確率で相手をよろめかせ1ターン動けなくする。",
+      desc: "装備すると攻撃力+2。攻撃が当たると、20%の確率で相手をよろめかせ1ターン動けなくする（ボスには効かない）。",
     },
     // ---- 銃（遠くから撃てるが弱め） ----
     gun: {
-      name: "銃", group: "attack", sprite: "gun", category: "gun", symbol: "銃", color: "#7a8290", weight: 2,
+      name: "銃", group: "attack", sprite: "gun", category: "gun", symbol: "銃", color: "#5e656e", rarity: 3,
       effect: "aim", throwEffect: "bonk", shot: "bullet", power: 4, charges: 6, range: 8,
       boltSymbol: "•", boltColor: "#ffe066", emptyText: "弾が残っていない。",
       desc: "向いた方向に弾を撃つ（8マスまで・6発）。ダメージは攻撃力に関係なく4（相手の防御力を引く）。",
     },
     // ---- 杖（方向を選んで振る。当たった相手に特殊な効果） ----
     dreamStaff: {
-      name: "夢見の杖", group: "staff", sprite: "staff", category: "staff", symbol: "杖", color: "#b9a8ff", weight: 2,
+      name: "夢見の杖", group: "staff", sprite: "staff", category: "staff", symbol: "杖", color: "#9086b8", rarity: 3,
       effect: "aim", throwEffect: "bonk", shot: "sleep", power: 5, charges: 4, range: 10,
       boltSymbol: "✦", boltColor: "#b9a8ff", emptyText: "杖にもう力が残っていない。",
       desc: "振ると光の玉が飛び、当たった相手を5ターン眠らせる（攻撃を受けると起きる。ボスは2ターン）。4回使える。",
     },
     repelStaff: {
-      name: "反発の杖", group: "staff", sprite: "staff", category: "staff", symbol: "杖", color: "#88ddff", weight: 2,
+      name: "反発の杖", group: "staff", sprite: "staff", category: "staff", symbol: "杖", color: "#6a9cb4", rarity: 3,
       effect: "aim", throwEffect: "bonk", shot: "knock", power: 5, charges: 4, range: 10,
       boltSymbol: "✦", boltColor: "#88ddff", emptyText: "杖にもう力が残っていない。",
       desc: "当たった相手を向こうへ5マスはじき飛ばす。壁などにぶつかると3ダメージ。4回使える。",
     },
     banishStaff: {
-      name: "放逐の杖", group: "staff", sprite: "staff", category: "staff", symbol: "杖", color: "#cc88ff", weight: 1,
+      name: "放逐の杖", group: "staff", sprite: "staff", category: "staff", symbol: "杖", color: "#946eae", rarity: 4,
       effect: "aim", throwEffect: "bonk", shot: "banish", power: 0, charges: 3, range: 10,
       boltSymbol: "✦", boltColor: "#cc88ff", emptyText: "杖にもう力が残っていない。",
       desc: "当たった相手を、この階のどこか遠くへ飛ばす（ボスには効かない）。3回使える。",
     },
     // ---- お札（読み上げると特殊な効果） ----
     seerOfuda: {
-      name: "千里眼の札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#44aaff", weight: 3,
+      name: "千里眼の札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#4d7194", rarity: 2,
       effect: "reveal", throwEffect: "bonk", power: 0,
       desc: "読み上げると、この階の地形と落ちているアイテムがすべてわかる。",
     },
     guardOfuda: {
-      name: "守護の札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#44cc55", weight: 3,
+      name: "守護の札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#5d8a50", rarity: 3,
       effect: "guard", throwEffect: "bonk", power: 15,
       desc: "読み上げると、15ターンの間、受けるダメージが半分になる。",
     },
     hushOfuda: {
-      name: "静寂の札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#ee3333", weight: 2,
+      name: "静寂の札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#9e453b", rarity: 4,
       effect: "hush", throwEffect: "bonk", power: 20,
-      desc: "読み上げると、見えている敵すべてが20ターンの間、技を使えなくなる（溜めている技も止まる）。",
+      desc: "読み上げると、見えている敵すべてが20ターンの間、技を使えなくなる（溜めている技も止まる。ボスには効かない）。",
     },
     // ---- 道具 ----
     returnBell: {
-      name: "帰還の鈴", group: "tool", sprite: "bell", category: "tool", symbol: "♪", color: "#88ddff", weight: 3,
+      name: "帰還の鈴", group: "tool", sprite: "bell", category: "tool", symbol: "♪", color: "#b09450", rarity: 4,
       effect: "escape", throwEffect: "bonk", power: 0,
       desc: "鳴らすと、その場からダンジョンを脱出して拠点に帰れる。連れている仲間も一緒に帰る。",
     },
@@ -176,13 +177,22 @@ Game.items = {
     }
   },
 
-  // weight に比例した確率で種類を選ぶ
+  // 出やすさ（レア度の spawn）
+  weightOf: function (id) {
+    return Game.config.itemRarities[this.types[id].rarity || 1].spawn;
+  },
+
+  rarityOf: function (id) {
+    return Game.config.itemRarities[this.types[id].rarity || 1];
+  },
+
+  // 出やすさに比例した確率で種類を選ぶ（レアな物ほど出にくい）
   pickType: function () {
     var total = 0, id;
-    for (id in this.types) total += this.types[id].weight;
+    for (id in this.types) total += this.weightOf(id);
     var r = Math.random() * total;
     for (id in this.types) {
-      r -= this.types[id].weight;
+      r -= this.weightOf(id);
       if (r < 0) return id;
     }
     return id;
@@ -315,17 +325,23 @@ Game.items = {
       Game.log.add("淡い光の膜に包まれた。" + power + "ターンの間、受けるダメージが半分になる。", "good");
     },
 
-    // 静寂の札：見えている敵が技を使えなくなる
+    // 静寂の札：見えている敵が技を使えなくなる（ボスには効かない）
     hush: function (t, power) {
-      var n = 0;
+      var n = 0, resisted = [];
       Game.enemies.list.forEach(function (e) {
         if (!Game.fov.isVisible(e.x, e.y)) return;
-        e.silenced = power;
+        var turns = Game.equip.statusTurns(e, "debuff", power);
+        if (turns === 0) {
+          resisted.push(e.name);
+          return;
+        }
+        e.silenced = turns;
         e.charge = null;
         n++;
       });
-      if (n === 0) Game.log.add("しかし何も起こらなかった。", "miss");
-      else Game.log.add("あたりが静まりかえった。見えている敵は " + power + " ターンの間、技を使えない。", "good");
+      if (n > 0) Game.log.add("あたりが静まりかえった。見えている敵は " + power + " ターンの間、技を使えない。", "good");
+      if (resisted.length > 0) Game.log.add(resisted.join("・") + "には効かなかった…", "miss");
+      if (n === 0 && resisted.length === 0) Game.log.add("しかし何も起こらなかった。", "miss");
     },
 
     escape: function (t) {

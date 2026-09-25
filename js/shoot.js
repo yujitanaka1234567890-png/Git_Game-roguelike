@@ -76,7 +76,7 @@ Game.shoot = {
 
     // 夢見の杖：眠らせる（ボスは短い）
     sleep: function (t, target) {
-      var turns = target.isBoss ? 2 : t.power;
+      var turns = Game.equip.statusTurns(target, "sleep", t.power); // ボスは短い
       target.sleep = Math.max(target.sleep || 0, turns);
       target.charge = null;
       Game.log.add(target.name + "は深い眠りに落ちた…（" + turns + "ターン。攻撃を受けると起きる）", "good");
@@ -100,7 +100,7 @@ Game.shoot = {
 
     // 放逐の杖：この階のどこか遠く（主人公から見えない床）へ飛ばす。ボスには効かない
     banish: function (t, target) {
-      if (target.isBoss) {
+      if (Game.equip.statusTurns(target, "debuff", 1) === 0) {
         Game.log.add(target.name + "には効かなかった…", "miss");
         return;
       }

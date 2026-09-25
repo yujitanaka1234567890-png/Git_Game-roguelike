@@ -3,6 +3,7 @@
 //     （items.js の weapon：atk＝攻撃力の上乗せ、hit＝命中率の増減、pierce＝相手の防御力を無視、stun＝当てた時に相手をひるませる確率）
 //   ・同時に装備できる武器は1つ。持ち物から外れる（投げる・置く）と自動で外れる。冒険ごとに外れた状態から始まる
 //   ・状態：sleep（眠り。その間は行動しない。攻撃を受けると起きる）、silenced（技を使えない）、主人公の guardTurns（受けるダメージ半分）
+//   ・状態をかける時は statusTurns で実際のターン数を決める（ボスは弱体が効かず、眠りは短い。config.bossResist）
 Game.equip = {
   weapon: null, // 装備中のアイテムデータ
 
@@ -52,20 +53,36 @@ Game.equip = {
     return w && w.hit ? w.hit : 0;
   },
 
-  pierces: function (attacker) {
+  // 貫通（ドリル）の時のダメージの元：ドリルの攻撃力＋主人公の素の攻撃力（武器の分を除く）の半分。防御力は無視。
+  // 貫通でなければ null
+  pierceBase: function (attacker) {
     var w = attacker === Game.player ? this.stats() : null;
-    return !!(w && w.pierce);
+    if (!w || !w.pierce) return null;
+    return w.atk + (attacker.atk - w.atk) / 2;
   },
 
-  // 攻撃が当たった後：グローブならひるませる（1ターン行動できない）
+  // 攻撃が当たった後：グローブならひるませる（1ターン行動できない。ボスには効かない）
   afterHit: function (attacker, defender) {
     var w = attacker === Game.player ? this.stats() : null;
     if (!w || !w.stun || defender.hp <= 0 || Math.random() >= w.stun) return;
+    if (this.statusTurns(defender, "debuff", 1) === 0) return;
     defender.sleep = Math.max(defender.sleep || 0, 1);
     Game.log.add(defender.name + "はよろめいた！（1ターン動けない）", "good");
   },
 
   // ---------- 状態 ----------
+  // target に状態をかける時の実際のターン数（0 なら効かない）。
+  //   kind："sleep"（眠り）/ "debuff"（技封じ・ひるみ・放逐などの弱体）/ "ailment"（毒・麻痺・出血などの状態異常。将来用）
+  //   ボスは弱体が効かず、眠りは最大 bossResist.sleepTurns ターン、状態異常は ailmentMul 倍（最低1ターン）
+  statusTurns: function (target, kind, turns) {
+    if (!target.isBoss) return turns;
+    var r = Game.config.bossResist;
+    if (kind === "debuff") return 0;
+    if (kind === "sleep") return Math.min(turns, r.sleepTurns);
+    if (kind === "ailment") return Math.max(1, Math.round(turns * r.ailmentMul));
+    return turns;
+  },
+
   // 眠っていればその分ターンを消費して true（行動しない）
   asleep: function (unit) {
     if (!unit.sleep) return false;

@@ -13,6 +13,7 @@ Game.renderer = {
     "K": { sprite: "board", color: "#8a5a2a", char: "掲", charColor: "#ffcc55" },
     "S": { sprite: "stone", color: "#9a9aa6", char: "碑", charColor: "#bbbbdd" },
     "Z": { sprite: "book", color: "#6a8aff", char: "図", charColor: "#aaccff" },
+    "T": { sprite: "sign", color: "#9e7650", char: "案", charColor: "#e0c890" },
     "G": { sprite: "gateM", color: "#c8a8ff", char: "∩", charColor: "#c8a8ff" }, // 3マスで1つの門（drawTile で左・中・右を選ぶ）
   },
 
@@ -142,7 +143,12 @@ Game.renderer = {
       }
     }
 
-    if (Game.state === "gameover") this.drawOverlay("GAME OVER", "Enter で拠点へ戻る");
+    if (Game.state === "gameover") {
+      this.drawOverlay("GAME OVER", "Enter で拠点へ戻る");
+      Game.minimap.hide();
+    } else {
+      Game.minimap.draw(); // 全体マップ（2Dでも3Dでも左上に重ねる）
+    }
   },
 
   // 1マスの地形を描く

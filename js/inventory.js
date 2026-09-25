@@ -115,7 +115,8 @@ Game.inventory = {
       el.appendChild(desc);
       var from = document.createElement("div");
       from.className = "inv-help";
-      from.textContent = "拾った世界：" + Game.dimension.worldName(cur.origin);
+      var rr = Game.items.rarityOf(cur.type);
+      from.textContent = "レア度：" + rr.stars + "（" + rr.label + "）　拾った世界：" + Game.dimension.worldName(cur.origin);
       el.appendChild(from);
     }
 

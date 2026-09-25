@@ -64,6 +64,18 @@ Game.config = {
     4: { label: "とてもめずらしい", recruit: 0.05, spawn: 1, mul: 2.2 },
     5: { label: "幻", recruit: 0.03, spawn: 0.3, mul: 3.0 },
   },
+  // アイテムのレア度（items.js の rarity）。spawn = 出やすさ（大きいほど出やすい）。強い・便利な物ほどレアで出にくい
+  itemRarities: {
+    1: { label: "よく見る", stars: "★", spawn: 10 },
+    2: { label: "少しめずらしい", stars: "★★", spawn: 5 },
+    3: { label: "めずらしい", stars: "★★★", spawn: 2.5 },
+    4: { label: "とてもめずらしい", stars: "★★★★", spawn: 1 },
+    5: { label: "幻", stars: "★★★★★", spawn: 0.3 },
+  },
+  // ボスの状態への強さ（equip.statusTurns）。
+  //   debuff＝技封じ・ひるみ・放逐などの弱体 → 効かない / sleep＝眠り → 最大 sleepTurns ターン
+  //   ailment＝毒・麻痺・出血などの状態異常（将来追加する時用）→ ターン数を ailmentMul 倍（ある程度は効く）
+  bossResist: { sleepTurns: 2, ailmentMul: 0.5 },
   specialChance: 0.2, // 敵が攻撃できる時に、必殺技の溜めを始める確率
   allySkillChance: 0.2, // 仲間が攻撃できる時に、技の溜めを始める確率（敵と同じく予告して2ターン後に発動）
   specialWindup: 2, // 必殺技の予告ターン数（予告してから、このターン数の後に発動）

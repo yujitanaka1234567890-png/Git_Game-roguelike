@@ -251,7 +251,9 @@ Game.endTurn = function () {
   var left = Game.mind.countdownLeft();
   if (left !== null && left > 0 && Game.player.hp > 0) {
     Game.log.add("⚠ 意識が闇に呑まれていく… あと " + left + " ターンで取り込まれる！（精神力を1以上に）", "warn");
+    Game.notice.show("⚠ あと " + left + " ターンでダンジョンに取り込まれる！ 階段か精神回復の道具を", "danger");
   }
+  Game.notice.checkHp(); // HPが残りわずかなら画面の下で知らせる
   if (Game.player.wasHit) Game.hitPauseUntil = Date.now() + Game.config.hitPauseMs;
   if (Game.player.hp <= 0) {
     Game.log.add("あなたは B" + Game.floor + "F で倒れた… Enter で拠点へ戻る", "bad");
@@ -544,6 +546,7 @@ Game.showBase = function () {
   Game.inventory.clear();
   Game.base.tidy();
   Game.fov.revealAll = true;
+  Game.notice.clear();
   Game.baseScene.enter();
   document.body.classList.add("in-base");
 
@@ -567,6 +570,12 @@ Game.showBase = function () {
     });
     Game.base.lastResult = null;
   }
+  if (Game.base.firstTime) {
+    // 初めて遊ぶ時：遊び方の説明を読むかたずねる
+    Game.base.firstTime = false;
+    Game.log.add("ようこそ、拠点へ。家の左下の案内板（案）で、いつでも遊び方を読める。", "info");
+    Game.tutorial.askFirstTime();
+  }
   Game.refresh();
   document.getElementById("game").focus();
 };
@@ -584,6 +593,7 @@ Game.startAdventure = function (dungeonId) {
   Game.state = "playing";
   Game.stairsPending = false;
   Game.giveUpPending = false;
+  Game.notice.clear();
   Game.allies.clear();
   for (var i = 0; i < party.length; i++) {
     Game.allies.list.push(Game.allies.create(party[i].type, -1, -1, party[i].id));

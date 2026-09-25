@@ -20,6 +20,8 @@ Game.leveling = {
         label + "は Lv" + unit.level + " になった！（最大HP+" + growth.hp + " 攻撃力+" + growth.atk + "）",
         "good"
       );
+      // 主人公のレベルアップは画面の下にも出す（ジャジャーンの音の理由がわかるように）
+      if (unit === Game.player) Game.notice.show("レベルアップ！ Lv" + unit.level + "（最大HP+" + growth.hp + " 攻撃力+" + growth.atk + "）", "good");
     }
   },
 };

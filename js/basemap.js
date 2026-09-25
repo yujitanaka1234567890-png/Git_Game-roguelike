@@ -6,6 +6,7 @@
 //                      交配小屋（♥）… 牧場の2体から新しい仲間を生み出す
 //                      図鑑（図）… 出会ったモンスターのくわしい情報を見る（bestiary.js）
 //                      記録の石碑（碑）… 記録の呪文（セーブ用パスワード）の書き出し・読み込み
+//                      案内板（案）… 遊び方の説明（tutorial.js。入口の近く）
 //   下：門（∩）      … 乗ると行き先のダンジョンを選んで出発
 Game.baseScene = {
   monsters: [], // 牧場を歩く仲間 [{entry: 牧場のデータ, x, y}]
@@ -32,6 +33,7 @@ Game.baseScene = {
     g[1][15] = "H"; // 交配小屋
     g[1][17] = "Z"; // 図鑑
     g[1][19] = "S"; // 記録の石碑（記録の呪文）
+    g[7][10] = "T"; // 案内板（遊び方の説明）：牧場からの出入口の近く（家の左下の隅）
     g[4][15] = "@"; // 拠点に戻った時の位置
     return g.map(function (r) { return r.join(""); });
   },
@@ -159,6 +161,10 @@ Game.baseScene = {
     }
     if (Game.map.tileAt(nx, ny) === "S") {
       Game.savecode.openMenu();
+      return;
+    }
+    if (Game.map.tileAt(nx, ny) === "T") {
+      Game.tutorial.open(0);
       return;
     }
     var m = this.monsterAt(nx, ny);

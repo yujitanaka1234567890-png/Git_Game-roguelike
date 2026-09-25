@@ -18,9 +18,10 @@ Game.combat = {
   },
 
   // ダメージ = (攻撃力 − 防御力) に ±20% のばらつき。最低でも1
+  // ドリル（貫通）：防御力を無視する代わりに、ドリルの攻撃力＋主人公の素の攻撃力の半分だけ
   calcDamage: function (attacker, defender) {
-    var def = Game.equip.pierces(attacker) ? 0 : defender.def; // ドリルは防御力を無視
-    var base = attacker.atk * Game.water.atkMul(attacker) - def; // 水属性は水たまりの上で強い
+    var pierce = Game.equip.pierceBase(attacker);
+    var base = pierce !== null ? pierce : attacker.atk * Game.water.atkMul(attacker) - defender.def; // 水属性は水たまりの上で強い
     var rand = 0.8 + Math.random() * 0.4;
     return Math.max(1, Math.round(base * rand));
   },

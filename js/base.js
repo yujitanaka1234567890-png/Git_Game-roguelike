@@ -13,6 +13,7 @@ Game.base = {
   seen: {}, // 出会ったことのある種類 { typeId: true }（プレイヤー用の図鑑 bestiary.js に載る）
   lost: [], // はぐれた仲間の記録 [{id, dungeonId, floor, members: [種類ID], mission: null | {team, chance}}]（rescue.js）
   lastResult: null, // 直前の冒険の結果 { kind: "escape" | "death" | "info", lines: [...] }
+  firstTime: false, // 初めて遊ぶ（保存データがなかった）。拠点に着いたら遊び方の説明を読むかたずねる
   lastLog: null, // 倒れた冒険のログ（拠点のログの下に続けて出す。次の冒険に出るまで残る）[{text, type, meta}]
   lastLogKey: "dimension-roguelike-lastlog",
   saveKey: "dimension-roguelike-save-v1",
@@ -34,14 +35,8 @@ Game.base = {
       this.seen = {};
       this.lost = [];
       for (var i = 0; i < Game.config.starterStorage.length; i++) this.addToStorage(Game.config.starterStorage[i]);
-      this.lastResult = {
-        kind: "info",
-        lines: [
-          "ようこそ、拠点へ。",
-          "家の収納箱（▣）で道具を選び、下の門（∩）からダンジョンへ出発しよう。",
-          "牧場の仲間が増えたら、家の交配小屋（♥）で新しい仲間を生み出せる。",
-        ],
-      };
+      this.lastResult = null;
+      this.firstTime = true; // 拠点に着いたら、遊び方の説明を読むかたずねる（tutorial.js）
       this.save();
       return;
     }

@@ -1,4 +1,4 @@
-// 全体マップ（3D表示の時だけ、ゲーム画面の左上に薄く重ねる）。
+// 全体マップ（2D・3Dどちらでも、ゲーム画面の左上に薄く重ねる。N キーで大きさ・非表示を切り替え）。
 // 探索済みの床・階段・アイテム・仲間・見えている敵・主人公を小さな点で描く。見た目だけでルールには影響しない。
 Game.minimap = {
   canvas: null,
@@ -24,10 +24,10 @@ Game.minimap = {
     } catch (e) {
       // 覚えておけなくても切り替えはできる
     }
-    return "全体マップ：" + this.sizeNames[this.sizeIndex] + (Game.view3d.enabled ? "" : "（3D表示の時に出る）");
+    return "全体マップ：" + this.sizeNames[this.sizeIndex];
   },
 
-  // ゲーム画面（3D）の上に重ねる canvas を用意する
+  // ゲーム画面（2D・3D）の上に重ねる canvas を用意する
   setup: function () {
     if (this.canvas) return;
     var cv = document.createElement("canvas");

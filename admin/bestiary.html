@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>モンスター図鑑（管理者用）</title>
+  <style>
+    body { margin: 0; padding: 16px; background: #111; color: #ddd; font-family: "Consolas", "Meiryo", monospace; font-size: 13px; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; color: #8ab4ff; border-bottom: 1px solid #333; padding-bottom: 4px; }
+    h3 { font-size: 14px; margin: 14px 0 6px; color: #ffe08a; }
+    .note { color: #888; margin: 0 0 12px; }
+    table { border-collapse: collapse; margin-bottom: 8px; }
+    th, td { border: 1px solid #333; padding: 3px 8px; text-align: left; vertical-align: top; white-space: nowrap; }
+    #content { overflow-x: auto; }
+    th { background: #1d2233; color: #aac; position: sticky; top: 0; }
+    tr:nth-child(even) td { background: #16161c; }
+    .sym { font-weight: bold; font-size: 16px; text-align: center; }
+    .num { text-align: right; }
+    .ok { color: #8fd18f; }
+    .warn { color: #ffd24a; }
+    .err { color: #ff8080; }
+    .tag { display: inline-block; padding: 0 6px; margin: 1px 2px; border-radius: 3px; background: #2a3f70; font-size: 12px; }
+    .tag.breed { background: #6a2a55; }
+    .tag.evo { background: #2f5a2f; }
+    #checks li { margin: 2px 0; }
+  </style>
+</head>
+<body>
+  <h1>モンスター図鑑（管理者用）</h1>
+  <p class="note">
+    ゲームと同じ図鑑データ（js/data/*.js）を読み込んで一覧にしています。データを書き換えたら、このページを再読み込みして確認してください。<br>
+    能力値はレア度の倍率をかけた「実際の値」（仲間ならLv1の値）です。
+  </p>
+  <h2>設定チェック</h2>
+  <ul id="checks"></ul>
+  <div id="content"></div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/data/skills.js"></script>
+  <script src="../js/data/monsters.js"></script>
+  <script src="../js/data/dungeons.js"></script>
+  <script src="../js/data/breeding.js"></script>
+  <script src="../js/data/worlds.js"></script>
+  <script src="../js/data/sprites.js"></script>
+  <script src="../js/data/characters.js"></script>
+  <script src="../js/data/sea_characters.js"></script>
+  <script src="../js/data/char_frames.js"></script>
+  <script src="bestiary.js"></script>
+</body>
+</html>

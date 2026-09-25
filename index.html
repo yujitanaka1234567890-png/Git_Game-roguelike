@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>次元ローグライク（仮）</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <h1>次元ローグライク（仮）</h1>
+
+  <div id="layout">
+    <!-- 左側：上にステータス、下にログ -->
+    <div id="side">
+      <div id="hud">
+        <div class="hud-row"><span id="hud-floor"></span></div>
+        <div class="hud-row"><span id="hud-lv"></span></div>
+        <div class="hud-row">
+          <span class="hp-label">HP</span>
+          <div class="hp-bar"><div id="hp-fill"></div></div>
+          <span id="hud-hp"></span>
+        </div>
+        <div class="hud-row">
+          <span class="hp-label">精神</span>
+          <div class="hp-bar mind-bar"><div id="mind-fill"></div></div>
+          <span id="hud-mind"></span>
+        </div>
+        <div class="hud-row"><span id="hud-atk"></span><span id="hud-turn"></span></div>
+        <div class="hud-row" id="hud-boss" hidden></div>
+        <div class="hud-row"><span id="status"></span></div>
+      </div>
+      <div id="party"></div>
+      <div id="log-title">ログ（新しい順・スクロールで過去も見られる。<span class="skill-link-sample">下線の技名</span>はクリックで説明）</div>
+      <div id="log"></div>
+    </div>
+
+    <!-- 中央：ゲーム画面 -->
+    <div id="main">
+      <div id="game-wrap">
+        <canvas id="game" tabindex="0"></canvas>
+        <div id="inventory" hidden></div>
+        <div id="dialog" hidden></div>
+        <div id="savecode" hidden></div>
+      </div>
+    </div>
+
+    <!-- 右側：操作説明と凡例 -->
+    <div id="info">
+      <div class="help help-dungeon">
+        <div class="help-title">操作</div>
+        <ul>
+          <li>矢印：移動・攻撃</li>
+          <li>Shift＋矢印2つ同時：斜め</li>
+          <li>Shift＋矢印1つ：ダッシュ（Shiftを離すと止まる）</li>
+          <li>スペース：足踏み</li>
+          <li>I または W：持ち物（T で投げる）</li>
+          <li>階段の上で ↓↓：降りる</li>
+          <li>R を2回：冒険をあきらめる</li>
+          <li>.（ドット）：分隊への指示（人型の仲間を隊長に独立行動させる／呼び戻す。分隊と同じ部屋にいる時だけ）</li>
+          <li>3：3D ⇔ 2D　V：ドット絵 ⇔ 文字</li>
+          <li>＋／－：カメラを寄せる・引く（3D）</li>
+          <li>マウスホイール：3D画面の拡大・縮小</li>
+          <li>N：全体マップの大きさ（非表示・小・中・大）</li>
+          <li>M：効果音オン ⇔ オフ</li>
+        </ul>
+        <div class="help-title">見方</div>
+        <ul>
+          <li>左上の点 = 進化段階</li>
+          <li>黄色い枠と「!」= 敵の技の溜め中</li>
+          <li>青い枠 = 仲間の技の溜め中</li>
+          <li>青い下地・青い四角 = 仲間（ぶつかると入れ替わる）</li>
+          <li>橙の四角 = 分隊の仲間（独立行動中）</li>
+          <li>体力ゲージ：緑 = 仲間、赤 = 敵</li>
+          <li>精神 = ダンジョンにいると少しずつ減る。同じ階に長居すると速く減る（広い階ほど長く居られる）。0になると3ターンのうちに戻さないとダンジョンに取り込まれる。50%で遠吠え・25%でささやき</li>
+          <li>≈ 水色の床 = 水たまり（水属性の敵はその上で強くなり、回復する）</li>
+          <li>紫の枠の中に立つ仲間 = はぐれた仲間（ぶつかる・乗ると救出）</li>
+          <li>最下層はボス部屋（倒すと帰還のゲートが現れる）</li>
+          <li>3D表示では左上に全体マップ（水色＝自分・青＝仲間・橙＝分隊・赤＝敵・黄＝アイテム・紫＝はぐれた仲間）</li>
+        </ul>
+      </div>
+      <div class="help help-base">
+        <div class="help-title">拠点での操作</div>
+        <ul>
+          <li>矢印で歩く（Shift＋矢印2つで斜め）</li>
+          <li>牧場の仲間にぶつかる：話しかける</li>
+          <li>▣ 収納箱：持って行く道具を選ぶ</li>
+          <li>掲 掲示板：連れて行く仲間を選ぶ・救出隊を送る</li>
+          <li>♥ 交配小屋：2体から新しい仲間を生み出す</li>
+          <li>図 図鑑：出会ったモンスターを調べる</li>
+          <li>碑 記録の石碑：続きから遊ぶための「記録の呪文」</li>
+          <li>∩ 門に乗る：行き先を選んで出発</li>
+          <li>ウィンドウ：↑↓で選び Enter・スペースで決定、Esc で閉じる</li>
+          <li>3：3D ⇔ 2D　V：ドット絵 ⇔ 文字　M：効果音</li>
+          <li>＋／－・マウスホイール：3D画面の拡大・縮小</li>
+          <li>N：全体マップの大きさ（3D）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 読み込み順が大事：下のファイルは上のファイルを使う -->
+  <script src="js/config.js"></script>
+  <!-- 図鑑データ（モンスター・技・ダンジョン・交配表・世界・ドット絵）。admin/bestiary.html でも同じものを読む -->
+  <script src="js/data/skills.js"></script>
+  <script src="js/data/monsters.js"></script>
+  <script src="js/data/dungeons.js"></script>
+  <script src="js/data/breeding.js"></script>
+  <script src="js/data/worlds.js"></script>
+  <script src="js/data/sprites.js"></script>
+  <script src="js/data/characters.js"></script>
+  <script src="js/data/sea_characters.js"></script>
+  <script src="js/data/char_frames.js"></script>
+  <script src="js/dungeon.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/fov.js"></script>
+  <script src="js/log.js"></script>
+  <script src="js/dialog.js"></script>
+  <script src="js/fx.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/music.js"></script>
+  <script src="js/pixelart.js"></script>
+  <script src="js/dimension.js"></script>
+  <script src="js/water.js"></script>
+  <script src="js/combat.js"></script>
+  <script src="js/leveling.js"></script>
+  <script src="js/items.js"></script>
+  <script src="js/inventory.js"></script>
+  <script src="js/throw.js"></script>
+  <script src="js/mind.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/enemy.js"></script>
+  <script src="js/specials.js"></script>
+  <script src="js/pathfind.js"></script>
+  <script src="js/allies.js"></script>
+  <script src="js/squad.js"></script>
+  <script src="js/rescue.js"></script>
+  <script src="js/base.js"></script>
+  <script src="js/savecode.js"></script>
+  <script src="js/bestiary.js"></script>
+  <script src="js/basemap.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/anim3d.js"></script>
+  <script src="js/minimap.js"></script>
+  <script src="js/render3d.js"></script>
+  <script src="js/render3d_parts.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

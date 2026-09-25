@@ -27,17 +27,7 @@ Game.base = {
       data = null; // 保存領域が使えない環境（プライベートモード等）でも遊べるようにする
     }
     if (!data) {
-      // 初めて遊ぶ
-      this.ranch = [];
-      this.storage = [];
-      this.cleared = {};
-      this.discovered = {};
-      this.seen = {};
-      this.lost = [];
-      for (var i = 0; i < Game.config.starterStorage.length; i++) this.addToStorage(Game.config.starterStorage[i]);
-      this.lastResult = null;
-      this.firstTime = true; // 拠点に着いたら、遊び方の説明を読むかたずねる（tutorial.js）
-      this.save();
+      this.resetToNew(); // 初めて遊ぶ
       return;
     }
     this.nextId = data.nextId || 1;
@@ -50,6 +40,25 @@ Game.base = {
     this.lost = (data.lost || []).filter(function (r) {
       return Game.DUNGEONS[r.dungeonId] && r.members.every(function (t) { return Game.MONSTERS[t]; });
     });
+  },
+
+  // 最初の状態にする（初めて遊ぶ時・石碑の「最初から始める」）。
+  // 今遊んでいる記録（saveKey）だけを新しくする。石碑に刻んだ記録（saveslots.js）にはさわらない
+  resetToNew: function () {
+    this.nextId = 1;
+    this.ranch = [];
+    this.storage = [];
+    this.cleared = {};
+    this.discovered = {};
+    this.seen = {};
+    this.lost = [];
+    this.selected = {};
+    this.taking = {};
+    for (var i = 0; i < Game.config.starterStorage.length; i++) this.addToStorage(Game.config.starterStorage[i]);
+    this.lastResult = null;
+    this.firstTime = true; // 拠点に着いたら、遊び方の説明を読むかたずねる（tutorial.js）
+    this.keepLastLog(null);
+    this.save();
   },
 
   // 倒れた冒険のログを覚えておく（ブラウザを閉じても、次の冒険に出るまで拠点で読める。記録の呪文には入れない）

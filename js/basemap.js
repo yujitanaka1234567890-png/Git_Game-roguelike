@@ -5,7 +5,7 @@
 //                      掲示板（掲）… 連れて行く仲間を選ぶ／はぐれた仲間の確認と救出隊の派遣
 //                      交配小屋（♥）… 牧場の2体から新しい仲間を生み出す
 //                      図鑑（図）… 出会ったモンスターのくわしい情報を見る（bestiary.js）
-//                      記録の石碑（碑）… 記録の呪文（セーブ用パスワード）の書き出し・読み込み
+//                      記録の石碑（碑）… 記録を3つまで刻む・読み込む、最初から始める、記録の呪文（saveslots.js・savecode.js）
 //                      案内板（案）… 遊び方の説明（tutorial.js。入口の近く）
 //   下：門（∩）      … 乗ると行き先のダンジョンを選んで出発
 Game.baseScene = {
@@ -160,7 +160,7 @@ Game.baseScene = {
       return;
     }
     if (Game.map.tileAt(nx, ny) === "S") {
-      Game.savecode.openMenu();
+      Game.saveSlots.openMenu(); // 記録の枠（3つ）・最初から・記録の呪文
       return;
     }
     if (Game.map.tileAt(nx, ny) === "T") {

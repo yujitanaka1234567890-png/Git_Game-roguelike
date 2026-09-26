@@ -86,13 +86,16 @@ Game.fx = {
   pops: [], // [{ unit, text, color, start, until }]
   popMs: 700,
 
-  popNumber: function (target, amount) {
+  damageColor: "#ffffff", // ダメージの数字（誰が受けても白）
+  healColor: "#a8f0b4", // 回復の数字（パステルの緑）
+
+  // heal = true なら回復の数字（緑）
+  popNumber: function (target, amount, heal) {
     if (!target || target.x < 0) return;
     var now = Date.now();
-    var start = now - this.lastSlot.at < 20 ? this.lastSlot.impact : now; // 直前に並べた攻撃が当たる瞬間に合わせる
-    var friendly = target === Game.player || Game.allies.list.indexOf(target) >= 0;
+    var start = !heal && now - this.lastSlot.at < 20 ? this.lastSlot.impact : now; // 直前に並べた攻撃が当たる瞬間に合わせる
     this.pops = this.pops.filter(function (p) { return p.until > now; });
-    this.pops.push({ unit: target, text: String(amount), color: friendly ? "#ff6868" : "#ffffff", start: start, until: start + this.popMs });
+    this.pops.push({ unit: target, text: String(amount), color: heal ? this.healColor : this.damageColor, start: start, until: start + this.popMs });
     this.redrawAt(start);
     if (Game.renderer.kick) Game.renderer.kick();
   },
@@ -127,7 +130,7 @@ Game.fx = {
       var a = list[i];
       var x = a.pop.unit.x * ts + ts / 2, y = a.pop.unit.y * ts + ts * 0.15 - a.hop * ts;
       ctx.globalAlpha = a.alpha;
-      ctx.strokeStyle = "#1a0000";
+      ctx.strokeStyle = "#101010";
       ctx.strokeText(a.pop.text, x, y);
       ctx.fillStyle = a.pop.color;
       ctx.fillText(a.pop.text, x, y);

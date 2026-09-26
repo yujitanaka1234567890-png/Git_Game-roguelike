@@ -41,8 +41,8 @@ Game.items = {
     // ---- 精神力を回復する物 ----
     calmIncense: {
       name: "澄心の香", group: "mind", sprite: "incense", category: "incense", symbol: "∽", color: "#8a7aa4", rarity: 3,
-      effect: "mindUp", throwEffect: "bonk", power: 50,
-      desc: "焚くと心が澄み、精神力が50回復する。",
+      effect: "mindUp", throwEffect: "bonk", power: 25,
+      desc: "焚くと心が澄み、精神力が25回復する。",
     },
     tobacco: {
       name: "煙草", group: "mind", sprite: "tobaccoBox", category: "smoke", symbol: "∫", color: "#7e4a3c", rarity: 1,
@@ -297,6 +297,7 @@ Game.items = {
         Game.sound.play("heal");
         var before = p.hp;
         p.hp = Math.min(p.maxHp, p.hp + power);
+        Game.fx.popNumber(p, p.hp - before, true);
         Game.log.add("HPが " + (p.hp - before) + " 回復した。", "good");
       }
     },
@@ -380,6 +381,7 @@ Game.items = {
       Game.sound.play("heal");
       var before = target.hp;
       target.hp = Math.min(target.maxHp, target.hp + t.power);
+      if (target.hp > before) Game.fx.popNumber(target, target.hp - before, true);
       Game.log.add(target.name + "のHPが " + (target.hp - before) + " 回復した。", "good");
     },
 

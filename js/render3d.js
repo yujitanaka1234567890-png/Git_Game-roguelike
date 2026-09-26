@@ -78,6 +78,7 @@ Game.view3d = {
   show: function (on) {
     document.getElementById("game").style.display = on ? "none" : "";
     if (this.canvas) this.canvas.style.display = on ? "" : "none";
+    Game.backdrop.show(on);
     if (!on) Game.minimap.hide();
   },
 
@@ -90,13 +91,15 @@ Game.view3d = {
     cv.width = 960;
     cv.height = 648;
     cv.style.display = "none";
-    var gl = cv.getContext("webgl", { antialias: false, alpha: false });
+    // 何もない所は透けて、後ろの背景（backdrop.js）が見える
+    var gl = cv.getContext("webgl", { antialias: false, alpha: true, premultipliedAlpha: false });
     if (!gl) {
       this.failed = true;
       return false;
     }
     var game = document.getElementById("game");
     game.parentNode.insertBefore(cv, game.nextSibling);
+    Game.backdrop.setup(cv);
     var self = this;
     cv.addEventListener("wheel", function (e) {
       e.preventDefault();
@@ -147,8 +150,8 @@ Game.view3d = {
 
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.clearColor(0, 0, 0, 1);
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // 透明度も重ねて正しく残す
+    gl.clearColor(0, 0, 0, 0);
     return true;
   },
 
@@ -202,6 +205,7 @@ Game.view3d = {
     var hero = units.heroPose;
     var cam = (this.cam = { x: hero.x, z: hero.z });
     Game.anim3d.sweep(now);
+    Game.backdrop.draw(this.canvas, cam); // 後ろの動く背景
 
     // ---- 1. 地形（画面に映る範囲だけ） ----
     var zr = Math.max(1, this.zoom); // 引くほど広く組み立てる

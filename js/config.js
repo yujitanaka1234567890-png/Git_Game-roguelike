@@ -80,6 +80,7 @@ Game.config = {
   //   debuff＝技封じ・ひるみ・放逐などの弱体 → 効かない / sleep＝眠り → 最大 sleepTurns ターン
   //   ailment＝毒・麻痺・出血などの状態異常（将来追加する時用）→ ターン数を ailmentMul 倍（ある程度は効く）
   bossResist: { sleepTurns: 2, ailmentMul: 0.5 },
+  bossBreakRatio: 0.05, // ボスが技を溜めている間に、最大HPのこの割合以上のダメージを与えると技が止まる
   specialChance: 0.2, // 敵が攻撃できる時に、必殺技の溜めを始める確率
   allySkillChance: 0.2, // 仲間が攻撃できる時に、技の溜めを始める確率（敵と同じく予告して2ターン後に発動）
   specialWindup: 2, // 必殺技の予告ターン数（予告してから、このターン数の後に発動）

@@ -187,7 +187,7 @@ Game.onKey = function (key) {
   if (Game.state === "playing" && !Game.dashing) {
     if (lower === "i" || lower === "w") {
       Game.state = "menu";
-      Game.inventory.open = true;
+      Game.inventory.openMenu();
       Game.stairsPending = false;
       Game.giveUpPending = false;
       Game.refresh();
@@ -210,7 +210,7 @@ Game.onKey = function (key) {
     if (key === "Escape" || lower === "i" || lower === "w") Game.closeMenu();
     else if (key === "Enter" || lower === "z") Game.useSelectedItem();
     else if (lower === "d") Game.dropSelectedItem();
-    else if (lower === "t" && Game.inventory.items.length > 0) {
+    else if (lower === "t" && Game.inventory.selectedEntry()) {
       // 投げる方向の選択へ（アイテムはまだ持ち物に残しておく）
       Game.aimMode = "throw";
       Game.state = "aim";
@@ -478,7 +478,12 @@ Game.aimMessage = function () {
 Game.useSelectedItem = function () {
   var entry = Game.inventory.selectedEntry();
   if (!entry) return;
-  if (Game.items.types[entry.type].effect === "aim") {
+  var eff = Game.items.types[entry.type].effect;
+  if (Game.inventory.footSelected() && (eff === "equip" || eff === "gun")) {
+    Game.refresh("足元の武器・防具・銃は、拾ってから装備する");
+    return;
+  }
+  if (eff === "aim") {
     // 銃・杖：先に方向を選ぶ
     var why = Game.shoot.check(entry);
     if (why) {
@@ -560,6 +565,10 @@ Game.fireGun = function (dx, dy) {
 // 選んだアイテムを足元に置く（1ターン消費）。階段や他のアイテムの上には置けない
 Game.dropSelectedItem = function () {
   var p = Game.player;
+  if (Game.inventory.footSelected()) {
+    Game.refresh("それはもう足元にある");
+    return;
+  }
   if (Game.inventory.items.length === 0) return;
   if (Game.items.at(p.x, p.y) || p.onStairs()) {
     Game.refresh("ここには置けない");
@@ -579,6 +588,7 @@ Game.dropSelectedItem = function () {
 // 拠点に入る：拠点のマップを歩ける状態にし、直前の冒険の結果があればウィンドウで見せる
 Game.showBase = function () {
   Game.state = "base";
+  Game.sound.stopSong(); // ゲームオーバーの曲を止める
   Game.dashing = false;
   Game.dashToken++;
   Game.fx.clear();

@@ -1,6 +1,7 @@
 // 【図鑑データ】ダンジョンの一覧。
 //   world     ：属する世界（worlds.js）。壁や床の色、拾ったアイテムの「世界」が決まる
 //   colors    ：（省略可）このダンジョンだけの壁・床の色（世界の色の代わりに使う）
+//   backdrop  ：（省略可）3D表示で壁・床のない所に見える動く背景（backdrop.js の THEMES。starfield / underwater / abyss）
 //   style     ：（省略可）壁・床の模様（pixelart.js）。"timeGarden" = 時空を思わせる鈍い斑の壁と、継ぎ目のある床
 //               "seaCity" = 海に沈んだ都の石組みの壁（海藻・フジツボつき）と石畳の床
 //   puddles   ：（省略可）true なら部屋に水たまり（~）ができる。水属性の敵は水たまりの上で強くなる（water.js）
@@ -19,6 +20,7 @@ Game.DUNGEONS = {
     world: "magic",
     colors: { wall: "#4a4666", wallDim: "#2a283b", floor: "#1f2030", floorDim: "#131320" },
     style: "timeGarden",
+    backdrop: "starfield",
     floors: 10,
     unlockedBy: null,
     enemyBase: 3,
@@ -43,6 +45,7 @@ Game.DUNGEONS = {
     world: "deepSea",
     colors: { wall: "#3a6272", wallDim: "#1e3640", floor: "#26343e", floorDim: "#151e25" },
     style: "seaCity",
+    backdrop: "underwater",
     puddles: true,
     floors: 12,
     unlockedBy: "beginnerCave",
@@ -65,6 +68,7 @@ Game.DUNGEONS = {
   abyssLabyrinth: {
     name: "深淵の迷宮",
     world: "deepSea",
+    backdrop: "abyss",
     floors: 15,
     unlockedBy: "beginnerCave",
     enemyBase: 5,

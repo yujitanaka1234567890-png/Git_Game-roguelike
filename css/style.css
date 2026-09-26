@@ -191,6 +191,17 @@ body.in-base .help-dungeon { display: none; }
 #dialog[hidden] { display: none; }
 #dialog, #inventory, #savecode { z-index: 2; }
 
+/* 3D表示：後ろに動く背景（backdrop.js）を重ね、3Dの画面の何もない所から透けて見せる */
+#game3d { position: relative; z-index: 0; background: transparent; }
+#backdrop3d {
+  position: absolute;
+  z-index: 0;
+  border: none;
+  background: #000;
+  pointer-events: none;
+  image-rendering: auto;
+}
+
 /* 左上に重ねる全体マップ（minimap.js。2D・3D共通） */
 #minimap {
   position: absolute;

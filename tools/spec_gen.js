@@ -13,7 +13,7 @@ function groups(file, obj){ // コメントの見出しで分類
     m=l.match(/^  (\w+): \{/); if(m&&obj[m[1]]) out.push([g,m[1]]); }
   return out;
 }
-const shapeName={single:'隣の1体',around:'隣の全員',sight:'見えている全員',range:'近くの見えている全員'};
+const shapeName={single:'隣の1体',around:'隣の全員',sight:'見えている全員',range:'近くの見えている全員',line:'一直線'};
 function where(id){const r=[];for(const k in D){const d=D[k];if(d.boss===id)r.push(d.name+' 最下層（ボス）');
   (d.spawns||[]).forEach(s=>{if(s.type===id)r.push(d.name+' B'+s.from+'F〜B'+(s.to||d.floors)+'F');});}
   Game.BREEDING.forEach(b=>{if(b.child===id)r.push('交配：'+M[b.parents[0]].name+' ＋ '+M[b.parents[1]].name);});

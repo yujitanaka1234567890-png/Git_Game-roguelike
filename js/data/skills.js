@@ -101,8 +101,8 @@ Game.SKILLS = {
     windup: "足を大きく踏み鳴らす構えだ…", charging: "床の苔がいっせいに逆立った…！",
   },
   whirlpool: {
-    name: "深淵の渦潮", shape: "sight", mult: 1.5, color: "#3a8aff",
-    windup: "巨大な口で水を吸い込み始めた…", charging: "部屋じゅうの水が渦を巻いている…！",
+    name: "深淵の渦潮", shape: "range", range: 2, mult: 1.5, color: "#3a8aff",
+    windup: "巨大な口で水を吸い込み始めた…", charging: "大口のまわりの水が渦を巻いている…！",
   },
   swallow: {
     name: "丸呑み", shape: "single", mult: 3.5, color: "#ff4466",
@@ -146,8 +146,8 @@ Game.SKILLS = {
     windup: "槍を高く掲げ、潮を呼び始めた…", charging: "遠くから潮鳴りが近づいてくる…！",
   },
   tsunami: {
-    name: "大津波", shape: "sight", mult: 1.7, color: "#3a8aff",
-    windup: "殻の奥から低い潮鳴りが響き始めた…", charging: "部屋の奥から大波が押し寄せてくる…！",
+    name: "大津波", shape: "line", range: 5, mult: 1.7, color: "#3a8aff",
+    windup: "殻の奥から低い潮鳴りが響き始めた…", charging: "殻の前にまっすぐ大波がせり上がってくる…！",
   },
   shellCrush: {
     name: "殻砕き", shape: "around", mult: 2.6, color: "#d8a070",

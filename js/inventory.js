@@ -5,11 +5,13 @@ Game.inventory = {
   max: 12, // 持てる数
   selected: 0, // メニューで選んでいる番号
   open: false, // メニューを開いているか
+  foot: null, // 開いた時に足元にあった床のアイテム（あれば一番上に「足元」として出す。selected = -1 で選ぶ）
 
   clear: function () {
     this.items = [];
     this.selected = 0;
     this.open = false;
+    this.foot = null;
     Game.equip.reset(); // 冒険の始め・終わりは武器を外した状態
   },
 
@@ -36,12 +38,33 @@ Game.inventory = {
     if (cur) this.selected = Math.max(0, this.items.indexOf(cur));
   },
 
+  // メニューを開く：足元にアイテムがあれば、それを選んだ状態で始める
+  openMenu: function () {
+    this.open = true;
+    this.foot = Game.items.at(Game.player.x, Game.player.y);
+    if (this.foot) this.selected = -1;
+    else if (this.selected < 0) this.selected = 0;
+  },
+
+  // 足元のアイテムを選んでいるか
+  footSelected: function () {
+    return this.selected === -1 && !!this.foot;
+  },
+
   selectedEntry: function () {
+    if (this.selected === -1) return this.foot;
     return this.items[this.selected] || null;
   },
 
-  // 選んでいるアイテムを取り出して返す（持ち物から消える）
+  // 選んでいるアイテムを取り出して返す（持ち物から消える。足元の物なら床から消える）
   takeSelected: function () {
+    if (this.footSelected()) {
+      var fi = this.foot;
+      Game.items.remove(fi);
+      this.foot = null;
+      this.selected = 0;
+      return Game.items.makeEntry(fi);
+    }
     if (this.items.length === 0) return null;
     var entry = this.items.splice(this.selected, 1)[0];
     if (this.selected >= this.items.length) this.selected = Math.max(0, this.items.length - 1);
@@ -51,6 +74,12 @@ Game.inventory = {
 
   // 持ち物の中の特定のアイテムを取り除く（使ってなくなった時）
   removeEntry: function (entry) {
+    if (entry && entry === this.foot) {
+      Game.items.remove(entry);
+      this.foot = null;
+      this.selected = 0;
+      return;
+    }
     var i = this.items.indexOf(entry);
     if (i < 0) return;
     this.items.splice(i, 1);
@@ -58,8 +87,10 @@ Game.inventory = {
   },
 
   moveCursor: function (d) {
-    if (this.items.length === 0) return;
-    this.selected = (this.selected + d + this.items.length) % this.items.length; // 端まで行くと反対側へ
+    var lo = this.foot ? -1 : 0; // 足元の物があれば -1 から
+    var n = this.items.length - lo;
+    if (n <= 0) return;
+    this.selected = ((this.selected - lo + d + n) % n) + lo; // 端まで行くと反対側へ
   },
 
   render: function () {
@@ -76,14 +107,30 @@ Game.inventory = {
     title.textContent = "持ち物（" + this.items.length + " / " + this.max + "）";
     el.appendChild(title);
 
-    if (this.items.length === 0) {
-      var empty = document.createElement("div");
-      empty.className = "inv-empty";
-      empty.textContent = "何も持っていない";
-      el.appendChild(empty);
+    var ul = document.createElement("ul");
+    if (this.foot) {
+      // 足元のアイテム（拾わずにその場で使える）
+      var fh = document.createElement("li");
+      fh.className = "inv-group";
+      fh.textContent = "― 足元 ―";
+      ul.appendChild(fh);
+      var fl = document.createElement("li");
+      if (this.selected === -1) fl.className = "selected";
+      var ficon = document.createElement("span");
+      ficon.className = "inv-icon";
+      ficon.appendChild(Game.icons.make("item:" + this.foot.type, 18));
+      fl.appendChild(ficon);
+      fl.appendChild(document.createTextNode(Game.items.displayName(this.foot)));
+      ul.appendChild(fl);
     }
 
-    var ul = document.createElement("ul");
+    if (this.items.length === 0) {
+      var empty = document.createElement("li");
+      empty.className = "inv-empty";
+      empty.textContent = "何も持っていない";
+      ul.appendChild(empty);
+    }
+
     var lastGroup = null;
     for (var i = 0; i < this.items.length; i++) {
       var t = Game.items.types[this.items[i].type];
@@ -121,7 +168,9 @@ Game.inventory = {
 
     var help = document.createElement("div");
     help.className = "inv-help";
-    help.textContent = "↑↓：選ぶ　Enter：使う（武器・防具・銃は装備／外す、杖は方向を選ぶ）　T：投げる　D：置く　Esc / I / W：閉じる";
+    help.textContent = this.footSelected()
+      ? "足元の物　Enter：その場で使う（拾わない）　T：投げる　Esc / I / W：閉じる"
+      : "↑↓：選ぶ　Enter：使う（武器・防具・銃は装備／外す、杖は方向を選ぶ）　T：投げる　D：置く　Esc / I / W：閉じる";
     el.appendChild(help);
   },
 };

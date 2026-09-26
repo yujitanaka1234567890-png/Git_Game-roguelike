@@ -36,6 +36,19 @@ Game.combat = {
     Game.fx.hitMark(defender, source); // のけぞり＋赤いとげとげ
     Game.fx.popNumber(defender, actual); // ダメージの数字がぴょんと跳ねる
     if (defender.dmgLog && source) defender.dmgLog.push({ unit: source, amount: actual });
+    this.breakBossCharge(defender, actual);
+  },
+
+  // ボスが技を溜めている間に、最大HPの bossBreakRatio 以上のダメージを与えると溜めが崩れて技が止まる（ボスだけ）
+  breakBossCharge: function (unit, amount) {
+    var c = unit.charge;
+    var t = unit.type && Game.MONSTERS[unit.type];
+    if (!c || !t || !t.boss || unit.hp <= 0) return;
+    c.taken = (c.taken || 0) + amount;
+    if (c.taken < unit.maxHp * Game.config.bossBreakRatio) return;
+    unit.charge = null;
+    Game.log.add("★ " + unit.name + "の構えが崩れた！「" + Game.SKILLS[c.skill].name + "」は止まった。", "good", { skill: c.skill });
+    Game.notice.show(unit.name + "の技を止めた！", "good");
   },
 
   // 隣にいる攻撃候補から相手を選ぶ：基本はHPが一番少ない相手。

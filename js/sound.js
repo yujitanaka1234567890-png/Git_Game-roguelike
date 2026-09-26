@@ -10,6 +10,7 @@ Game.sound = {
   volume: 0.22, // 全体の音量（0〜1）
   ctx: null,
   master: null,
+  song: null, // 流れている長い曲（ゲームオーバー）の出口
   prefKey: "dimension-roguelike-sound",
 
   init: function () {
@@ -36,6 +37,7 @@ Game.sound = {
 
   toggle: function () {
     this.enabled = !this.enabled;
+    if (!this.enabled) this.stopSong();
     try {
       window.localStorage.setItem(this.prefKey, this.enabled ? "on" : "off");
     } catch (e) {
@@ -60,6 +62,42 @@ Game.sound = {
     g.connect(this.master);
     osc.start(t0);
     osc.stop(t0 + dur + 0.02);
+  },
+
+  // のばす音：音量を保ったまま dur 秒鳴らし、最後だけ短く消す（曲の旋律をなめらかにつなげる用）
+  hold: function (freq, dur, type, vol, delay) {
+    var ctx = this.ctx;
+    var t0 = ctx.currentTime + (delay || 0);
+    var osc = ctx.createOscillator();
+    var g = ctx.createGain();
+    osc.type = type || "triangle";
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.04);
+    g.gain.setValueAtTime(vol * 0.85, t0 + Math.max(0.05, dur - 0.08));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g);
+    g.connect(this.master);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  },
+
+  // 長い曲（ゲームオーバー）用の出口。stopSong で途中から消せる
+  songBus: function () {
+    this.stopSong();
+    this.song = this.ctx.createGain();
+    this.song.connect(this.master);
+    return this.song;
+  },
+
+  // 流れている長い曲を静かに止める（拠点に戻った時など）
+  stopSong: function () {
+    if (!this.song || !this.ctx) return;
+    var g = this.song, t = this.ctx.currentTime;
+    this.song = null;
+    g.gain.setValueAtTime(g.gain.value, t);
+    g.gain.linearRampToValueAtTime(0, t + 0.4);
+    setTimeout(function () { g.disconnect(); }, 500);
   },
 
   // 雑音（打撃・炎・カチッという音など）。lowpass = こもらせる周波数 / highpass = 低い音を削る周波数
@@ -399,31 +437,45 @@ Game.sound = {
     recruit: function () { this.seq([523, 784, 1047], 0.09, "triangle", 0.3); },
     rescue: function () { this.seq([659, 880, 1175, 1568], 0.08, "sine", 0.3); },
     escape: function () { this.seq([392, 523, 659, 784, 1047], 0.1, "triangle", 0.3); },
-    // ゲームオーバー：葬送行進曲（ショパン「ピアノソナタ第2番」第3楽章の冒頭。1840年の曲で著作権切れ）を、
-    // 変ロ短調でゆっくり、暗いオルガンと鐘のような低音で合成して演奏する
+    // ゲームオーバー：葬送行進曲（ショパン「ピアノソナタ第2番」第3楽章。1840年の曲で著作権切れ）を、
+    // 変ロ短調でゆっくり、暗いオルガンと鐘のような低音で合成して演奏する。
+    // 音の長さは元の2倍、音と音はとぎれずにつなげる（レガート）。冒頭の4小節に続けて、属音（F）の上で同じ形をくり返し、主音に戻って終わる
     gameover: function () {
       var self = this;
       var b = 0.78; // 1拍の長さ（秒）。遅いほど重々しい
-      // 旋律：暗いオルガン（三角波＋1オクターブ下の正弦波＋かすかな矩形波）
-      var voice = function (freq, beat, beats) {
-        var t = beat * b, d = beats * b * 0.95;
-        self.tone(freq, d, "triangle", 0.2, null, t);
-        self.tone(freq / 2, d, "sine", 0.16, null, t);
-        self.tone(freq, d, "square", 0.025, null, t);
-      };
-      // 伴奏：1拍ごとに低い和音を鐘のように鳴らす（変ロ短調 ⇔ 変ト長調を交互に）
-      var chord = function (freqs, beat) {
-        for (var i = 0; i < freqs.length; i++) self.tone(freqs[i], b * 0.9, "sine", i === 0 ? 0.22 : 0.08, freqs[i] * 0.995, beat * b);
-      };
-      var Bbm = [58.27, 87.31, 138.59], Gb = [46.25, 69.3, 116.54];
-      for (var k = 0; k < 9; k++) chord(k % 2 === 0 ? Bbm : Gb, k);
-      var Bb = 233.08, A = 220, C = 261.63, Db = 277.18;
-      // ダン、ダ・ダン、ダーン（同じ音を重く4回）
-      voice(Bb, 0, 1); voice(Bb, 1, 0.75); voice(Bb, 1.75, 0.25); voice(Bb, 2, 2);
-      // ダン・ダ ダン・ダ ダン・ダ ダーン（少し上がって、ゆっくり沈む）
-      voice(Db, 4, 0.75); voice(C, 4.75, 0.25); voice(C, 5, 0.75); voice(Bb, 5.75, 0.25);
-      voice(Bb, 6, 0.75); voice(A, 6.75, 0.25); voice(Bb, 7, 2.2);
-      self.tone(58.27, b * 3, "sine", 0.25, 55, 7 * b); // 最後に深い低音を長く残す
+      var song = this.songBus(); // 拠点に戻ったら止められるように、曲だけの出口を通す
+      var bus = this.master;
+      this.master = song;
+      try {
+        // 旋律：暗いオルガン（三角波＋1オクターブ下の正弦波＋かすかな矩形波）。次の音まで伸ばしてつなげる
+        var voice = function (freq, beat, beats) {
+          var t = beat * b, d = beats * b + 0.06;
+          self.hold(freq, d, "triangle", 0.2, t);
+          self.hold(freq / 2, d, "sine", 0.16, t);
+          self.hold(freq, d, "square", 0.022, t);
+        };
+        // 伴奏：2拍ごとに低い和音を鐘のように鳴らす
+        var chord = function (freqs, beat) {
+          for (var i = 0; i < freqs.length; i++) self.tone(freqs[i], b * 1.9, "sine", i === 0 ? 0.22 : 0.08, freqs[i] * 0.995, beat * b);
+        };
+        var Bbm = [58.27, 87.31, 138.59], Gb = [46.25, 69.3, 116.54], F = [43.65, 65.41, 130.81], Db = [69.3, 103.83, 138.59];
+        var Bb = 233.08, A = 220, C = 261.63, Dd = 277.18, E = 329.63, Ff = 349.23, Gg = 369.99, Ab = 415.3;
+        // ひとまとまり（2小節分・元の長さで8拍）を2倍の長さで鳴らす。m = [旋律の音×7]
+        //   ダン、ダ・ダン、ダーン ／ ダン・ダ ダン・ダ ダン・ダ ダーン
+        var phrase = function (at, m, chords) {
+          var r = [[0, 1], [1, 0.75], [1.75, 0.25], [2, 2], [4, 0.75], [4.75, 0.25], [5, 0.75], [5.75, 0.25], [6, 0.75], [6.75, 0.25], [7, 1]];
+          var notes = [m[0], m[0], m[0], m[0], m[1], m[2], m[2], m[3], m[3], m[4], m[5]];
+          for (var i = 0; i < r.length; i++) voice(notes[i], at + r[i][0] * 2, r[i][1] * 2);
+          for (var k = 0; k < 8; k++) chord(chords[k % chords.length], at + k * 2);
+        };
+        phrase(0, [Bb, Dd, C, Bb, A, Bb], [Bbm, Gb]);
+        phrase(16, [Bb, Dd, C, Bb, A, Bb], [Bbm, Gb]);
+        phrase(32, [Ff, Ab, Gg, Ff, E, Ff], [F, Db]); // 属音の上で同じ形
+        phrase(48, [Bb, Dd, C, Bb, A, Bb], [Bbm, Gb]);
+        self.tone(58.27, b * 6, "sine", 0.25, 55, 62 * b); // 最後に深い低音を長く残す
+      } finally {
+        this.master = bus;
+      }
     },
     death: function () { this.tone(330, 0.5, "sawtooth", 0.25, 110); }, // 仲間が倒れた
     cursor: function () { this.tone(1200, 0.025, "sine", 0.08); },

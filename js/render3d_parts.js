@@ -59,7 +59,7 @@ Object.assign(Game.view3d, {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.lineWidth = 4;
-      ctx.strokeStyle = "#1a0000";
+      ctx.strokeStyle = "#101010";
       ctx.strokeText(text, 16, 17);
       ctx.fillStyle = color;
       ctx.fillText(text, 16, 17);

@@ -341,3 +341,11 @@ canvas.icon {
   vertical-align: middle;
   margin: 0 2px;
 }
+
+/* ページの一番下の小さな注意書き（訪問者数の計測について） */
+#privacy-note {
+  color: #666;
+  font-size: 11px;
+  text-align: center;
+  margin: 12px 0 8px;
+}

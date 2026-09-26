@@ -4,6 +4,8 @@ var Game = {};
 
 Game.config = {
   tileSize: 24, // 1マスのピクセル数
+  // 訪問者数の計測（visits.js）。GoatCounter で登録したコード（例："jigen-roguelike"）を入れると、公開ページで数え始める。空なら数えない
+  analytics: { goatcounter: "" },
   dungeon: {
     width: 40, // マップの横マス数
     height: 27, // マップの縦マス数

@@ -688,6 +688,7 @@ Game.start = function () {
   Game.base.load();
   Game.base.loadLastLog();
   Game.showBase();
+  Game.visits.init(); // 公開ページでの訪問者数の計測（設定した時だけ）
 };
 
 Game.start();

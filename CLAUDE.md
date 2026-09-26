@@ -31,6 +31,7 @@
 - `js/allies.js` 仲間（仲間化判定・入れ替え確認・AI・一覧表示）/ `js/squad.js` 分隊（.キー。人型を隊長に最大4体、階を自由に探索して独立行動。指示は同じ部屋にいる時だけ）
 - `js/savecode.js` 記録の呪文（セーブ用パスワード：JIGEN1-検出番号-中身。拠点の記録の石碑で書き出し・地面に書く。成功ログ「地面に書いた文字が浮かび上がり光った。記録された世界線へ移動した」）
 - `js/saveslots.js` 記録の石碑のメニュー（記録の枠3つ＝localStorage key dimension-roguelike-slots-v1 に刻む・読み込む／最初から始める＝base.resetToNew、枠は消さない／記録の呪文へ）
+- `js/visits.js` 訪問者数の計測（GoatCounter。config.analytics.goatcounter にコードを入れた時だけ、公開ページ（http/https）で動く。ブラウザごとに1回だけ「first-visit」イベントを送り、これをユニークユーザー数とする。セーブデータは送らない）
 - `js/tutorial.js` 遊び方の説明（6ページ：目的・操作・仲間・分隊・精神力・拠点の設備。拠点の案内板T・初回はたずねる。画面の仕組みに触れるメタな説明は書かない）
 - `js/base.js` 拠点のデータ（牧場・倉庫・連れて行く/持って行く選択・踏破記録 cleared・交配 breed・発見済み discovered・localStorage保存 key=dimension-roguelike-save-v1）
 - `js/basemap.js` 拠点の空間（固定マップ・牧場を歩く仲間・会話・収納箱・掲示板＝仲間選び/救出・交配小屋・門でのダンジョン選択）/ `js/bestiary.js` プレイヤー用モンスター図鑑（出会った種類 base.seen だけ詳しく載る）

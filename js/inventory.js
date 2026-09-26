@@ -109,7 +109,7 @@ Game.inventory = {
 
     var ul = document.createElement("ul");
     if (this.foot) {
-      // 足元のアイテム（拾わずにその場で使える）
+      // 足元のアイテム（拾う・拾わずにその場で使う・投げる）
       var fh = document.createElement("li");
       fh.className = "inv-group";
       fh.textContent = "― 足元 ―";
@@ -169,7 +169,7 @@ Game.inventory = {
     var help = document.createElement("div");
     help.className = "inv-help";
     help.textContent = this.footSelected()
-      ? "足元の物　Enter：その場で使う（拾わない）　T：投げる　Esc / I / W：閉じる"
+      ? "足元の物　Enter：使う／拾う／投げるを選ぶ　P：拾う　T：投げる　Esc / I / W：閉じる"
       : "↑↓：選ぶ　Enter：使う（武器・防具・銃は装備／外す、杖は方向を選ぶ）　T：投げる　D：置く　Esc / I / W：閉じる";
     el.appendChild(help);
   },

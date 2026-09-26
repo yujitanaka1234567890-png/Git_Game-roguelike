@@ -112,6 +112,7 @@ canvas {
   padding: 1px 8px;
   border-radius: 3px;
 }
+.party-stars { color: #f0c850; letter-spacing: -1px; }
 
 /* ---------- ログ（新しい行が上。スクロールで古い行も見られる） ---------- */
 #log-title { font-size: 11px; color: #777; }

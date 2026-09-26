@@ -144,21 +144,39 @@ Game.base = {
 
   // ---------- 交配 ----------
 
-  // 牧場の2体を交配する。親は牧場からいなくなり（ダンジョンへ帰る）、子が牧場に加わる。
-  // 生まれた子の種類IDを返す。組み合わせ表にない時は null（何も起きない）
-  breed: function (idA, idB) {
-    var a = this.ranchEntry(idA), b = this.ranchEntry(idB);
-    if (!a || !b || a === b) return null;
-    if (a.onMission || b.onMission) return null; // 救出に出かけている子は交配できない
-    var child = Game.breedResult(a.type, b.type);
-    if (!child) return null;
-    this.ranch = this.ranch.filter(function (r) { return r !== a && r !== b; });
-    delete this.selected[idA];
-    delete this.selected[idB];
-    this.addToRanch(child);
-    this.discovered[child] = true;
-    this.save();
-    return child;
+  // 冒険から帰った時に呼ぶ：牧場で留守番していた仲間（連れて行った子・救出に出かけている子は除く）のうち、
+  // 組み合わせ表（data/breeding.js）にある2体が、breedChance の確率でひとりでに交配する（1回の帰還で最大 breedMaxPerReturn 組）。
+  // 親は牧場からいなくなり（ダンジョンへ帰る）、子が牧場に加わる。知らせる文の配列を返す
+  autoBreed: function () {
+    var self = this, cfg = Game.config;
+    var home = this.ranch.filter(function (r) { return !r.onMission && !self.selected[r.id]; });
+    // 順番をばらばらにして、相手をランダムに選ぶ
+    for (var i = home.length - 1; i > 0; i--) {
+      var k = Math.floor(Math.random() * (i + 1));
+      var tmp = home[i];
+      home[i] = home[k];
+      home[k] = tmp;
+    }
+    var used = {}, lines = [], births = 0;
+    for (var a = 0; a < home.length && births < cfg.breedMaxPerReturn; a++) {
+      if (used[home[a].id]) continue;
+      for (var b = a + 1; b < home.length; b++) {
+        if (used[home[b].id]) continue;
+        var child = Game.breedResult(home[a].type, home[b].type);
+        if (!child || Math.random() >= cfg.breedChance) continue;
+        used[home[a].id] = used[home[b].id] = true;
+        var pa = home[a], pb = home[b];
+        this.ranch = this.ranch.filter(function (r) { return r !== pa && r !== pb; });
+        this.addToRanch(child);
+        this.discovered[child] = true;
+        this.seen[child] = true;
+        births++;
+        lines.push("[[tile:H]] 留守の間に " + Game.MONSTERS[pa.type].name + " と " + Game.MONSTERS[pb.type].name +
+          " の間に「" + Game.MONSTERS[child].name + "」が生まれていた！（親はダンジョンへ帰っていった）");
+        break;
+      }
+    }
+    return lines;
   },
 
   addToRanch: function (typeId) {
@@ -261,7 +279,11 @@ Game.base = {
       item.className = "party-member";
       item.appendChild(Game.icons.make("mon:" + party[i].type, 16));
       item.appendChild(document.createTextNode(" "));
-      item.appendChild(document.createTextNode(t.name));
+      item.appendChild(document.createTextNode(t.name + " "));
+      var stars = document.createElement("span");
+      stars.className = "party-stars";
+      stars.textContent = "★".repeat(t.rarity || 1); // レア度
+      item.appendChild(stars);
       el.appendChild(item);
     }
     var bag = document.createElement("span");

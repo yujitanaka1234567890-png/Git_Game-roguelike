@@ -59,6 +59,8 @@ Game.config = {
     max: 0.95,
   },
   ranchMax: 30, // 拠点の牧場に置ける仲間の最大数
+  breedChance: 0.3, // 冒険から帰った時、牧場で留守番していた相性のよい2体が子を生む確率（組ごと。base.autoBreed）
+  breedMaxPerReturn: 2, // 1回の帰還で生まれる子の最大数
   // 敵のレア度。recruit = 倒した時に仲間になる確率 / spawn = 出現しやすさ（大きいほど出やすい）
   // mul = 強さ（HP・攻撃力・防御力）と経験値にかける倍率（レアなほど強く、経験値も多い）
   rarities: {
@@ -83,6 +85,8 @@ Game.config = {
   bossBreakRatio: 0.05, // ボスが技を溜めている間に、最大HPのこの割合以上のダメージを与えると技が止まる
   specialChance: 0.2, // 敵が攻撃できる時に、必殺技の溜めを始める確率
   allySkillChance: 0.2, // 仲間が攻撃できる時に、技の溜めを始める確率（敵と同じく予告して2ターン後に発動）
+  allyDodgeIgnoreRatio: 0.15, // 敵の予告技の予想ダメージが仲間の今のHPのこの割合以下なら、基本はよけない（dodge.js）
+  allyDodgeWhim: 0.25, // よけなくてよい技でも、気まぐれでよける確率
   specialWindup: 2, // 必殺技の予告ターン数（予告してから、このターン数の後に発動）
   specialMaxRatio: 0.6, // 必殺技1回で受けるダメージの上限（相手の最大HPに対する割合。即死防止）
   phasingSense: 6, // 壁抜けする敵が主人公を感じ取れる距離

@@ -210,6 +210,8 @@ Game.allies = {
       Game.specials.allyContinue(a);
       return;
     }
+    // 敵が技を溜めていて、今いるマスに当たりそうならよける（dodge.js）
+    if (Game.dodge.tryDodge(a)) return;
     if (Game.specials.allyTryStart(a)) return;
 
     // 1. 隣の敵から相手を選んで攻撃
@@ -240,6 +242,7 @@ Game.allies = {
     // 3. 主人公についていく
     else if (path.dist(a.x, a.y, p.x, p.y) > 1) step = path.stepToward(a, p.x, p.y);
 
+    if (Game.dodge.blocks(a, step)) step = null; // 技が当たるマスには自分から入らない
     if (step) {
       a.x += step[0];
       a.y += step[1];
@@ -312,11 +315,21 @@ Game.allies = {
       item.className = "party-member";
       item.appendChild(Game.icons.make("mon:" + a.type, 16));
       item.appendChild(document.createTextNode(" "));
+      var stars = document.createElement("span");
+      stars.className = "party-stars";
+      stars.textContent = "★".repeat(Game.MONSTERS[a.type].rarity || 1); // レア度（★1〜5）
+      stars.title = Game.enemies.rarityOf(a.type).label;
       item.appendChild(
         document.createTextNode(
-          a.baseName + " Lv" + a.level + "　HP " + a.hp + "/" + a.maxHp +
+          a.baseName + " "
+        )
+      );
+      item.appendChild(stars);
+      item.appendChild(
+        document.createTextNode(
+          " Lv" + a.level + "　HP " + a.hp + "/" + a.maxHp +
           "　経験 " + a.exp + "/" + Game.leveling.expForLevel(a.level + 1) +
-          (a.fromBase ? "" : "　★新入り") + (a.squad ? "　［分隊" + a.squad.id + "］" : "")
+          (a.fromBase ? "" : "　新入り") + (a.squad ? "　［分隊" + a.squad.id + "］" : "")
         )
       );
       el.appendChild(item);

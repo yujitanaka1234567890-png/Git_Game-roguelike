@@ -77,6 +77,7 @@ Game.squad = {
       // 3. 隊員：隊長についていく
       step = path.stepToward(a, leader.x, leader.y);
     }
+    if (Game.dodge.blocks(a, step)) step = null; // 技が当たるマスには自分から入らない
     if (step && Game.map.canStep(a.x, a.y, step[0], step[1]) && path.isFree(a.x + step[0], a.y + step[1])) {
       a.x += step[0];
       a.y += step[1];

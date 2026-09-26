@@ -3,7 +3,7 @@
 //   右：家（設備は奥の壁ぞいに2マスおきに並ぶ）
 //                      収納箱（▣）… 倉庫から持って行く道具を選ぶ
 //                      掲示板（掲）… 連れて行く仲間を選ぶ／はぐれた仲間の確認と救出隊の派遣
-//                      交配小屋（♥）… 牧場の2体から新しい仲間を生み出す
+//                      交配小屋（♥）… 交配のしくみと、見つかった組み合わせ（交配は帰還時に自動。base.autoBreed）
 //                      図鑑（図）… 出会ったモンスターのくわしい情報を見る（bestiary.js）
 //                      記録の石碑（碑）… 記録を3つまで刻む・読み込む、最初から始める、記録の呪文（saveslots.js・savecode.js）
 //                      案内板（案）… 遊び方の説明（tutorial.js。入口の近く）
@@ -148,7 +148,7 @@ Game.baseScene = {
       return;
     }
     if (Game.map.tileAt(nx, ny) === "H") {
-      this.openBreeding(null);
+      this.openBreeding();
       return;
     }
     if (Game.map.tileAt(nx, ny) === "K") {
@@ -289,86 +289,20 @@ Game.baseScene = {
     });
   },
 
-  // 交配小屋：牧場から親を2体選ぶ → 結果を確認 → 交配
-  //   first = 1体目に選んだ牧場のデータ（まだなら null）
-  openBreeding: function (first) {
-    var self = this;
-    var base = Game.base;
-    var home = base.ranch.filter(function (r) { return !r.onMission; }); // 救出に出かけている子は選べない
-    if (home.length < 2) {
-      Game.dialog.open({
-        title: "交配小屋",
-        lines: ["牧場に仲間が2体以上いると、新しい仲間を生み出せる。"],
-        options: [{ label: "閉じる" }],
-      });
-      return;
+  // 交配小屋：交配は自動（冒険から帰った時に、留守番していた相性のよい2体が子を生む。base.autoBreed）。
+  // ここでは仕組みの説明と、これまでに見つかった組み合わせを見られる
+  openBreeding: function () {
+    var lines = [
+      "冒険に出ている間、牧場で留守番している仲間は、相性のよい相手と出会うと子を生むことがある。",
+      "生まれた子は親より少し強い。親の2体はダンジョンへ帰っていく。帰ってきた時に知らせが届く。",
+    ];
+    var known = Game.BREEDING.filter(function (b) { return Game.base.discovered[b.child]; });
+    lines.push(known.length > 0 ? "これまでに見つかった組み合わせ：" : "まだ子が生まれたことはない。");
+    for (var i = 0; i < known.length; i++) {
+      var b = known[i];
+      lines.push("[[mon:" + b.parents[0] + "]] " + Game.MONSTERS[b.parents[0]].name + " × [[mon:" + b.parents[1] + "]] " +
+        Game.MONSTERS[b.parents[1]].name + " → [[mon:" + b.child + "]] " + Game.MONSTERS[b.child].name);
     }
-    var options = [];
-    for (var i = 0; i < home.length; i++) {
-      (function (entry) {
-        if (first && entry === first) return;
-        var t = Game.MONSTERS[entry.type];
-        options.push({
-          label: "[[mon:" + entry.type + "]] " + t.name + "（" + Game.enemies.rarityOf(entry.type).label + "）",
-          onChoose: function () {
-            if (!first) self.openBreeding(entry);
-            else self.confirmBreeding(first, entry);
-          },
-        });
-      })(home[i]);
-    }
-    options.push({ label: "やめる" });
-    Game.dialog.open({
-      title: "交配小屋",
-      lines: first
-        ? ["1体目：" + Game.MONSTERS[first.type].name, "2体目を選んでください。"]
-        : ["交配すると、親の2体はダンジョンへ帰っていき、新しい子が生まれる。", "1体目を選んでください。"],
-      options: options,
-    });
-  },
-
-  confirmBreeding: function (a, b) {
-    var self = this;
-    var nameA = Game.MONSTERS[a.type].name, nameB = Game.MONSTERS[b.type].name;
-    var child = Game.breedResult(a.type, b.type);
-    if (!child) {
-      Game.dialog.open({
-        title: "交配小屋",
-        lines: [nameA + " と " + nameB + " の組み合わせでは、子は生まれないようだ。"],
-        options: [{ label: "別の組み合わせを選ぶ", onChoose: function () { self.openBreeding(null); } }, { label: "やめる" }],
-      });
-      return;
-    }
-    var known = !!Game.base.discovered[child];
-    Game.dialog.open({
-      title: "交配小屋",
-      lines: [
-        nameA + " × " + nameB + " → " + (known ? Game.MONSTERS[child].name : "？？？"),
-        "親の2体はダンジョンへ帰っていき、もう牧場には戻らない。本当に交配する？",
-      ],
-      options: [
-        {
-          label: "交配する",
-          onChoose: function () {
-            var born = Game.base.breed(a.id, b.id);
-            if (!born) return;
-            var t = Game.MONSTERS[born];
-            self.syncMonsters();
-            Game.log.add(nameA + " と " + nameB + " はダンジョンへ帰っていった。", "info");
-            Game.log.add("[[tile:H]] 新しい仲間「" + t.name + "」が生まれた！", "good");
-            var hut = self.findTile("H");
-            if (hut) Game.fx.flash(Game.fx.around(hut.x, hut.y, 1), "#ff88cc", 700);
-            var sk = Game.specials.skillsOf({ type: born }).map(function (s) { return s.def.name; });
-            var st = Game.enemies.statsOf(born);
-            Game.dialog.open({
-              title: "[[mon:" + born + "]] " + t.name + " が生まれた！（" + Game.enemies.rarityOf(born).label + "）",
-              lines: ["HP " + st.hp + "　攻撃力 " + st.atk + "　防御力 " + st.def, "技：" + sk.join("・"), "牧場で待っている。"],
-              options: [{ label: "OK" }],
-            });
-          },
-        },
-        { label: "やめる" },
-      ],
-    });
+    Game.dialog.open({ title: "交配小屋", lines: lines, options: [{ label: "閉じる" }] });
   },
 };

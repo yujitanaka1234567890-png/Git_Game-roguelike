@@ -154,7 +154,7 @@ Game.backdrop = {
       },
     },
 
-    // 水の中（水底の都）：上から光の筋がゆらめき、泡がゆらゆらと昇る
+    // 水の中（水底の都）：上から光の筋がゆらめき、泡がゆらゆらと昇る。小魚の群れと、ときどき大きな生き物の影（backdrop_sea.js）
     underwater: {
       sky: function (ctx) { this.gradient(ctx, "#0d3550", "#04121e"); },
       seed: function () {
@@ -181,6 +181,8 @@ Game.backdrop = {
           ctx.closePath();
           ctx.fill();
         }
+        Game.backdropSea.drawBig(ctx, t, px, pz); // 遠くを横切るクジラ・ダイオウイカ（backdrop_sea.js）
+        Game.backdropSea.drawFish(ctx, t, px, pz); // 行ったり来たりする小魚の群れ
         ctx.strokeStyle = "rgba(190,230,255,0.55)";
         ctx.lineWidth = 1;
         for (i = 0; i < s.bubbles.length; i++) {

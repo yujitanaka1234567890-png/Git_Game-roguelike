@@ -210,6 +210,7 @@ Game.onKey = function (key) {
     if (key === "Escape" || lower === "i" || lower === "w") Game.closeMenu();
     else if (key === "Enter" || lower === "z") Game.useSelectedItem();
     else if (lower === "d") Game.dropSelectedItem();
+    else if (lower === "p") Game.pickUpFoot();
     else if (lower === "t" && Game.inventory.selectedEntry()) {
       // 投げる方向の選択へ（アイテムはまだ持ち物に残しておく）
       Game.aimMode = "throw";
@@ -292,7 +293,7 @@ Game.onDeath = function (headline) {
   if (lost.length > 0) Game.log.add("新しい仲間たちは散り散りになってしまった…", "bad");
   Game.allies.clear();
   var lines = [headline];
-  var missionLines = Game.rescue.resolveMissions().concat(Game.rescue.expireOld()); // 救出隊の結果と期限切れ（新しい記録を足す前に）
+  var missionLines = Game.base.autoBreed().concat(Game.rescue.resolveMissions(), Game.rescue.expireOld()); // 救出隊の結果と期限切れ（新しい記録を足す前に）
   var lostNote = Game.rescue.recordLost(newcomers);
   lines.push(lost.length > 0 ? "この冒険で仲間になった " + lost.join("・") + " とはぐれてしまった…" : "はぐれた仲間はいない。");
   if (lostNote) lines.push(lostNote);
@@ -317,6 +318,7 @@ Game.escapeDungeon = function (headline, cleared) {
   var lines = [headline];
   var newcomers = Game.allies.list.filter(function (a) { return !a.fromBase; });
   var veterans = Game.allies.list.filter(function (a) { return a.fromBase; });
+  var bred = Game.base.autoBreed(); // 留守番の仲間の交配（新しい仲間を牧場に入れる前に）
   var brought = [], full = [];
   for (var i = 0; i < newcomers.length; i++) {
     if (Game.base.addToRanch(newcomers[i].type)) brought.push(newcomers[i].baseName);
@@ -344,7 +346,7 @@ Game.escapeDungeon = function (headline, cleared) {
   if (carried.length > 0) lines.push("持ち物 " + (carried.length - overflow.length) + " 個を倉庫にしまった。");
   if (overflow.length > 0) lines.push("倉庫がいっぱいで " + overflow.join("・") + " は置いてきた…");
 
-  lines = lines.concat(Game.rescue.resolveMissions(), Game.rescue.expireOld()); // 救出隊の結果と期限切れ
+  lines = lines.concat(bred, Game.rescue.resolveMissions(), Game.rescue.expireOld()); // 交配・救出隊の結果と期限切れ
   Game.allies.clear();
   Game.inventory.clear();
   Game.base.save();
@@ -474,10 +476,56 @@ Game.aimMessage = function () {
   return t.name + "を" + verb + "方向は？（矢印／Shift＋矢印2つで斜め／Esc で戻る）";
 };
 
-// 選んだアイテムを使う（1ターン消費）。使ってもなくならない物（リボルバートイ等）は持ち物に残る
-Game.useSelectedItem = function () {
+// 足元のアイテムで Enter：使う／拾う／投げる を選ぶウィンドウ
+Game.openFootMenu = function () {
   var entry = Game.inventory.selectedEntry();
   if (!entry) return;
+  var eff = Game.items.types[entry.type].effect;
+  var options = [];
+  if (eff !== "equip" && eff !== "gun") options.push({ label: "使う（拾わずにその場で）", onChoose: function () { Game.useSelectedItem(true); } });
+  options.push({ label: "拾う", onChoose: Game.pickUpFoot });
+  options.push({
+    label: "投げる",
+    onChoose: function () {
+      Game.aimMode = "throw";
+      Game.state = "aim";
+      Game.inventory.open = false;
+      Game.refresh(Game.aimMessage());
+    },
+  });
+  options.push({ label: "やめる" });
+  Game.dialog.open({ title: "足元の [[item:" + entry.type + "]] " + Game.items.displayName(entry), lines: [], options: options });
+};
+
+// 足元のアイテムを拾う（1ターン消費）。持ち物がいっぱいなら拾えない（ターンは使わない）
+Game.pickUpFoot = function () {
+  var inv = Game.inventory;
+  if (!inv.footSelected()) return;
+  var name = Game.items.displayName(inv.foot);
+  if (inv.items.length >= inv.max) {
+    Game.log.add("持ち物がいっぱいで" + name + "を拾えない。", "miss");
+    Game.refresh("持ち物がいっぱいで拾えない（" + inv.max + " 個まで）");
+    return;
+  }
+  var p = Game.player;
+  Game.items.pickupAt(p.x, p.y);
+  inv.foot = null;
+  inv.selected = 0;
+  inv.open = false;
+  Game.state = "playing";
+  Game.endTurn();
+  Game.afterAction();
+};
+
+// 選んだアイテムを使う（1ターン消費）。使ってもなくならない物（リボルバートイ等）は持ち物に残る
+//   足元の物は、まず「使う／拾う／投げる」を選ぶ（fromFootMenu = そのウィンドウで「使う」を選んだ）
+Game.useSelectedItem = function (fromFootMenu) {
+  var entry = Game.inventory.selectedEntry();
+  if (!entry) return;
+  if (Game.inventory.footSelected() && fromFootMenu !== true) {
+    Game.openFootMenu();
+    return;
+  }
   var eff = Game.items.types[entry.type].effect;
   if (Game.inventory.footSelected() && (eff === "equip" || eff === "gun")) {
     Game.refresh("足元の武器・防具・銃は、拾ってから装備する");
@@ -617,6 +665,11 @@ Game.showBase = function () {
     for (var i = 0; i < res.lines.length; i++) {
       Game.log.add(res.lines[i], res.kind === "death" ? "bad" : res.kind === "escape" ? "good" : "info");
     }
+    if (res.kind === "escape") {
+      // 生きて帰れた時は、ログ（一番上）と画面の下のお知らせに一言
+      Game.log.add("帰還できた。。。記録しておこう", "good");
+      Game.notice.show("帰還できた。。。記録しておこう", "good");
+    }
     Game.dialog.open({
       title: res.kind === "escape" ? "おかえりなさい！" : res.kind === "death" ? "冒険の結果" : "拠点",
       lines: res.lines,
@@ -693,7 +746,12 @@ Game.start = function () {
   Game.input.init(Game.onPlayerMove, Game.startDash, Game.onKey);
   Game.base.load();
   Game.base.loadLastLog();
+  var hadSave = !Game.base.firstTime;
+  var slots = Game.saveSlots.readAll().some(function (s) { return s; });
+  if (slots) Game.base.firstTime = false; // 始める記録を選んでから（「最初から」を選べば説明をたずねる）
   Game.showBase();
+  Game.saveSlots.openStart(hadSave); // どの記録から始めるかを選ぶ（刻んだ記録も前回の続きもなければ出さない）
+  Game.refresh();
   Game.visits.init(); // 公開ページでの訪問者数の計測（設定した時だけ）
 };
 

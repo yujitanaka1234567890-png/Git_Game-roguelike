@@ -125,20 +125,54 @@ Game.saveSlots = {
       options: [
         {
           label: "読み込む",
-          onChoose: function () {
-            if (!Game.base.applySaveData(JSON.parse(JSON.stringify(slot.data)))) {
-              Game.log.add("この枠の記録は読み取れなかった…", "bad");
-              return;
-            }
-            Game.base.keepLastLog(null);
-            Game.base.lastResult = { kind: "info", lines: ["石碑に刻まれた記録（枠" + (i + 1) + "）の世界へ戻ってきた。"] };
-            Game.showBase();
-            Game.sound.play("rescue");
-          },
+          onChoose: function () { self.loadSlot(i, slot); },
         },
         { label: "やめる", onChoose: function () { self.openSlots("load"); } },
       ],
     });
+  },
+
+  // 枠 i の記録を読み込んで拠点に入る。読めなければ false
+  loadSlot: function (i, slot) {
+    if (!Game.base.applySaveData(JSON.parse(JSON.stringify(slot.data)))) {
+      Game.log.add("この枠の記録は読み取れなかった…", "bad");
+      return false;
+    }
+    Game.base.firstTime = false;
+    Game.base.keepLastLog(null);
+    Game.base.lastResult = { kind: "info", lines: ["石碑に刻まれた記録（枠" + (i + 1) + "）の世界へ戻ってきた。"] };
+    Game.showBase();
+    Game.sound.play("rescue");
+    return true;
+  },
+
+  // ゲームを開いた時：どの記録から始めるかを選ぶ（自動の記録から勝手に始めない）。
+  //   hadSave = ブラウザに自動の記録（前回の続き）があった
+  //   刻んだ記録も自動の記録もなければ、何も聞かずに最初から始める
+  openStart: function (hadSave) {
+    var self = this;
+    var list = this.readAll();
+    var options = [];
+    list.forEach(function (slot, i) {
+      if (slot) options.push({ label: "[[tile:S]] " + self.label(i, slot), onChoose: function () { if (!self.loadSlot(i, slot)) self.openStart(hadSave); } });
+    });
+    if (options.length === 0 && !hadSave) return false;
+    if (hadSave) {
+      var b = Game.base;
+      options.push({
+        label: "前回の続き（自動で残った記録：牧場" + b.ranch.length + "体・倉庫" + b.storage.length + "個・踏破" + Object.keys(b.cleared).length + "）",
+        onChoose: function () { Game.log.add("前回の続きから始めた。", "info"); },
+      });
+    }
+    options.push({ label: "最初から始める（刻んだ記録は消えない）", onChoose: function () { self.startNew(); } });
+    options.push({ label: "記録の呪文を地面に書く（別のPCから）", onChoose: function () { Game.savecode.openImport(); } });
+    Game.dialog.open({
+      title: "どこから始める？",
+      lines: ["記録の石碑 [[tile:S]] に刻んだ記録から、始める場所を選んでください。"],
+      options: options,
+      onCancel: function () { self.openStart(hadSave); }, // Esc では閉じない（必ずどれかを選ぶ）
+    });
+    return true;
   },
 
   // 最初から始める：今の記録は新しくなる。枠は消さない

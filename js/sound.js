@@ -439,7 +439,9 @@ Game.sound = {
     escape: function () { this.seq([392, 523, 659, 784, 1047], 0.1, "triangle", 0.3); },
     // ゲームオーバー：葬送行進曲（ショパン「ピアノソナタ第2番」第3楽章。1840年の曲で著作権切れ）を、
     // 変ロ短調でゆっくり、暗いオルガンと鐘のような低音で合成して演奏する。
-    // 音の長さは元の2倍、音と音はとぎれずにつなげる（レガート）。冒頭の4小節に続けて、属音（F）の上で同じ形をくり返し、主音に戻って終わる
+    // 音と音はとぎれずにつなげる（レガート）。冒頭の4小節に続けて、属音（F）の上で同じ形をくり返し、主音に戻って終わる。
+    // 抑揚：まとまりごとに 弱く→少し強く→強く（属音の所）→ごく弱く と変え、まとまりの中でもふくらんでしぼむ。
+    //       長い音・拍の頭は少し強く、短い装飾の音は弱く
     gameover: function () {
       var self = this;
       var b = 0.78; // 1拍の長さ（秒）。遅いほど重々しい
@@ -447,32 +449,36 @@ Game.sound = {
       var bus = this.master;
       this.master = song;
       try {
-        // 旋律：暗いオルガン（三角波＋1オクターブ下の正弦波＋かすかな矩形波）。次の音まで伸ばしてつなげる
-        var voice = function (freq, beat, beats) {
+        // 旋律：暗いオルガン（三角波＋1オクターブ下の正弦波＋かすかな矩形波）。次の音まで伸ばしてつなげる。dyn = 強さ（1が普通）
+        var voice = function (freq, beat, beats, dyn) {
           var t = beat * b, d = beats * b + 0.06;
-          self.hold(freq, d, "triangle", 0.2, t);
-          self.hold(freq / 2, d, "sine", 0.16, t);
-          self.hold(freq, d, "square", 0.022, t);
+          self.hold(freq, d, "triangle", 0.2 * dyn, t);
+          self.hold(freq / 2, d, "sine", 0.16 * dyn, t);
+          self.hold(freq, d, "square", 0.022 * dyn, t);
         };
         // 伴奏：2拍ごとに低い和音を鐘のように鳴らす
-        var chord = function (freqs, beat) {
-          for (var i = 0; i < freqs.length; i++) self.tone(freqs[i], b * 1.9, "sine", i === 0 ? 0.22 : 0.08, freqs[i] * 0.995, beat * b);
+        var chord = function (freqs, beat, dyn) {
+          for (var i = 0; i < freqs.length; i++) self.tone(freqs[i], b * 1.9, "sine", (i === 0 ? 0.22 : 0.08) * dyn, freqs[i] * 0.995, beat * b);
         };
         var Bbm = [58.27, 87.31, 138.59], Gb = [46.25, 69.3, 116.54], F = [43.65, 65.41, 130.81], Db = [69.3, 103.83, 138.59];
         var Bb = 233.08, A = 220, C = 261.63, Dd = 277.18, E = 329.63, Ff = 349.23, Gg = 369.99, Ab = 415.3;
-        // ひとまとまり（2小節分・元の長さで8拍）を2倍の長さで鳴らす。m = [旋律の音×7]
+        // ひとまとまり（2小節分・8拍）。m = [旋律の音×6]、dyn = このまとまりの強さ
         //   ダン、ダ・ダン、ダーン ／ ダン・ダ ダン・ダ ダン・ダ ダーン
-        var phrase = function (at, m, chords) {
+        var phrase = function (at, m, chords, dyn) {
           var r = [[0, 1], [1, 0.75], [1.75, 0.25], [2, 2], [4, 0.75], [4.75, 0.25], [5, 0.75], [5.75, 0.25], [6, 0.75], [6.75, 0.25], [7, 1]];
           var notes = [m[0], m[0], m[0], m[0], m[1], m[2], m[2], m[3], m[3], m[4], m[5]];
-          for (var i = 0; i < r.length; i++) voice(notes[i], at + r[i][0] * 2, r[i][1] * 2);
-          for (var k = 0; k < 8; k++) chord(chords[k % chords.length], at + k * 2);
+          for (var i = 0; i < r.length; i++) {
+            var swell = 0.8 + 0.4 * Math.sin((Math.PI * i) / (r.length - 1)); // まとまりの中でふくらんでしぼむ
+            var accent = r[i][1] >= 1 ? 1.12 : r[i][1] <= 0.25 ? 0.72 : 1; // 長い音は強く、短い装飾音は弱く
+            voice(notes[i], at + r[i][0], r[i][1], dyn * swell * accent);
+          }
+          for (var k = 0; k < 4; k++) chord(chords[k % chords.length], at + k * 2, dyn * (k === 0 ? 1.15 : 0.9));
         };
-        phrase(0, [Bb, Dd, C, Bb, A, Bb], [Bbm, Gb]);
-        phrase(16, [Bb, Dd, C, Bb, A, Bb], [Bbm, Gb]);
-        phrase(32, [Ff, Ab, Gg, Ff, E, Ff], [F, Db]); // 属音の上で同じ形
-        phrase(48, [Bb, Dd, C, Bb, A, Bb], [Bbm, Gb]);
-        self.tone(58.27, b * 6, "sine", 0.25, 55, 62 * b); // 最後に深い低音を長く残す
+        phrase(0, [Bb, Dd, C, Bb, A, Bb], [Bbm, Gb], 0.7); // 弱く
+        phrase(8, [Bb, Dd, C, Bb, A, Bb], [Bbm, Gb], 0.9); // 少し強く
+        phrase(16, [Ff, Ab, Gg, Ff, E, Ff], [F, Db], 1.25); // 属音の上で同じ形（一番強く）
+        phrase(24, [Bb, Dd, C, Bb, A, Bb], [Bbm, Gb], 0.55); // ごく弱く、消えるように
+        self.tone(58.27, b * 6, "sine", 0.2, 55, 31 * b); // 最後に深い低音を長く残す
       } finally {
         this.master = bus;
       }

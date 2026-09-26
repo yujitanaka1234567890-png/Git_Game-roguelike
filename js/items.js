@@ -136,7 +136,7 @@ Game.items = {
     },
     // ---- お札（読み上げると特殊な効果） ----
     seerOfuda: {
-      name: "千里眼の札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#4d7194", rarity: 2,
+      name: "夜目見通しの札", group: "ofuda", sprite: "ofuda", category: "ofuda", symbol: "札", color: "#4d7194", rarity: 2,
       effect: "reveal", throwEffect: "bonk", power: 0,
       desc: "読み上げると、この階の地形と落ちているアイテムがすべてわかる。",
     },
@@ -329,7 +329,7 @@ Game.items = {
       Game.mind.restore(power, true);
     },
 
-    // 千里眼の札：この階の地形とアイテムがすべてわかる
+    // 夜目見通しの札：この階の地形とアイテムがすべてわかる
     reveal: function () {
       for (var y = 0; y < Game.map.height; y++) {
         for (var x = 0; x < Game.map.width; x++) Game.fov.explored[y][x] = true;

@@ -1,14 +1,14 @@
-// 3D表示の「紙芝居」の動き（見た目だけ。ゲームのルールには影響しない）。
+// 「紙芝居」の動き（見た目だけ。ゲームのルールには影響しない）。3D表示と2D表示（renderer_units.js）の両方で使う。
 // キャラごとに、表示している位置・向きを覚えておき、描くたびに次のような見た目を計算する：
-//   ・移動：マスからマスへすべるように動く（主人公もモンスターも歩きの絵を交互に。モンスターはぴょんと跳ねる）
+//   ・移動：マスからマスへすべるように動く（1歩の前半と後半で絵を切り替えて足を運ぶ。モンスターはぴょんと跳ねる）
 //   ・向き：左右に動くとその向きを向く。向きを変える時は紙をくるっと裏返すように細くなってから反対を向く
-//   ・攻撃：相手の方へ一瞬踏み込む（攻撃の絵。モンスターの絵は data/char_frames.js）
+//   ・攻撃：一瞬うしろへ引いて溜めてから、相手の方へ踏み込む（攻撃の絵。モンスターの絵は data/char_frames.js）
 //   ・やられ：のけぞる（主人公はやられの絵、モンスターは赤っぽくなる）
 //   ・待機：主人公はネオンが明滅、モンスターは息をするように伸び縮みする
 // 攻撃・やられは fx.js の attackOf / tiltOf（攻撃した時に記録される）から判断する。
 Game.anim3d = {
   track: new Map(), // キャラ → 表示の状態
-  slideMs: 110, // 1マス動くのにかける時間
+  slideMs: 130, // 1マス動くのにかける時間
   flipMs: 160, // 向きを変える（裏返す）のにかける時間
 
   reset: function () {
@@ -58,12 +58,15 @@ Game.anim3d = {
     var p = (now - st.flipT0) / this.flipMs;
     o.flip = p < 1 ? Math.max(0.08, Math.abs(Math.cos(p * Math.PI))) * (p < 0.5 ? -st.face : st.face) : st.face;
 
+    var windup = false;
     if (atk) {
       var q = Math.max(0, Math.min(1, (now - atk.start) / Game.fx.hitMs));
-      var lunge = Math.sin(q * Math.PI) * 0.3;
+      // 最初の少しは後ろへ引いて溜め、そこから踏み込んで戻る
+      windup = q < 0.25;
+      var lunge = windup ? -0.08 * Math.sin((q / 0.25) * (Math.PI / 2)) : Math.sin(((q - 0.25) / 0.75) * Math.PI) * 0.32;
       o.x += atk.dx * lunge;
       o.z += atk.dy * lunge;
-      if (!isHero) o.roll = -atk.dx * 0.25 * Math.sin(q * Math.PI);
+      if (!isHero) o.roll = windup ? atk.dx * 0.08 : -atk.dx * 0.25 * Math.sin(((q - 0.25) / 0.75) * Math.PI);
     }
     if (hurt) {
       o.x += hurt.dx * 0.12;
@@ -74,12 +77,12 @@ Game.anim3d = {
 
     if (isHero) {
       if (hurt) o.frame = "hero_hurt";
-      else if (atk) o.frame = "hero_attack";
-      else if (moving) o.frame = st.steps % 2 ? "hero_walk1" : "hero_walk2";
+      else if (atk) o.frame = windup ? "hero_idle1" : "hero_attack";
+      else if (moving) o.frame = (k < 0.5) === (st.steps % 2 === 1) ? "hero_walk1" : "hero_walk2"; // 1歩の中で足を入れ替える
       else o.frame = Math.floor(now / 600) % 2 ? "hero_idle2" : "hero_idle1";
       if (moving) o.lift = Math.sin(k * Math.PI) * 0.05;
     } else {
-      o.suffix = hurt ? "_hurt" : atk ? "_attack" : moving && st.steps % 2 ? "_walk" : "";
+      o.suffix = hurt ? "_hurt" : atk ? (windup ? "" : "_attack") : moving && k < 0.6 ? "_walk" : ""; // 歩き出しは足を出した絵
       var b = Math.sin(now / 350 + st.seed);
       o.sy = 1 + 0.045 * b;
       o.sx = 1 - 0.03 * b;

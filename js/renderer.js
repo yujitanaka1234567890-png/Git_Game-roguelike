@@ -47,6 +47,36 @@ Game.renderer = {
       water: (wc && wc.water) || c.water, waterDim: (wc && wc.waterDim) || c.waterDim,
     };
 
+    // 別の階・拠点に移ったら、動き（すべる移動など）の記録をやり直す
+    if (this.lastTiles !== Game.map.tiles) {
+      this.lastTiles = Game.map.tiles;
+      Game.anim3d.reset();
+    }
+    this.buildTerrain(colors, pixel);
+    this.animUntil = Date.now() + 900; // この間は1秒に60回ほど描き直して、動きをなめらかに見せる
+    this.drawFrame(); // キャラなど動くもの（renderer_units.js）
+
+    if (Game.state === "gameover") Game.minimap.hide();
+    else Game.minimap.draw(); // 全体マップ（2Dでも3Dでも左上に重ねる）
+    this.kick();
+  },
+
+  // 動かないもの（地形・床のアイテム・はぐれた仲間の気配）を裏の画用紙に描いておく。
+  // 描き直しのたびに全部描くと重いので、ゲームの状態が変わった時（draw）だけ描き、動きの途中はこれを貼るだけにする
+  buildTerrain: function (colors, pixel) {
+    if (!this.terrain) this.terrain = document.createElement("canvas");
+    var tc = this.terrain;
+    if (tc.width !== this.canvas.width || tc.height !== this.canvas.height) {
+      tc.width = this.canvas.width;
+      tc.height = this.canvas.height;
+    }
+    var main = this.ctx;
+    this.ctx = tc.getContext("2d"); // drawTile などの描き先を、いったん裏の画用紙にする
+    var ctx = this.ctx;
+    var ts = Game.config.tileSize;
+    var c = Game.config.colors;
+    var fov = Game.fov;
+
     // ---- マップ：未探索は真っ黒、探索済みで今見えていない所は暗く、見えている所は明るく ----
     for (var y = 0; y < Game.map.height; y++) {
       for (var x = 0; x < Game.map.width; x++) {
@@ -56,16 +86,6 @@ Game.renderer = {
           continue;
         }
         this.drawTile(x, y, Game.map.tiles[y][x], fov.isVisible(x, y), colors, pixel);
-      }
-    }
-
-    // ---- 拠点の牧場を歩く仲間（連れて行く子は青い下地） ----
-    if (Game.state === "base") {
-      var ms = Game.baseScene.monsters;
-      for (var b = 0; b < ms.length; b++) {
-        var mt = Game.MONSTERS[ms[b].entry.type];
-        if (Game.base.selected[ms[b].entry.id]) this.drawAllyBg(ms[b].x, ms[b].y);
-        this.drawMonster(mt, ms[b].x, ms[b].y);
       }
     }
 
@@ -88,116 +108,13 @@ Game.renderer = {
       var mt2 = Game.MONSTERS[mk.type];
       if (mt2) this.drawThing(mt2.sprite, mt2.overlay, mt2.color, mk.x, mk.y, mt2.symbol, litMk ? mt2.color : "#555");
       else this.drawThing("marker", null, "#66ffee", mk.x, mk.y, "◇", litMk ? "#66ffee" : "#337777");
-      var tsz = Game.config.tileSize;
       ctx.strokeStyle = "#b066ff";
       ctx.lineWidth = 2;
-      ctx.strokeRect(mk.x * tsz + 1, mk.y * tsz + 1, tsz - 2, tsz - 2);
+      ctx.strokeRect(mk.x * ts + 1, mk.y * ts + 1, ts - 2, ts - 2);
       ctx.lineWidth = 1;
       if (!litMk) this.dimCell(mk.x, mk.y);
     }
-
-    // ---- 仲間（青い下地で敵と見分ける。いつでも表示） ----
-    var allies = Game.allies.list;
-    for (var a = 0; a < allies.length; a++) {
-      var al = allies[a];
-      if (al.x < 0) continue;
-      this.drawAllyBg(al.x, al.y);
-      this.drawMonster(Game.MONSTERS[al.type], al.x, al.y, al);
-      this.drawDangerPulse(al);
-      if (al.hp < al.maxHp) this.drawHpBar(al);
-      if (al.charge) this.drawChargeMark(al, "#66ccff");
-    }
-
-    // ---- 敵（見えている敵だけ） ----
-    var list = Game.enemies.list;
-    for (var i = 0; i < list.length; i++) {
-      var e = list[i];
-      if (!fov.isVisible(e.x, e.y)) continue;
-      var inWall = Game.map.tileAt(e.x, e.y) === "#"; // 壁の中にいる（壁抜けする敵）は半透明
-      if (inWall) ctx.globalAlpha = 0.55;
-      this.drawMonster(Game.MONSTERS[e.type], e.x, e.y, e);
-      ctx.globalAlpha = 1;
-      if (e.hp < e.maxHp) this.drawHpBar(e);
-      if (e.charge) this.drawChargeMark(e);
-    }
-
-    // ---- 主人公 ----
-    var p = Game.player;
-    var self = this;
-    this.withTilt(p, p.x, p.y, function () {
-      self.drawThing("player", null, c.player, p.x, p.y, p.symbol, c.player);
-    });
-
-    // ---- 攻撃マーク（赤いとげとげ）とダメージの数字 ----
-    Game.fx.drawHitMarks(ctx, ts);
-    Game.fx.drawNumbers(ctx, ts);
-
-    // ---- 投げて飛んでいるアイテム ----
-    var pr = Game.throwing.projectile;
-    if (pr) this.drawThing(pr.sprite, null, pr.color, pr.x, pr.y, pr.symbol, pr.color);
-
-    // ---- 必殺技・ブレスの光 ----
-    Game.fx.draw(ctx, ts);
-
-    // ---- 精神力が減ると、画面が紫の闇ににじむ（ダンジョンに取り込まれかけている表現） ----
-    if (Game.state !== "base" && p.maxMind) {
-      var mr = p.mind / p.maxMind;
-      if (mr < 0.3) {
-        ctx.fillStyle = "rgba(70, 0, 110, " + ((0.3 - mr) * 1.2).toFixed(2) + ")";
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      }
-    }
-
-    if (Game.state === "gameover") {
-      this.drawOverlay("GAME OVER", "Enter で拠点へ戻る");
-      Game.minimap.hide();
-    } else {
-      Game.minimap.draw(); // 全体マップ（2Dでも3Dでも左上に重ねる）
-    }
-    this.kick();
-  },
-
-  // ---------- 動きのある表示（ダメージの数字・死にかけの仲間の点滅）のための描き直し ----------
-  // 2D はふだん何か起きた時だけ描き直すので、動いている物がある間だけ1秒に30回ほど描き直す（3D は render3d.js が描き直し続ける）
-  animLoop: null,
-  needsAnim: function () {
-    if (Game.state !== "playing" && Game.state !== "menu" && Game.state !== "aim" && Game.state !== "animating") return false;
-    if (Game.fx.hasActivePops()) return true;
-    return Game.allies.list.some(function (a) { return Game.renderer.inDanger(a); });
-  },
-  kick: function () {
-    if (this.animLoop || !this.ctx || Game.view3d.active() || !this.needsAnim()) return;
-    var self = this, last = 0;
-    var tick = function (t) {
-      if (Game.view3d.active() || !self.needsAnim()) {
-        self.animLoop = null;
-        if (!Game.view3d.active()) self.draw(); // 最後の1枚（数字を消す）
-        return;
-      }
-      self.animLoop = requestAnimationFrame(tick);
-      if (t - last < 33) return;
-      last = t;
-      self.draw();
-    };
-    this.animLoop = requestAnimationFrame(tick);
-  },
-
-  // 死にかけ（HPが dangerRatio 以下）の仲間か
-  dangerRatio: 0.25,
-  inDanger: function (u) {
-    return u.x >= 0 && u.hp > 0 && u.hp / u.maxHp <= this.dangerRatio;
-  },
-
-  // 点滅の強さ 0〜1（何もしていない間も薄い紅色にゆっくり点滅する）
-  dangerPulse: function () {
-    return 0.5 + 0.5 * Math.sin(Date.now() / 220);
-  },
-
-  drawDangerPulse: function (u) {
-    if (!this.inDanger(u)) return;
-    var ts = Game.config.tileSize;
-    this.ctx.fillStyle = "rgba(255, 70, 110, " + (0.12 + 0.33 * this.dangerPulse()).toFixed(2) + ")";
-    this.ctx.fillRect(u.x * ts, u.y * ts, ts, ts);
+    this.ctx = main;
   },
 
   // 1マスの地形を描く
@@ -254,45 +171,6 @@ Game.renderer = {
     }
   },
 
-  // モンスター1体（ドット絵なら絵、文字表示なら文字）＋進化段階の印。unit を渡すと攻撃された時にのけぞる
-  // ボスは1.6倍の大きさで、足元に赤い影をつけて描く
-  drawMonster: function (t, x, y, unit) {
-    var self = this;
-    this.withTilt(unit, x, y, function () {
-      var big = t.boss && Game.pixel.enabled ? Game.pixel.build(t.sprite, t.overlay, t.color) : null;
-      if (big) {
-        var ts = Game.config.tileSize, size = ts * 1.6;
-        self.ctx.fillStyle = "rgba(255, 40, 40, 0.28)";
-        self.ctx.beginPath();
-        self.ctx.ellipse(x * ts + ts / 2, y * ts + ts - 2, ts * 0.8, ts * 0.3, 0, 0, Math.PI * 2);
-        self.ctx.fill();
-        self.ctx.imageSmoothingEnabled = false;
-        self.ctx.drawImage(big, x * ts + ts / 2 - size / 2, y * ts + ts - size, size, size);
-        return;
-      }
-      self.drawThing(t.sprite, t.overlay, t.color, x, y, t.symbol, t.color);
-    });
-    this.drawStagePips(x, y, t.stage);
-  },
-
-  // 攻撃されたばかりなら、攻撃と逆向きに少し傾けてずらした状態で draw() を呼ぶ（のけぞり）
-  withTilt: function (unit, x, y, draw) {
-    var h = unit ? Game.fx.tiltOf(unit) : null;
-    if (!h) {
-      draw();
-      return;
-    }
-    var ctx = this.ctx;
-    var ts = Game.config.tileSize;
-    var cx = x * ts + ts / 2, cy = y * ts + ts;
-    ctx.save();
-    ctx.translate(cx + h.dx * 3, cy + h.dy * 3);
-    ctx.rotate((h.dx !== 0 ? h.dx : h.dy * 0.6) * 0.3); // 足元を軸に、攻撃と逆側へ傾く
-    ctx.translate(-cx, -cy);
-    draw();
-    ctx.restore();
-  },
-
   // 絵を描く。ドット絵が無効 or 絵がなければ文字で描く
   drawThing: function (sprite, overlay, color, x, y, ch, charColor) {
     if (Game.pixel.enabled && sprite && Game.pixel.draw(this.ctx, sprite, overlay, color, x, y, Game.config.tileSize)) return;
@@ -312,15 +190,15 @@ Game.renderer = {
     this.ctx.fillRect(x * ts, y * ts, ts, ts);
   },
 
-  // ダメージを受けた敵・仲間の足元に小さなHPバーを描く
-  drawHpBar: function (e) {
+  // ダメージを受けた敵・仲間の足元に小さなHPバーを描く（x, y＝表示している位置。マス単位・小数あり）
+  drawHpBar: function (e, x, y) {
     var ctx = this.ctx;
     var ts = Game.config.tileSize;
     var w = ts - 6;
     ctx.fillStyle = Game.config.colors.hpBarBg;
-    ctx.fillRect(e.x * ts + 3, e.y * ts + ts - 3, w, 3);
+    ctx.fillRect(x * ts + 3, y * ts + ts - 3, w, 3);
     ctx.fillStyle = Game.allies.list.indexOf(e) >= 0 ? Game.config.colors.allyHpBar : Game.config.colors.hpBar;
-    ctx.fillRect(e.x * ts + 3, e.y * ts + ts - 3, w * (e.hp / e.maxHp), 3);
+    ctx.fillRect(x * ts + 3, y * ts + ts - 3, w * (e.hp / e.maxHp), 3);
   },
 
   // 進化段階の印：マスの左上に小さな点（2段階目は1つ、3段階目は2つ）
@@ -337,19 +215,19 @@ Game.renderer = {
   },
 
   // 技を溜めている敵（黄色）・仲間（青）：枠と「!」と残りターン数
-  drawChargeMark: function (e, color) {
+  drawChargeMark: function (e, color, x, y) {
     var ctx = this.ctx;
     var ts = Game.config.tileSize;
     color = color || "#ffe066";
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
-    ctx.strokeRect(e.x * ts + 1, e.y * ts + 1, ts - 2, ts - 2);
+    ctx.strokeRect(x * ts + 1, y * ts + 1, ts - 2, ts - 2);
     ctx.lineWidth = 1;
     ctx.fillStyle = color;
     ctx.font = "bold " + Math.floor(ts * 0.45) + "px monospace";
     ctx.textAlign = "right";
     ctx.textBaseline = "top";
-    ctx.fillText("!" + e.charge.left, e.x * ts + ts - 1, e.y * ts);
+    ctx.fillText("!" + e.charge.left, x * ts + ts - 1, y * ts);
   },
 
   // 画面全体を暗くして中央に文字を出す

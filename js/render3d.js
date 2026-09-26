@@ -154,7 +154,7 @@ Game.view3d = {
   },
 
   // ---------- 描く ----------
-  // renderer.draw() から呼ばれる（ゲームの状態が変わった時）。紙芝居の動きのため、その後も1秒に30回ほど描き直し続ける
+  // renderer.draw() から呼ばれる（ゲームの状態が変わった時）。紙芝居の動きのため、その後も1秒に60回ほど描き直し続ける
   draw: function () {
     this.show(true);
     if (this.lastTiles !== Game.map.tiles) {
@@ -176,7 +176,7 @@ Game.view3d = {
         return;
       }
       self.loop = requestAnimationFrame(tick);
-      if (t - last < 33) return;
+      if (t - last < 14) return; // 1秒に約60回
       last = t;
       self.render();
     };

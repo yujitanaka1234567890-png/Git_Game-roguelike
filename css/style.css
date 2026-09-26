@@ -349,3 +349,11 @@ canvas.icon {
   text-align: center;
   margin: 12px 0 8px;
 }
+
+/* タイトルの横の版（どの版を開いているか確かめる用） */
+#version {
+  font-size: 12px;
+  font-weight: normal;
+  color: #777;
+  margin-left: 10px;
+}

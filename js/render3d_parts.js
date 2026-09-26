@@ -85,6 +85,20 @@ Object.assign(Game.view3d, {
     });
   },
 
+  // 階段のマス：黒地に白い縁、真ん中に白い階段の絵
+  stairsSlot: function () {
+    return this.slot("stairsTile", 32, 32, function (ctx) {
+      ctx.fillStyle = "#050505";
+      ctx.fillRect(0, 0, 32, 32);
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(1.5, 1.5, 29, 29);
+      var img = Game.pixel.build("stairs", null, "#ffffff");
+      ctx.imageSmoothingEnabled = false;
+      if (img) ctx.drawImage(img, 4, 4, 24, 24);
+    });
+  },
+
   // 真っ白（色を付けて帯や光に使う）・丸い影・四角い枠・攻撃マーク
   whiteSlot: function () {
     return this.slot("white", 8, 8, function (ctx) {

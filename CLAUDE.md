@@ -33,7 +33,7 @@
 - `js/savecode.js` 記録の呪文（セーブ用パスワード：JIGEN1-検出番号-中身。拠点の記録の石碑で書き出し・地面に書く。成功ログ「地面に書いた文字が浮かび上がり光った。記録された世界線へ移動した」）
 - `js/saveslots.js` 記録の石碑のメニュー（記録の枠3つ＝localStorage key dimension-roguelike-slots-v1 に刻む・読み込む／最初から始める＝base.resetToNew、枠は消さない／記録の呪文へ）
 - `js/visits.js` 訪問者数の計測（GoatCounter。config.analytics.goatcounter にコードを入れた時だけ、公開ページ（http/https）で動く。ブラウザごとに1回だけ「first-visit」イベントを送り、これをユニークユーザー数とする。セーブデータは送らない）
-- `js/tutorial.js` 遊び方の説明（6ページ：目的・操作・仲間・分隊・精神力・拠点の設備。拠点の案内板T・初回はたずねる。画面の仕組みに触れるメタな説明は書かない）
+- `js/tutorial.js` 遊び方の説明（7ページ：目的・操作・仲間・分隊の作り方・分隊の動き・精神力・拠点の設備。拠点の案内板T・初回はたずねる。画面の仕組みに触れるメタな説明は書かない）
 - `js/base.js` 拠点のデータ（牧場・倉庫・連れて行く/持って行く選択・踏破記録 cleared・交配 breed・発見済み discovered・localStorage保存 key=dimension-roguelike-save-v1）
 - `js/basemap.js` 拠点の空間（固定マップ・牧場を歩く仲間・会話・収納箱・掲示板＝仲間選び/救出・交配小屋・門でのダンジョン選択）/ `js/bestiary.js` プレイヤー用モンスター図鑑（出会った種類 base.seen だけ詳しく載る）
 - `js/data/sprites.js` ドット絵（設備。12×12 の文字で手描き・オリジナル）/ `js/data/item_sprites.js` アイテム・武器のドット絵（16×16・落ち着いた固定色＝大文字の色文字）/ `js/data/characters.js` 主人公・モンスターのドット絵（16×16・右向き。主人公は紙芝居用に hero_idle1/2・walk1/2・attack・hurt）と重ねる小物 / `js/data/sea_characters.js` 水属性モンスターの絵と歩き・攻撃の指定（Game.EXTRA_FRAMES）/ `js/data/char_frames.js` モンスターの歩き・攻撃の絵（元の絵をずらし＋行の描き直しで作る。名前_walk・名前_attack）/ `js/pixelart.js` ドット絵の描画（壁・床は模様をその場で描く。grid＝色のマス目）/ `js/hires.js` キャラの高解像度版（16→32：ドット絵向け2倍拡大＋外側の輪郭を細く＋左上から光の陰影。3D表示と図鑑で使う）/ `js/sound.js` 効果音（Web Audio API で合成）/ `js/music.js` BGM（合成で演奏するオリジナル曲。今はボス戦のみ。refresh で update）
@@ -53,7 +53,7 @@
 - 技（specials.js・data/skills.js）：モンスターは複数の技を持つ（進化で増える／強い技に変わる）。敵：攻撃できる相手がいる時 specialChance(20%) で届く技から1つ選んで溜め開始→予兆をログ（⚠、log-warn）＋マップに黄枠と「!残りターン」→ specialWindup(2)ターン後に発動（届かなければ空振り）。主人公・仲間が受ける合計ダメージは最大HPの specialMaxRatio(60%) まで（即死防止）。仲間：allySkillChance(20%) で溜め開始、敵と同じく予兆をログ（◆、log-ally）＋マップに青枠、2ターン動かず溜めてから発動（階移動で溜め取りやめ）。範囲 shape：single/around/sight。
 - アイテム：踏むと自動で拾う（最大12個）。I または W で持ち物メニュー、Enter 使う、T 投げる、D 置く、Esc/I 閉じる。1階に3〜5個。
 - ダンジョン生成：部屋はセル内の左上1マス・右下2マスの余白で置き、部屋間は壁3マス以上。通路の曲がり角は部屋の壁の列/行を避ける。
-- 精神力（mind.js・config.mind）：最大100。ダンジョンでは drainEvery(8) ターンごとに1ずつ減る。1つの階に「長居の猶予」を超えて居ると lingerDrainEvery(2) ターンごとに1減る。猶予＝graceTurns(165)×その階の床のマス数÷refFloorTiles(320)（広い階ほど長い、最低60）。0になると zeroCountdown(3) ターンのカウントダウン（ログに「あと N ターン」）、その間に1以上に戻さないとダンジョンに取り込まれて倒れる（mind.zeroTurns・countdownLeft・isTaken）。50%・25%・10%・0%で警告。50%で遠吠え（howl、以後 howlEvery(45) ターンごと）、25%でささやき（whisper＝子音と母音に分けて合成した「ひそひそひそ」、以後 whisperEvery(30) ターンごと）。30%未満で画面が紫ににじむ。回復：階段+10、澄心の香+50、煙草7、六面パズル10、リボルバートイ20/14/8/4。冒険開始時は満タン。
+- 精神力（mind.js・config.mind）：最大100。ダンジョンでは drainEvery(8) ターンごとに1ずつ減る。1つの階に「長居の猶予」を超えて居ると lingerDrainEvery(2) ターンごとに1減る。猶予＝graceTurns(205)×その階の床のマス数÷refFloorTiles(320)（広い階ほど長い、最低 minGrace=100）。0になると zeroCountdown(3) ターンのカウントダウン（ログに「あと N ターン」）、その間に1以上に戻さないとダンジョンに取り込まれて倒れる（mind.zeroTurns・countdownLeft・isTaken）。50%・25%・10%・0%で警告。50%で遠吠え（howl、以後 howlEvery(45) ターンごと）、25%でささやき（whisper＝子音と母音に分けて合成した「ひそひそひそ」、以後 whisperEvery(30) ターンごと）。30%未満で画面が紫ににじむ。回復：階段+10、澄心の香+50、煙草7、六面パズル10、リボルバートイ20/14/8/4。冒険開始時は満タン。
 - 敵の湧き直し（enemies.tryRespawn）：毎ターン respawnChance(3%) で、主人公から見えず6マス以上離れた部屋の床に1体湧く（その階の上限 maxEnemies=10 まで）。
 - 拠点（basemap.js）：起動時・帰還時は拠点を歩く。左が牧場（牧場の仲間が歩き回る。ぶつかる＝話しかける→「連れて行く/やめる」ウィンドウ）、右が家（収納箱▣にぶつかる→倉庫から持って行く道具を選ぶ）、下が門∩（乗る→出発確認）。帰還時は結果をウィンドウとログで表示。
 - 牧場は種類のみ保存・最大30、倉庫は最大60。出発時に仲間最大7体・持ち物最大12個。仲間は毎回Lv1（statsOf の値）で作り直す。
@@ -122,3 +122,5 @@
 - 六面パズルを使うと「カチャカチャ」（sound の puzzle。items の sound でアイテム専用の音を指定）。
 - 精神力0の間は、1手ごとに次の移動・足踏み・ダッシュの入力を config.mind.zeroInputWaitMs(1000ms) 受け付けない（Game.mindLockUntil）。ダッシュも止まる。持ち物は開ける。
 - 設備・アイテム・モンスターの文字アイコン（▣・図・碑・刀など）は、説明・選択ウィンドウ・持ち物・仲間一覧ではドット絵のアイコンで出す（icons.js）。
+- 階段（3D）：黒地に白い縁と白い階段の絵のマス（render3d_parts.stairsSlot）＋上に浮かぶ小さな印（壁に隠れても見える。乗っている間は出さない）。階段・脱出口に乗ると画面の下に「降りますか？（↓を2回）」（STAIRS の ask）。
+- ログの文字にも [[tile:H]] などのアイコン印が使える（log.fillLine が icons.fill を使う）。

@@ -39,11 +39,16 @@ Game.log = {
     var skillId = line.meta && line.meta.skill;
     var def = skillId && Game.SKILLS[skillId];
     var at = def ? line.text.indexOf(def.name) : -1;
+    var add = function (text) {
+      var span = document.createElement("span");
+      Game.icons.fill(span, text); // [[tile:H]] などの印はドット絵のアイコンになる（icons.js）
+      div.appendChild(span);
+    };
     if (at < 0) {
-      div.textContent = line.text;
+      add(line.text);
       return;
     }
-    div.appendChild(document.createTextNode(line.text.slice(0, at)));
+    add(line.text.slice(0, at));
     var link = document.createElement("span");
     link.className = "skill-link";
     link.textContent = def.name;
@@ -52,6 +57,6 @@ Game.log = {
       Game.specials.showInfo(skillId);
     });
     div.appendChild(link);
-    div.appendChild(document.createTextNode(line.text.slice(at + def.name.length)));
+    add(line.text.slice(at + def.name.length));
   },
 };

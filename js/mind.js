@@ -52,7 +52,7 @@ Game.mind = {
     for (var y = 0; y < Game.map.height; y++) {
       for (var x = 0; x < Game.map.width; x++) if (Game.map.tiles[y][x] !== "#") tiles++;
     }
-    return Math.max(60, Math.round((cfg.graceTurns * tiles) / cfg.refFloorTiles));
+    return Math.max(cfg.minGrace, Math.round((cfg.graceTurns * tiles) / cfg.refFloorTiles));
   },
 
   // 1ターンごとに呼ぶ

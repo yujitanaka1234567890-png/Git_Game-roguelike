@@ -70,7 +70,11 @@ Game.player = {
     Game.items.pickupAt(nx, ny);
     Game.rescue.checkStep(nx, ny); // はぐれた仲間の気配を踏んだら救出
     var st = this.stairsHere();
-    if (st) Game.log.add(st.label + "がある。（" + st.key + " を2回で" + st.verb + "）");
+    if (st) {
+      var icon = st.action === "escape" ? "[[tile:O]]" : "[[tile:>]]";
+      Game.log.add(icon + " " + st.label + "がある。（" + st.key + " を2回で" + st.verb + "）");
+      Game.notice.show(st.label + "の上にいる。" + st.ask + "（" + st.key + " を2回押すと" + st.verb + "）", "info");
+    }
     return "moved";
   },
 

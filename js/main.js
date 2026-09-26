@@ -370,7 +370,7 @@ Game.descend = function () {
   Game.enterFloor();
   Game.mind.onNewFloor(true); // 新しい空気で精神力が少し回復
   Game.log.add("B" + Game.floor + "F に降りた。", "good");
-  if (Game.floor >= Game.currentDungeon().floors) Game.log.add("この階のどこかに脱出口（◎）がある。", "good");
+  if (Game.floor >= Game.currentDungeon().floors) Game.log.add("この階のどこかに脱出口 [[tile:O]] がある。", "good");
   Game.refresh();
 };
 

@@ -355,13 +355,13 @@ Game.baseScene = {
             var t = Game.MONSTERS[born];
             self.syncMonsters();
             Game.log.add(nameA + " と " + nameB + " はダンジョンへ帰っていった。", "info");
-            Game.log.add("♥ 新しい仲間「" + t.name + "」が生まれた！", "good");
+            Game.log.add("[[tile:H]] 新しい仲間「" + t.name + "」が生まれた！", "good");
             var hut = self.findTile("H");
             if (hut) Game.fx.flash(Game.fx.around(hut.x, hut.y, 1), "#ff88cc", 700);
             var sk = Game.specials.skillsOf({ type: born }).map(function (s) { return s.def.name; });
             var st = Game.enemies.statsOf(born);
             Game.dialog.open({
-              title: "♥ " + t.name + " が生まれた！（" + Game.enemies.rarityOf(born).label + "）",
+              title: "[[mon:" + born + "]] " + t.name + " が生まれた！（" + Game.enemies.rarityOf(born).label + "）",
               lines: ["HP " + st.hp + "　攻撃力 " + st.atk + "　防御力 " + st.def, "技：" + sk.join("・"), "牧場で待っている。"],
               options: [{ label: "OK" }],
             });

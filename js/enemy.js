@@ -116,7 +116,7 @@ Game.enemies = {
       y = Game.map.stairsY;
     }
     Game.map.tiles[y][x] = "O";
-    Game.log.add("★ ボスを倒した！ 倒れた場所に帰還のゲート（◎）が現れた！ 乗って ↓↓ で拠点へ帰れる", "good");
+    Game.log.add("★ ボスを倒した！ 倒れた場所に帰還のゲート [[tile:O]] が現れた！ 乗って ↓↓ で拠点へ帰れる", "good");
     Game.sound.play("escape");
     Game.fx.flash(Game.fx.around(x, y, 1), "#ffe066", 1200);
   },

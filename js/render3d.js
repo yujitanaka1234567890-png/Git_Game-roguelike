@@ -208,6 +208,7 @@ Game.view3d = {
     var x1 = Math.max(0, Math.floor(cam.x - 20 * zr)), x2 = Math.min(map.width - 1, Math.floor(cam.x + 20 * zr));
     var z1 = Math.max(0, Math.floor(cam.z - 17 * zr)), z2 = Math.min(map.height - 1, Math.floor(cam.z + 9 * zr));
     var flats = []; // 床に置く設備（階段・脱出口）
+    var stairsSpots = []; // 階段の場所（手前の壁に隠れても分かるよう、上に小さな印を浮かべる）
     var stands = []; // 立てる設備（収納箱・門など）
     for (var z = z1; z <= z2; z++) {
       for (var x = x1; x <= x2; x++) {
@@ -232,6 +233,12 @@ Game.view3d = {
           var wv = m * (0.85 + 0.15 * Math.sin(now / 500 + x * 0.7 + z * 1.3));
           this.quad([x, 0, z + 1], [x + 1, 0, z + 1], [x + 1, 0, z], [x, 0, z],
             this.tileSlot("water", (wc && wc.water) || c.water, (x % 4) + (z % 4) * 4, "water"), [wv, wv, wv, 1]);
+          continue;
+        }
+        if (tile === ">") {
+          // 階段：黒地に白い縁と白い階段の絵の、目立つマスにする
+          this.quad([x, 0, z + 1], [x + 1, 0, z + 1], [x + 1, 0, z], [x, 0, z], this.stairsSlot(), [m, m, m, 1]);
+          stairsSpots.push({ x: x, z: z });
           continue;
         }
         if (tile === ",") fsl = this.tileSlot("grass", c.grass, variant);
@@ -320,6 +327,12 @@ Game.view3d = {
       var gh = ghosts[i];
       var gs = gh.boss ? 2 : 1.3, gfp = gh.flip === undefined ? 1 : gh.flip;
       this.board(gh.x, gh.z, gs * Math.abs(gfp) * (gh.sx || 1), gs * (gh.sy || 1), gh.s, [1, 1, 1, 0.5], gh.lift || 0, gh.roll || 0, 0, gfp);
+    }
+    // 階段の上に浮かぶ小さな印（壁の向こうでも見える。主人公が乗っている間は出さない）
+    for (i = 0; i < stairsSpots.length; i++) {
+      var sp = stairsSpots[i];
+      if (sp.x === Game.player.x && sp.z === Game.player.y) continue;
+      this.board(sp.x + 0.5, sp.z + 0.5, 0.5, 0.5, this.stairsSlot(), [1, 1, 1, 0.85], 0.95 + 0.06 * Math.sin(now / 400));
     }
     var pops = Game.fx.activePops();
     for (i = 0; i < pops.length; i++) {

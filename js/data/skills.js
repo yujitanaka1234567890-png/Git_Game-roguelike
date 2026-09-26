@@ -1,6 +1,7 @@
 // 【図鑑データ】技（必殺技）の一覧。モンスターは monsters.js の skills にここのIDを並べて持つ。
 // 名前はすべてオリジナル。
 //   shape：single（隣の1体）/ around（隣の全員）/ sight（見えている全員）/ range（使い手から range マス以内で見えている全員）
+//          line（向いた方向へ一直線に range マス。溜め始めに向きが決まり、溜めている間は危ないマスが光る）
 //   mult ：使い手の攻撃力にかける倍率 / hits：連続で当たる回数（省略時1） / color：エフェクトの色
 //   windup / charging：敵が使う時の予兆ログ（予告1ターン目 / 2ターン目）
 Game.SKILLS = {
@@ -88,8 +89,12 @@ Game.SKILLS = {
   },
   // ---- ボス ----
   rockAvalanche: {
-    name: "岩なだれ", shape: "around", mult: 2.4, color: "#a0a080",
+    name: "岩なだれ", shape: "range", range: 2, mult: 1.3, color: "#a0a080",
     windup: "両腕の大岩を高く振り上げた…", charging: "天井からぱらぱらと小石が落ちてくる…！",
+  },
+  rockBeam: {
+    name: "苔光線", shape: "line", range: 3, mult: 1.7, color: "#d8e070",
+    windup: "胸の苔がじわりと光り、こちらへ向いた…", charging: "光がまっすぐに集まっていく…！",
   },
   quakeWave: {
     name: "大地の震え", shape: "sight", mult: 1.3, color: "#c0a060",

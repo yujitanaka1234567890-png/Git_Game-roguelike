@@ -121,7 +121,7 @@ Game.MONSTERS = {
   // ---- ボス（各ダンジョンの最下層） ----
   rockColossus: {
     name: "岩苔の巨像", symbol: "Ω", sprite: "golem", color: "#8a9a6a", hp: 40, atk: 4, def: 1, exp: 50,
-    rarity: 5, growth: { hp: 0, atk: 0 }, skills: ["rockAvalanche", "quakeWave"], stage: 1, boss: true,
+    rarity: 5, growth: { hp: 0, atk: 0 }, skills: ["rockBeam", "rockAvalanche"], stage: 1, boss: true,
   },
   abyssMaw: {
     name: "深淵の大口", symbol: "Ψ", sprite: "maw", color: "#3a6aa0", hp: 60, atk: 6, def: 2, exp: 90,

@@ -58,7 +58,7 @@ Game.minimap = {
     ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
     ctx.fillRect(0, 0, cv.width, cv.height);
 
-    var colors = { ">": "#4aa0ff", "O": "#ffe066", "G": "#c8a8ff", "~": "#3a7ac8" };
+    var colors = { ">": "#ffd84a", "O": "#ffe066", "G": "#c8a8ff", "~": "#3a7ac8" }; // 階段は黄色（仲間の青と見分ける）
     for (var y = 0; y < map.height; y++) {
       for (var x = 0; x < map.width; x++) {
         var t = map.tiles[y][x];
@@ -73,7 +73,7 @@ Game.minimap = {
       ctx.fillRect(x * cs + cs / 2 - s / 2, y * cs + cs / 2 - s / 2, s, s);
     };
     var items = Game.items.floorItems;
-    for (var i = 0; i < items.length; i++) if (items[i].seen) dot(items[i].x, items[i].y, "#ffd84a");
+    for (var i = 0; i < items.length; i++) if (items[i].seen) dot(items[i].x, items[i].y, "#a8dcff"); // アイテムは薄い青
     var mk = Game.rescue.marker;
     if (mk && mk.seen) dot(mk.x, mk.y, "#b066ff");
     if (Game.state === "base") {

@@ -32,6 +32,7 @@ Game.specials = {
   // 技の範囲の説明
   shapeText: function (def) {
     if (def.shape === "range") return "使い手から " + def.range + " マス以内で見えている全員";
+    if (def.shape === "line") return "向いた方向へ一直線に " + def.range + " マス（溜め始めに向きが決まる）";
     return { single: "隣の1体", around: "隣にいる全員", sight: "使い手から見えている全員" }[def.shape] || def.shape;
   },
 
@@ -47,7 +48,8 @@ Game.specials = {
 
   // 技が届く相手。side = "enemy"（敵が使う → 主人公・仲間に当たる）/ "ally"（仲間が使う → 敵に当たる）
   // 敵が範囲技（隣の全員・見えている全員）を使うと、範囲にいる他の敵も巻き込まれる（事故）
-  targetsFor: function (user, def, side) {
+  //   shape "line"：dir（溜め始めに決めた向き）の一直線上 range マスにいる全員。dir がなければ、一直線上に狙える相手
+  targetsFor: function (user, def, side, dir) {
     var candidates;
     if (side === "enemy") {
       candidates = [Game.player].concat(Game.allies.list).filter(function (u) { return u.x >= 0; });
@@ -57,13 +59,56 @@ Game.specials = {
     } else {
       candidates = Game.enemies.list.slice();
     }
+    var self = this;
+    var onLine = dir ? this.lineCells(user, dir, def.range) : null;
     return candidates.filter(function (u) {
+      if (def.shape === "line") {
+        if (!onLine) return self.lineDirTo(user, u, def.range) !== null;
+        return onLine.some(function (c) { return c.x === u.x && c.y === u.y; });
+      }
       if (def.shape === "sight") return Game.fov.canSee(user.x, user.y, u.x, u.y);
       if (def.shape === "range") {
         return Math.max(Math.abs(u.x - user.x), Math.abs(u.y - user.y)) <= def.range && Game.fov.canSee(user.x, user.y, u.x, u.y);
       }
       return Game.path.canReach(user, u);
     });
+  },
+
+  // ---------- 一直線の技（ビーム） ----------
+  // user から dir の向きへ range マス（壁で止まる）
+  lineCells: function (user, dir, range) {
+    var cells = [], x = user.x, y = user.y;
+    for (var i = 0; i < range; i++) {
+      if (!Game.map.canStep(x, y, dir[0], dir[1])) break;
+      x += dir[0];
+      y += dir[1];
+      cells.push({ x: x, y: y });
+    }
+    return cells;
+  },
+
+  // user から見て、t が縦・横・斜めの一直線上 range マス以内（間に壁なし）ならその向き。違えば null
+  lineDirTo: function (user, t, range) {
+    var dx = t.x - user.x, dy = t.y - user.y;
+    if ((dx === 0 && dy === 0) || (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy))) return null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) > range) return null;
+    var dir = [Math.sign(dx), Math.sign(dy)];
+    var cells = this.lineCells(user, dir, range);
+    return cells.some(function (c) { return c.x === t.x && c.y === t.y; }) ? dir : null;
+  },
+
+  // 溜めを始める時に向きを決める（line の技だけ）。狙える相手のうち1体の方へ
+  aimLine: function (user, def, side) {
+    if (def.shape !== "line") return null;
+    var self = this;
+    var ts = this.targetsFor(user, def, side).filter(function (u) { return side !== "enemy" || self.isOurSide(u); });
+    if (ts.length === 0) return null;
+    return this.lineDirTo(user, Game.combat.chooseTarget(ts), def.range);
+  },
+
+  // 一直線の技の危ないマスを光らせる（溜めている間、よけられるように）
+  showLine: function (user, def, dir) {
+    if (dir) Game.fx.flash(this.lineCells(user, dir, def.range), def.color, 450);
   },
 
   // 主人公・仲間（敵から見た「狙う相手」）か
@@ -88,14 +133,16 @@ Game.specials = {
     var skill = this.pickUsable(e, "enemy");
     if (!skill) return false;
     if (Math.random() >= Game.config.specialChance) return false;
-    e.charge = { left: Game.config.specialWindup, skill: skill.id };
+    e.charge = { left: Game.config.specialWindup, skill: skill.id, dir: this.aimLine(e, skill.def, "enemy") };
     Game.sound.play("warn");
     Game.log.add(
-      "⚠ " + e.name + "は" + skill.def.windup + "（" + Game.config.specialWindup + "ターン後に「" + skill.def.name + "」）",
+      "⚠ " + e.name + "は" + skill.def.windup + "（" + Game.config.specialWindup + "ターン後に「" + skill.def.name + "」）" +
+        (e.charge.dir ? "　光った一直線からよけろ！" : ""),
       "warn",
       { skill: skill.id }
     );
     Game.fx.flash([{ x: e.x, y: e.y }], "#ffe066", 300);
+    this.showLine(e, skill.def, e.charge.dir);
     return true;
   },
 
@@ -106,10 +153,12 @@ Game.specials = {
     if (e.charge.left > 0) {
       Game.log.add("⚠ " + e.name + "は" + def.charging + "（「" + def.name + "」まであと" + e.charge.left + "ターン）", "warn", { skill: e.charge.skill });
       Game.fx.flash([{ x: e.x, y: e.y }], "#ffe066", 300);
+      this.showLine(e, def, e.charge.dir);
       return;
     }
+    var dir = e.charge.dir;
     e.charge = null;
-    this.release(e, def, "enemy");
+    this.release(e, def, "enemy", dir);
   },
 
   // （仲間）ときどき技の溜めを始める。敵と同じく予兆をログに出し、specialWindup ターン溜めてから発動する
@@ -118,7 +167,7 @@ Game.specials = {
     if (Math.random() >= Game.config.allySkillChance) return false;
     var skill = this.pickUsable(a, "ally");
     if (!skill) return false;
-    a.charge = { left: Game.config.specialWindup, skill: skill.id };
+    a.charge = { left: Game.config.specialWindup, skill: skill.id, dir: this.aimLine(a, skill.def, "ally") };
     Game.sound.play("warn");
     Game.log.add(
       "◆ " + a.name + "は" + skill.def.windup + "（" + Game.config.specialWindup + "ターン後に「" + skill.def.name + "」）",
@@ -136,14 +185,16 @@ Game.specials = {
       Game.log.add("◆ " + a.name + "は" + def.charging + "（「" + def.name + "」まであと" + a.charge.left + "ターン）", "ally", { skill: a.charge.skill });
       return;
     }
+    var adir = a.charge.dir;
     a.charge = null;
-    this.release(a, def, "ally");
+    this.release(a, def, "ally", adir);
   },
 
-  release: function (user, def, side) {
+  release: function (user, def, side, dir) {
     Game.sound.play("special");
     Game.log.add("★ " + user.name + "の「" + def.name + "」！", side === "enemy" ? "bad" : "good", { skill: def.id });
-    var targets = this.targetsFor(user, def, side);
+    var targets = this.targetsFor(user, def, side, dir);
+    if (def.shape === "line" && dir) Game.fx.flash(this.lineCells(user, dir, def.range), def.color, 600); // ビームの光
     if (targets.length === 0) {
       Game.log.add("しかし、誰にも当たらなかった！", "miss");
       Game.fx.flash(Game.fx.around(user.x, user.y, 1), def.color, 400);

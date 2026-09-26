@@ -9,6 +9,7 @@
 - 素材（画像・音）は利用規約を確認したものだけを使い、出典を記録する。
 
 ## 技術方針
+- **表示は3Dで進める**（2026-09 決定）。起動時はいつも3D（3 キーの切り替えは廃止）。新しい見た目・演出は3D（render3d.js・render3d_parts.js・anim3d.js）にだけ作る。2D（renderer.js・renderer_units.js）は WebGL が使えないブラウザの予備と倒れた時の画面のためだけに残し、新機能の対応はしなくてよい（壊れない程度に保つ）。
 - HTML5 + CSS + 素のJavaScript（Canvas描画）。フレームワーク・ビルドツール・npm は使わない。
 - `index.html` をダブルクリックで動くことを維持する（ES Modules は file:// で動かないため、`<script>` タグ＋グローバル `Game` 名前空間で分割）。
 - 1ファイル1役割。ファイルが大きくなったら分割する（目安300行）。新ファイルは index.html の読み込み順に追加。
@@ -36,7 +37,7 @@
 - `js/base.js` 拠点のデータ（牧場・倉庫・連れて行く/持って行く選択・踏破記録 cleared・交配 breed・発見済み discovered・localStorage保存 key=dimension-roguelike-save-v1）
 - `js/basemap.js` 拠点の空間（固定マップ・牧場を歩く仲間・会話・収納箱・掲示板＝仲間選び/救出・交配小屋・門でのダンジョン選択）/ `js/bestiary.js` プレイヤー用モンスター図鑑（出会った種類 base.seen だけ詳しく載る）
 - `js/data/sprites.js` ドット絵（設備。12×12 の文字で手描き・オリジナル）/ `js/data/item_sprites.js` アイテム・武器のドット絵（16×16・落ち着いた固定色＝大文字の色文字）/ `js/data/characters.js` 主人公・モンスターのドット絵（16×16・右向き。主人公は紙芝居用に hero_idle1/2・walk1/2・attack・hurt）と重ねる小物 / `js/data/sea_characters.js` 水属性モンスターの絵と歩き・攻撃の指定（Game.EXTRA_FRAMES）/ `js/data/char_frames.js` モンスターの歩き・攻撃の絵（元の絵をずらし＋行の描き直しで作る。名前_walk・名前_attack）/ `js/pixelart.js` ドット絵の描画（壁・床は模様をその場で描く。grid＝色のマス目）/ `js/hires.js` キャラの高解像度版（16→32：ドット絵向け2倍拡大＋外側の輪郭を細く＋左上から光の陰影。3D表示と図鑑で使う）/ `js/sound.js` 効果音（Web Audio API で合成）/ `js/music.js` BGM（合成で演奏するオリジナル曲。今はボス戦のみ。refresh で update）
-- `js/icons.js` 文章の中の小さなドット絵アイコン（[[tile:C]]・[[item:gun]]・[[mon:numerin]] の印を dialog・説明で絵にする。index.html の data-icon も）/ `js/renderer.js` 描画（2D。地形・床のアイテムは裏の画用紙 terrain に描いておく）＋ `js/renderer_units.js`（2Dの動くもの：drawFrame・drawUnit。anim3d の紙芝居の動きを2Dでも使う。動いている間だけ約60回/秒で描き直す kick）/ `js/render3d.js` 3D表示（試作・WebGL直書き・外部ライブラリなし。3 キーで切替、renderer.draw の先頭で分岐。ルールには触れない）＋ `js/render3d_parts.js`（アトラス・四角形の組み立て）/ `js/anim3d.js` 紙芝居の動き / `js/minimap.js` 3D時の左上の全体マップ / `js/input.js` キー入力 / `js/main.js` 状態遷移・ターン進行（endTurn→afterAction）・ダッシュ・脱出・死亡処理
+- `js/icons.js` 文章の中の小さなドット絵アイコン（[[tile:C]]・[[item:gun]]・[[mon:numerin]] の印を dialog・説明で絵にする。index.html の data-icon も）/ `js/renderer.js` 描画（2D。地形・床のアイテムは裏の画用紙 terrain に描いておく）＋ `js/renderer_units.js`（2Dの動くもの：drawFrame・drawUnit。anim3d の紙芝居の動きを2Dでも使う。動いている間だけ約60回/秒で描き直す kick）/ `js/render3d.js` 3D表示（メインの表示・WebGL直書き・外部ライブラリなし。renderer.draw の先頭で分岐。ルールには触れない）＋ `js/render3d_parts.js`（アトラス・四角形の組み立て）/ `js/anim3d.js` 紙芝居の動き / `js/minimap.js` 3D時の左上の全体マップ / `js/input.js` キー入力 / `js/main.js` 状態遷移・ターン進行（endTurn→afterAction）・ダッシュ・脱出・死亡処理
 - `docs/roadmap.md` 開発ステップ / `docs/design_notes.md` 仕様面の課題メモ / `docs/spec/` 仕様書（monsters・skills・items・requests。ユーザーが直接書き換えて「仕様書を反映して」と頼む。手順はリポジトリ直下の modify-requests-rule.md）/ `tools/spec_gen.js` 仕様書をデータから作り直す道具（node。ゲーム本体には入らない）
 
 ## 確定した仕様

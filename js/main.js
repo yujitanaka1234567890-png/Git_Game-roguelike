@@ -145,10 +145,6 @@ Game.onKey = function (key) {
     Game.refresh(Game.pixel.toggle() ? "表示：ドット絵" : "表示：文字");
     return;
   }
-  if (lower === "3") {
-    Game.refresh(Game.view3d.toggle());
-    return;
-  }
   // N：全体マップの大きさ（3D表示の時）、＋／－：カメラを寄せる・引く（3D表示の時）
   if (lower === "n") {
     Game.refresh(Game.minimap.cycle());

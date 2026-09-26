@@ -10,7 +10,7 @@
 //   ・光の計算はしない（面ごとに明るさを変えるだけ）→ 内蔵グラフィックでも軽い
 //   ・画面に映る範囲（主人公のまわり）だけを組み立てる
 Game.view3d = {
-  enabled: false,
+  enabled: true, // いつも3Dで遊ぶ（2D表示は、WebGL が使えないブラウザの予備と倒れた時の画面だけ）
   prefKey: "dimension-roguelike-view",
   failed: false, // WebGL が使えなかった
 
@@ -34,7 +34,6 @@ Game.view3d = {
 
   init: function () {
     try {
-      if (window.localStorage.getItem(this.prefKey) === "3d") this.enabled = true;
       var z = parseFloat(window.localStorage.getItem(this.zoomKey));
       if (z >= this.zoomMin && z <= this.zoomMax) this.zoom = z;
     } catch (e) {
@@ -42,7 +41,7 @@ Game.view3d = {
     }
   },
 
-  // 3 キー：切り替えて、表示するメッセージを返す
+  // 3D⇔2D の切り替え（今は使っていない。開発方針で3Dだけにしたため、キーからは呼ばない）
   toggle: function () {
     this.enabled = !this.enabled;
     if (this.enabled && !this.setup()) {
@@ -61,7 +60,7 @@ Game.view3d = {
 
   // ＋／－キー：カメラを寄せる（dir = -1）・引く（dir = 1）。表示するメッセージを返す
   zoomBy: function (dir) {
-    if (!this.enabled) return "カメラの寄り引きは3D表示の時に使える（3 キー）";
+    if (!this.active()) return "カメラの寄り引きは3D表示の時に使える";
     this.zoom = Math.max(this.zoomMin, Math.min(this.zoomMax, Math.round((this.zoom + dir * 0.15) * 100) / 100));
     try {
       window.localStorage.setItem(this.zoomKey, String(this.zoom));
